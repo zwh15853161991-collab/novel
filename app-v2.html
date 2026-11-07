@@ -344,7 +344,11 @@ async function callTurn(text){
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
     body:JSON.stringify({model:'deepseek-chat',temperature:0.95,max_tokens:900,
       messages:[{role:'system',content:sysPrompt()},{role:'user',content:'读者说／做：'+text}]})});
-  if(!r.ok) throw new Error('接口 '+r.status);
+  if(!r.ok){
+    const map={401:'key 无效或已失效（请到「我的」重新填）',402:'账户余额不足',429:'请求太频繁，等几秒',
+               500:'模型服务端异常',503:'模型繁忙，稍后再试'};
+    throw new Error(map[r.status]||('接口 '+r.status));
+  }
   const d=await r.json(); let s=d.choices[0].message.content.trim();
   if(s.startsWith('```')) s=s.split('```')[1].replace(/^json/,'').trim();
   const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i) s=s.slice(i,j+1);
@@ -455,6 +459,8 @@ function openSettings(){
      <div class="hint" style="margin:4px 0 8px">${MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):'存在这台设备，不上传'}</div>
      <input class="txt" id="keyInput" type="password" placeholder="sk-..." value="${KEY?'••••••••':''}">
      <button class="btn" onclick="saveKey()">保存</button>
+     <button class="btn ghost" onclick="testKey()">测试连接</button>
+     <div class="hint" id="keyMsg" style="margin-top:8px"></div>
      <button class="btn ghost" onclick="clearKey()">清除 key</button>
    </div>
    <div class="sgroup">其他（占位，后续补）</div>
@@ -501,6 +507,30 @@ function closeSheet(){ $('sheet').classList.remove('on'); }
 $('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
 $('setBtn2').onclick=openSettings;
 function saveKey(){ const v=($('keyInput').value||'').trim(); if(!v.startsWith('sk-')){ alert('看起来不是 key（应以 sk- 开头）'); return; } KEY=v; localStorage.setItem('jieyu.key',v); closeSheet(); renderHome(); }
+async function testKey(){
+  const box=$('keyMsg');
+  const v=($('keyInput').value||'').trim();
+  const k=(v&&v.startsWith('sk-'))?v:KEY;
+  box.style.color='var(--dim)'; box.textContent='测试中…';
+  if(MODE==='server'){
+    try{ const r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({session:'__probe__',route:'wan',text:'（测试）',max_tokens:60})});
+      box.style.color = r.ok?'var(--accent)':'#d98b7a';
+      box.textContent = r.ok?'服务端可用 ✅':('服务端返回 '+r.status);
+    }catch(e){ box.style.color='#d98b7a'; box.textContent='连不上本地服务'; }
+    return;
+  }
+  if(!k){ box.style.color='#d98b7a'; box.textContent='还没填 key'; return; }
+  try{
+    const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
+      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:'ping'}],max_tokens:5})});
+    if(r.ok){ box.style.color='var(--accent)'; box.textContent='key 可用 ✅'; }
+    else if(r.status===401){ box.style.color='#d98b7a'; box.textContent='key 无效或已过期 ❌'; }
+    else if(r.status===402){ box.style.color='#d98b7a'; box.textContent='余额不足 ❌'; }
+    else { box.style.color='#d98b7a'; box.textContent='返回 '+r.status+' ❌'; }
+  }catch(e){ box.style.color='#d98b7a'; box.textContent='网络不通：'+e.message; }
+}
 function clearKey(){ KEY=''; localStorage.removeItem('jieyu.key'); closeSheet(); renderHome(); }
 
 /* ---------- 对话菜单 ---------- */
@@ -577,6 +607,9 @@ $('memBtn').onclick=()=>{
 /* ---------- 启动 ---------- */
 (async()=>{
   await detect();
+  if(location.protocol==='file:' && MODE!=='server'){
+    setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
+  }
   renderHome();
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 })();
