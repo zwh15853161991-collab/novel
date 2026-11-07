@@ -141,7 +141,7 @@ const ACCENTS={
   clay:{name:'陶土',c:'#c08a72',ink:'#1c1310'}
 };
 const PRESETS={
-  deepseek:{name:'DeepSeek', base:'https://api.deepseek.com/chat/completions', model:'deepseek-chat'},
+  deepseek:{name:'DeepSeek V4.1 Flash', base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'},
   moonshot:{name:'Moonshot', base:'https://api.moonshot.cn/v1/chat/completions', model:'moonshot-v1-8k'},
   glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
@@ -149,9 +149,10 @@ const PRESETS={
 const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,
   mem:8000, reply:600, persona:'full',
   pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
-  api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-chat'}};
+  api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'}};
 let SET=Object.assign({},DEF,JSON.parse(localStorage.getItem('jieyu.set')||'{}'));
 function saveSet(){localStorage.setItem('jieyu.set',JSON.stringify(SET));}
+if(SET.api && SET.api.model==='deepseek-chat'){ SET.api.model='deepseek-flash'; saveSet(); }
 function applySet(){
   const t=THEMES[SET.theme]||THEMES.warm, a=ACCENTS[SET.accent]||ACCENTS.sand;
   const r=document.documentElement.style;
@@ -448,12 +449,12 @@ function openSettings(){
    <div class="opt" style="display:block">
      <div class="row"><div class="lbl grow">记忆长度</div><span class="val" id="memVal"></span></div>
      <div class="hint">她能看到多远的过去。越大越连贯，也越贵。</div>
-     <input type="range" id="memRange" min="2000" max="32000" step="1000" style="width:100%;accent-color:var(--accent)">
+     <input type="range" id="memRange" min="2000" max="128000" step="2000" style="width:100%;accent-color:var(--accent)">
    </div>
    <div class="opt" style="display:block">
      <div class="row"><div class="lbl grow">回复长度</div><span class="val" id="repVal"></span></div>
      <div class="hint">她一次说话+叙述的字数上限（越大描写越厚）。</div>
-     <input type="range" id="repRange" min="200" max="1600" step="100" style="width:100%;accent-color:var(--accent)">
+     <input type="range" id="repRange" min="200" max="4000" step="100" style="width:100%;accent-color:var(--accent)">
    </div>
    <div class="opt" style="display:block">
      <div class="row"><div class="lbl grow">人设理解深度</div><span class="val" id="perVal"></span></div>
@@ -473,7 +474,7 @@ function openSettings(){
      <div class="hint" style="margin:10px 0 4px">接口地址（OpenAI 兼容即可）</div>
      <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="${SET.api.base}">
      <div class="hint" style="margin:10px 0 4px">模型名</div>
-     <input class="txt" id="modelInput" placeholder="deepseek-chat" value="${SET.api.model}">
+     <input class="txt" id="modelInput" placeholder="deepseek-flash" value="${SET.api.model}">
      <button class="btn" onclick="saveKey()">保存</button>
      <button class="btn ghost" onclick="testKey()">测试连接</button>
      <div class="hint" id="keyMsg" style="margin-top:8px"></div>
