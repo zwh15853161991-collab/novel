@@ -386,7 +386,7 @@ function sysPrompt(userText){
   L.push('');
   L.push('输出格式（必须用这四个标签，标签名不许改）：');
   L.push('顺序必须是：<nar> → <say> → <act> → <meta>。act 用第三人称写她，不要出现「我」。');
-  L.push('<nar>两句之间的叙述，写足不压缩</nar><say>“台词”</say><act>收尾小动作</act><meta>{"advance":"这一轮剧情推进一句话","open_thread":"","close_thread":"","outline_hit":0,"aff":0,"trust":0,"memory":"","choices":["…","…","…"]}</meta>');
+  L.push('<nar>两句之间的叙述，写足不压缩</nar><say>“台词”</say><act>收尾小动作</act><meta>{"len":"short|mid|long","why":"判断依据20字内","advance":"这一轮剧情推进一句话","open_thread":"","close_thread":"","outline_hit":0,"aff":0,"trust":0,"memory":"","choices":["…","…","…"]}</meta>');
   return L.join('\n');
 }
 
@@ -440,6 +440,35 @@ async function callTurnStream(text, onSections){
     if(got){ const sec=parseSections(all); onSections(sec); }
   }
   let sec=parseSections(all);
+  // 复核：模型自报 short/mid/long，程序核对字数是否落在该档区间，偏了就让模型按目标重写一次
+  const BAND={short:[40,95],mid:[100,210],long:[200,380]};
+  {
+    const cls=(sec.meta&&sec.meta.len)||'';
+    const chars=(sec.nar||'').length+(sec.say||'').length;
+    if(BAND[cls]){
+      const [lo,hi]=BAND[cls];
+      if(chars<lo*0.75 || chars>hi*1.4){
+        try{
+          const target=Math.round((lo+hi)/2);
+          const r3=await fetch(SET.api.base,{method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+            body:JSON.stringify({model:SET.api.model,temperature:0.9,max_tokens:SET.reply,
+              messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},
+                        {role:'user',content:'读者说／做：'+text},
+                        {role:'assistant',content:'<nar>'+(sec.nar||'')+'</nar><say>'+(sec.say||'')+'</say>'},
+                        {role:'user',content:'这一版偏'+(chars<lo?'短':'长')+'（'+chars+'字，目标 '+lo+'-'+hi+' 字）。保持同样的内容与语气，改写到 '+target+' 字左右再输出一次，仍用四个标签。'}]})});
+          const j3=await r3.json(); const fix=parseSections(j3.choices[0].message.content||'');
+          if(fix.nar||fix.say){ sec={...sec, nar:fix.nar||sec.nar, say:fix.say||sec.say, act:fix.act||sec.act,
+                                    meta:{...sec.meta, ...(fix.meta||{}), repaired:true}}; onSections(sec); }
+        }catch(e){}
+      }
+    }
+  }
+  try{
+    const L=(sec.meta&&sec.meta.len)||'';
+    const chars=(sec.nar||'').length + (sec.say||'').length;
+    S.lastLen={len:L, why:(sec.meta&&sec.meta.why)||'', chars, cap:SET.reply};
+  }catch(e){}
   if(!sec.nar){   // 叙述缺失就补一次（只补叙述，很便宜）
     try{
       const t2=targetLen(text);
