@@ -83,6 +83,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Songti SC","Not
 .segs button{background:var(--bubble);border:1px solid var(--line);color:var(--dim);border-radius:10px;
   padding:6px 11px;font-size:13px;font-family:inherit}
 .segs button.on{color:var(--accent);border-color:rgba(201,160,106,.5)}
+.val{color:var(--accent);font-size:13px;border:1px solid var(--line);border-radius:8px;padding:2px 8px}
 input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);border-radius:12px;
   padding:11px 13px;color:var(--ink);font-size:14px;font-family:inherit;outline:none}
 .btn{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:13px;
@@ -109,6 +110,7 @@ input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);borde
     <div class="grow"><div class="nm" id="cnm">林未晞</div><div class="sub" id="csub"></div></div>
     <button class="iconbtn" id="memBtn">记</button>
     <button class="iconbtn" id="setBtn2">⚙</button>
+    <button class="iconbtn" id="moreBtn">⋯</button>
   </div>
   <div class="log" id="log"></div>
   <div class="choices" id="choices"></div>
@@ -138,7 +140,9 @@ const ACCENTS={
   moss:{name:'苔绿',c:'#94ab8e',ink:'#12180f'},
   clay:{name:'陶土',c:'#c08a72',ink:'#1c1310'}
 };
-const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true};
+const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,
+  mem:8000, reply:600, persona:'full',
+  pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''}};
 let SET=Object.assign({},DEF,JSON.parse(localStorage.getItem('jieyu.set')||'{}'));
 function saveSet(){localStorage.setItem('jieyu.set',JSON.stringify(SET));}
 function applySet(){
@@ -291,9 +295,11 @@ function makeOutline(){
 function sysPrompt(){
   const c=CHARS[CUR]||{}, L=[];
   L.push('你在一部中文互动小说里扮演'+c.name+'（'+(c.meta||'')+'）。');
-  L.push(c.desc||''); L.push('口吻：'+(c.voice||'')); L.push('');
+  if(SET.persona==='full'){ L.push(c.desc||''); L.push('口吻：'+(c.voice||'')); }
+  else { L.push('身份：'+(c.meta||'')+'。口吻：'+(c.voice||'')); }
+  L.push('');
   L.push('规矩：');
-  L.push('1 输出三部分：nar（两句之间的叙述，写足不压缩，通常 80-200 字，可用 \\n 分 2-4 段：环境/声音/温度 → 她在做什么 → 动作细节 → 神态语气）、say（台词，用「」包住）、act（收尾小动作，可空）');
+  L.push('1 输出三部分：nar（两句之间的叙述，可用 \\n 分 2-5 段：环境/声音/温度 → 她在做什么 → 动作细节 → 神态语气）、say（台词，用「」包住）、act（收尾小动作，可空）。总长度目标约 '+SET.reply+' tokens，写足但不要注水');
   L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
   L.push('2b act 用第三人称写她，不出现「我」');
   L.push('3 剧情由你推进：玩家行为要真的改变事情走向');
@@ -301,6 +307,12 @@ function sysPrompt(){
   L.push('4 不知道就说不懂或不耐烦地岔开，绝不编造设定');
   L.push('5 aff 按行为给分：被关心 +1~+2；被挑衅且反击 +0~+1；被羞辱 -1~-2；闲聊 0');
   L.push('');
+  const paceTxt={slow:'节奏放慢，多写环境与动作，推进克制',normal:'节奏正常，每轮推进一小步',fast:'节奏快些，尽快把关键冲突摆出来'}[SET.pace]||'';
+  const toneTxt={sweet:'整体基调偏暖，允许软化',balanced:'基调中性',bitter:'基调偏冷，别急着给甜头'}[SET.tone]||'';
+  L.push('【叙事偏好】'+paceTxt+'；'+toneTxt);
+  if(SET.me && (SET.me.name||SET.me.call||SET.me.traits)){
+    L.push('【读者】'+(SET.me.name?('名字：'+SET.me.name+'；'):'')+(SET.me.call?('身份：'+SET.me.call+'；'):'')+(SET.me.traits?('性格：'+SET.me.traits):''));
+  }
   L.push('【当下处境】'+(S.chapter||'')+'。'+(S.beat||''));
   L.push('【关系】好感 '+S.aff+'／信任 '+S.trust+'／阶段 '+S.stage);
   L.push('【本局大纲】（打勾的已发生，要演出来，也可加戏）');
@@ -310,7 +322,11 @@ function sysPrompt(){
   L.push('【剧情年表】'+((S.log||[]).slice(-6).join('；')||'（无）'));
   L.push('【未解的线索】'+((S.threads||[]).join('；')||'（无）'));
   L.push('【你记得的事】'+((S.facts||[]).slice(-10).join('；')||'（无）'));
-  L.push('【刚才聊到】'+((S.turns||[]).slice(-8).join('\n')||'（刚见面）'));
+  {
+    const budget=SET.mem; let acc=0, keep=[];
+    for(let i=(S.turns||[]).length-1;i>=0;i--){ const t=S.turns[i]; acc+=t.length; if(acc>budget*0.9) break; keep.unshift(t); }
+    L.push('【刚才聊到】'+(keep.join('\n')||'（刚见面）'));
+  }
   L.push('');
   L.push('只输出 JSON：{"nar":"叙述","say":"…","act":"…","advance":"这一轮剧情推进一句话","open_thread":"","close_thread":"","outline_hit":0,"aff":0,"trust":0,"memory":"","choices":["…","…","…"]}');
   return L.join('\n');
@@ -319,7 +335,7 @@ function sysPrompt(){
 async function callTurn(text){
   if(MODE==='server'){
     const r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({session:CUR,route:CUR,text})});
+      body:JSON.stringify({session:CUR,route:CUR,text,max_tokens:SET.reply,mem:SET.mem,persona:SET.persona})});
     const d=await r.json(); if(!r.ok) throw new Error(d.error||'接口错误');
     return d;
   }
@@ -416,6 +432,23 @@ function openSettings(){
      <div class="segs" id="fontRow">
        <button data-f="15">小</button><button data-f="17">标准</button><button data-f="19">大</button><button data-f="21">更大</button>
      </div></div>
+   <div class="sgroup">文字模型 · 控制消耗</div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">记忆长度</div><span class="val" id="memVal"></span></div>
+     <div class="hint">她能看到多远的过去。越大越连贯，也越贵。</div>
+     <input type="range" id="memRange" min="2000" max="32000" step="1000" style="width:100%;accent-color:var(--accent)">
+   </div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">回复长度</div><span class="val" id="repVal"></span></div>
+     <div class="hint">她一次说话+叙述的字数上限（越大描写越厚）。</div>
+     <input type="range" id="repRange" min="200" max="1600" step="100" style="width:100%;accent-color:var(--accent)">
+   </div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">人设理解深度</div><span class="val" id="perVal"></span></div>
+     <div class="hint">给她多少背景：精简 = 只给身份与口吻；完整 = 加性格、雷点、关系史。</div>
+     <div class="segs" id="perRow"><button data-p="lite">精简</button><button data-p="full">完整</button></div>
+   </div>
+   <div class="opt"><div><div class="lbl">每轮预估消耗</div><div class="hint">按上面三项估算，仅输入+输出</div></div><span class="val" id="costVal">—</span></div>
    <div class="sgroup">连接</div>
    <div class="opt" style="display:block">
      <div class="lbl">DeepSeek API key</div>
@@ -442,6 +475,23 @@ function openSettings(){
     b.style.background=ACCENTS[k].c; b.onclick=()=>{ SET.accent=k; saveSet(); applySet(); openSettings(); };
     aR.appendChild(b);
   });
+  const memR=$('memRange'), repR=$('repRange');
+  memR.value=SET.mem; repR.value=SET.reply;
+  const showCost=()=>{
+    $('memVal').textContent=SET.mem;
+    $('repVal').textContent=SET.reply;
+    $('perVal').textContent=SET.persona==='lite'?'精简':'完整';
+    const inp=Math.round(SET.mem*0.55)+(SET.persona==='full'?900:450);
+    const out=Math.round(SET.reply*0.75);
+    $('costVal').textContent='≈'+(inp+out).toLocaleString()+' tokens';
+  };
+  memR.oninput=()=>{ SET.mem=Number(memR.value); saveSet(); showCost(); };
+  repR.oninput=()=>{ SET.reply=Number(repR.value); saveSet(); showCost(); };
+  $('perRow').querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('on', SET.persona===b.dataset.p);
+    b.onclick=()=>{ SET.persona=b.dataset.p; saveSet(); openSettings(); };
+  });
+  showCost();
   $('fontRow').querySelectorAll('button').forEach(b=>{
     b.classList.toggle('on', Number(b.dataset.f)===SET.font);
     b.onclick=()=>{ SET.font=Number(b.dataset.f); saveSet(); applySet(); openSettings(); };
@@ -452,6 +502,62 @@ $('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
 $('setBtn2').onclick=openSettings;
 function saveKey(){ const v=($('keyInput').value||'').trim(); if(!v.startsWith('sk-')){ alert('看起来不是 key（应以 sk- 开头）'); return; } KEY=v; localStorage.setItem('jieyu.key',v); closeSheet(); renderHome(); }
 function clearKey(){ KEY=''; localStorage.removeItem('jieyu.key'); closeSheet(); renderHome(); }
+
+/* ---------- 对话菜单 ---------- */
+$('moreBtn').onclick=()=>{
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>这一局</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">操作</div>
+   <div class="opt" onclick="regen()"><div class="lbl">↻ 重新生成</div><span class="tag">换一版</span></div>
+   <div class="opt" onclick="undoTurn()"><div class="lbl">↺ 撤回最后一轮</div></div>
+   <div class="opt" onclick="newChat()"><div class="lbl">＋ 新建对话（同一人重开）</div></div>
+   <div class="sgroup">设置</div>
+   <div class="opt" onclick="editStory()"><div class="lbl">剧情选项设置</div><span class="tag">${SET.pace==='fast'?'快':SET.pace==='slow'?'慢':'正常'} · ${SET.tone==='sweet'?'偏甜':SET.tone==='bitter'?'偏苦':'均衡'}</span></div>
+   <div class="opt" onclick="editMe()"><div class="lbl">我的人设</div><span class="tag">${SET.me.name||'未填'}</span></div>
+   <div class="opt" onclick="openSettings()"><div class="lbl">文字模型设置</div></div>`;
+  $('sheet').classList.add('on');
+};
+function undoTurn(){
+  if(!S||!S.turns.length) return closeSheet();
+  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S); closeSheet(); openChat(CUR);
+}
+function regen(){
+  if(!S||!S.turns.length) return closeSheet();
+  const last=S.turns.length>=2?S.turns[S.turns.length-2]:S.turns[0];
+  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S);
+  closeSheet(); openChat(CUR);
+  setTimeout(()=>sendTurn(last),120);
+}
+function newChat(){ delS(CUR); const r=CUR; S=blank(r); closeSheet(); openChat(r); $('send').disabled=false; $('inp').disabled=false; }
+function editStory(){
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>剧情选项</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">节奏</div>
+   <div class="segs" id="paceRow">
+     <button data-v="slow">慢（多描写）</button><button data-v="normal">正常</button><button data-v="fast">快（推主线）</button></div>
+   <div class="sgroup">基调</div>
+   <div class="segs" id="toneRow">
+     <button data-v="sweet">偏甜</button><button data-v="balanced">均衡</button><button data-v="bitter">偏苦</button></div>`;
+  $('sheet').classList.add('on');
+  $('paceRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.pace===b.dataset.v);
+    b.onclick=()=>{SET.pace=b.dataset.v; saveSet(); editStory();}; });
+  $('toneRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.tone===b.dataset.v);
+    b.onclick=()=>{SET.tone=b.dataset.v; saveSet(); editStory();}; });
+}
+function editMe(){
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>我的人设</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">她怎么叫你</div>
+   <input class="txt" id="meName" placeholder="你的名字（可不填）" value="${SET.me.name||''}">
+   <div class="sgroup">称呼 / 身份</div>
+   <input class="txt" id="meCall" placeholder="例如：同班同学、店里常客" value="${SET.me.call||''}">
+   <div class="sgroup">性格（可留空）</div>
+   <input class="txt" id="meTraits" placeholder="例如：话少、心软、爱拆台" value="${SET.me.traits||''}">
+   <button class="btn" onclick="saveMe()">保存</button>`;
+  $('sheet').classList.add('on');
+}
+function saveMe(){ SET.me={name:($('meName').value||'').trim(), call:($('meCall').value||'').trim(), traits:($('meTraits').value||'').trim()};
+  saveSet(); closeSheet(); }
 
 /* ---------- 记忆面板 ---------- */
 $('memBtn').onclick=()=>{
