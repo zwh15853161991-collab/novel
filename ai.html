@@ -78,7 +78,12 @@ function remember(t){const ps=[/(?:我|俺)(?:很|特别|最)?(?:喜欢|爱)([^�
 
 const SEEDS=['雨','台风','月考','家长会','停电','夜自习','剪头发','体检','生日','搬家','感冒','旧同学'];
 function makeOutline(){
-  const out=[{t:SEEDS[Math.floor(Math.random()*SEEDS.length)]+'（本局的引子）',done:false}];
+  const want=new URLSearchParams(location.search).get('seed');
+  const used=JSON.parse(localStorage.getItem('jieyu.seeds')||'[]');
+  const seedPool=SEEDS.filter(x=>!used.includes(x));
+  const seed=want&&SEEDS.includes(want)?want:(seedPool.length?seedPool[Math.floor(Math.random()*seedPool.length)]:SEEDS[0]);
+  localStorage.setItem('jieyu.seeds', JSON.stringify(used.concat([seed]).slice(-8)));
+  const out=[{t:seed+'（本局的引子）',done:false}];
   const bs=Object.keys(SCENES).filter(c=>beatsFor(c).length).sort((a,b)=>order(a)-order(b));
   const pool=[]; bs.forEach(c=>beatsFor(c).forEach(b=>{ if(!(S.used_ids||[]).includes(b.id)) pool.push(b); }));
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
