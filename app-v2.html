@@ -140,6 +140,12 @@ const ACCENTS={
   moss:{name:'苔绿',c:'#94ab8e',ink:'#12180f'},
   clay:{name:'陶土',c:'#c08a72',ink:'#1c1310'}
 };
+const PRESETS={
+  deepseek:{name:'DeepSeek', base:'https://api.deepseek.com/chat/completions', model:'deepseek-chat'},
+  moonshot:{name:'Moonshot', base:'https://api.moonshot.cn/v1/chat/completions', model:'moonshot-v1-8k'},
+  glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
+  qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
+};
 const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,
   mem:8000, reply:600, persona:'full',
   pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
@@ -216,7 +222,8 @@ function renderHome(){
   if(TAB==='me'){
     const h=document.createElement('div'); h.className='sect'; h.textContent='连接'; box.appendChild(h);
     const d=document.createElement('div'); d.className='card';
-    d.innerHTML='<div class="nm">DeepSeek API</div><div class="sub">'+
+    const host=(SET.api&&SET.api.base||'').replace(/^https?:\/\//,'').split('/')[0];
+    d.innerHTML='<div class="nm">文字模型 · '+(SET.api.model||'未设')+'</div><div class="sub">'+host+' · '+
       (MODE==='server' ? (SERVER_KEY?'服务端已配置 key（本地服务在跑）':'服务端没配 key，将使用模板') :
        (KEY?'已填 key（只存在这台设备）':'未填 key，暂时用模板演示'))+'</div>';
     d.onclick=openSettings; box.appendChild(d);
@@ -459,6 +466,10 @@ function openSettings(){
      <div class="lbl">DeepSeek API key</div>
      <div class="hint" style="margin:4px 0 8px">${MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):'存在这台设备，不上传'}</div>
      <input class="txt" id="keyInput" type="password" placeholder="sk-..." value="${KEY?'••••••••':''}">
+     <div class="hint" style="margin:10px 0 6px">服务商预设</div>
+     <div class="segs" id="presetRow">
+       <button data-p="deepseek">DeepSeek</button><button data-p="moonshot">Moonshot</button>
+       <button data-p="glm">智谱</button><button data-p="qwen">通义</button></div>
      <div class="hint" style="margin:10px 0 4px">接口地址（OpenAI 兼容即可）</div>
      <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="${SET.api.base}">
      <div class="hint" style="margin:10px 0 4px">模型名</div>
@@ -503,6 +514,14 @@ function openSettings(){
     b.onclick=()=>{ SET.persona=b.dataset.p; saveSet(); openSettings(); };
   });
   showCost();
+  const pr=$('presetRow');
+  if(pr) pr.querySelectorAll('button').forEach(b=>{
+    const P=PRESETS[b.dataset.p];
+    b.classList.toggle('on', SET.api && SET.api.base===P.base);
+    b.onclick=()=>{ SET.api={base:P.base, model:P.model}; saveSet();
+      const bi=$('baseInput'), mi=$('modelInput'); if(bi) bi.value=P.base; if(mi) mi.value=P.model;
+      pr.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.p===b.dataset.p)); };
+  });
   $('fontRow').querySelectorAll('button').forEach(b=>{
     b.classList.toggle('on', Number(b.dataset.f)===SET.font);
     b.onclick=()=>{ SET.font=Number(b.dataset.f); saveSet(); applySet(); openSettings(); };
