@@ -29,6 +29,7 @@ footer{padding:7px 13px calc(11px + env(safe-area-inset-bottom));display:flex;ga
 #send[disabled]{opacity:.5}
 #mem{display:none;padding:10px 14px;border-top:1px solid var(--line);max-height:38dvh;overflow:auto;font-size:13.5px;color:var(--dim);max-width:760px;margin:0 auto;width:100%}
 .tip{color:var(--dim);font-size:12.5px;text-align:center;margin:4px 0 10px}
+.adv{color:#b9a894;font-size:13px;border-left:2px solid rgba(185,168,148,.4);padding:4px 0 4px 9px;margin:-4px 0 12px;line-height:1.6}
 </style></head><body>
 <header><div class="ava" id="ava">晞</div>
 <div class="who"><div class="nm" id="nm">林未晞</div><div class="pl" id="pl"></div><div id="bar"><i id="affBar"></i></div></div>
@@ -44,7 +45,7 @@ const CN={'一':1,'二':2,'三':3};
 function order(n){for(const k in CN){if(n.includes('第'+k+'章'))return CN[k];}return 9;}
 let route=new URLSearchParams(location.search).get('r')||'wan';
 let KEY=localStorage.getItem('jieyu.key')||'';
-let S=JSON.parse(localStorage.getItem('ai.'+route)||'null')||{aff:0,trust:0,turns:[],facts:[],summary:'',chapter:CHARS[route].start_chapter||''};
+let S=JSON.parse(localStorage.getItem('ai.'+route)||'null')||{aff:0,trust:0,turns:[],facts:[],summary:'',chapter:CHARS[route].start_chapter||'',log:[],threads:[],stage:'陌生'};
 const $=id=>document.getElementById(id), log=$('log');
 function bubble(c,h){const d=document.createElement('div');d.className='b '+c;d.innerHTML=h;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
 function setBar(v){$('affBar').style.width=Math.max(0,Math.min(100,(v+20)/60*100))+'%';}
@@ -60,7 +61,11 @@ function advance(){
 function render(){const c=CHARS[route];$('nm').textContent=c.name;$('ava').textContent=c.name.slice(-1);
   $('pl').textContent=S.chapter+' · '+(c.meta||'');setBar(S.aff);
   $('aibtn').textContent = KEY? 'AI 已接':'AI'; $('aibtn').className='mini'+(KEY?' on':'');}
-function memHTML(){return '<div><b>好感</b> '+S.aff+' · <b>信任</b> '+S.trust+' · <b>章节</b> '+(S.chapter||'—')+'</div>'
+function endingHint(){const a=S.aff,t=S.trust,closed=(S.threads||[]).length===0;
+  return (a>=30&&t>=20&&closed)?'A 走成了':(a>=20&&t>=10)?'B 差一步':(a>=10)?'C 停在原地':'D 散了';}
+function memHTML(){return '<div><b>好感</b> '+S.aff+' · <b>信任</b> '+S.trust+' · <b>阶段</b> '+S.stage+' · <b>章节</b> '+(S.chapter||'—')+' · <b>倾向</b> '+endingHint()+'</div>'
+  +'<div style="margin-top:8px"><b>未解的线索</b><br>'+(((S.threads||[]).map(x=>'· '+x).join('<br>'))||'（暂无）')+'</div>'
+  +'<div style="margin-top:8px"><b>剧情年表</b><br>'+(((S.log||[]).slice(-6).map(x=>'· '+x).join('<br>'))||'（还没有）')+'</div>'
   +'<div style="margin-top:8px"><b>她记住的事</b><br>'+(S.facts.slice(-8).map(x=>'· '+x).join('<br>')||'（还没有）')+'</div>'
   +'<div style="margin-top:8px"><b>更早的事</b><br>'+((S.summary||'').trim()||'（还没有）')+'</div>';}
 
@@ -74,8 +79,40 @@ function mockReply(t){const k=intent(t),tb=MOCK[route]||MOCK.wan,p=tb[k]||['「�
 
 function sysPrompt(){
   const c=CHARS[route];
-  return '你在一部中文互动小说里扮演'+c.name+'（'+(c.meta||'')+'）。\n'+(c.desc||'')+'\n口吻：'+(c.voice||'')+'\n\n规矩：\n1 只输出两点：你说的话（用「」包住），和你做的一个动作（一句，不要清单）\n2 不解释动机、不总结主题、不描写读者内心、不替读者做决定
-2b 「动作」用第三人称写她做了什么（例：「把椅子往后一蹬」），不要写「我」\n3 每次 30–110 字，最多两段\n4 你只知道你知道的事，不知道就说不懂或不耐烦地岔开，绝不编造设定\n5 语气像这个人，不要助手口吻\n\n【当下处境】'+S.chapter+'。'+(S.beat||'')+'\n【关系】好感 '+S.aff+'／信任 '+S.trust+'\n【你记得的事】'+(S.facts.slice(-12).map(x=>'· '+x).join('\n')||'（还没有）')+((S.summary)?('\n· （更早的事）'+S.summary):'')+'\n【刚才聊到】'+(S.turns.slice(-8).join('\n')||'（刚见面）')+'\n\n只输出 JSON：{"say":"…","act":"…","aff":1,"trust":0,"memory":"","choices":["…","…","…"]}';
+  const L=[];
+  L.push('你在一部中文互动小说里扮演'+c.name+'（'+(c.meta||'')+'）。');
+  L.push(c.desc||''); L.push('口吻：'+(c.voice||''));
+  L.push('');
+  L.push('规矩：');
+  L.push('1 只输出两点：你说的话（用「」包住），和你做的一个动作（一句，不要清单）');
+  L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
+  L.push('2b 「动作」用第三人称写她做了什么（例：「把椅子往后一蹬」），不要写「我」');
+  L.push('3 每次 30–110 字，最多两段');
+  L.push('4 你只知道你知道的事，不知道就说不懂或不耐烦地岔开，绝不编造设定');
+  L.push('5 剧情由你推进：玩家的行为要真的改变事情走向，不能聊完又回到原样');
+  L.push('');
+  L.push('【当下处境】'+S.chapter+'。'+(S.beat||''));
+  L.push('【关系】好感 '+S.aff+'／信任 '+S.trust+'／阶段 '+S.stage);
+  L.push('【你记得的事】'+((S.facts.slice(-12).map(x=>'· '+x).join('\n'))||'（还没有）')+((S.summary)?('\n· （更早的事）'+S.summary):''));
+  L.push('【刚才聊到】'+((S.turns.slice(-8).join('\n'))||'（刚见面）'));
+  L.push('【剧情年表】（已经发生过的事，不要重复）');
+  L.push(((S.log||[]).slice(-6).map(x=>'· '+x).join('\n'))||'（还没有）');
+  L.push('【未解的线索】'+(((S.threads||[]).map(x=>'· '+x).join('\n'))||'（暂无）'));
+  L.push('【这一轮可以往哪推】'+candsText());
+  L.push('');
+  L.push('只输出 JSON：{"say":"…","act":"第三人称动作","advance":"这一轮剧情推进的一句话(15-40字)","open_thread":"新埋的线索或不填","close_thread":"解开的线索或不填","aff":-2到2,"trust":-2到2,"memory":"要长期记住的一句话或不填","choices":["…","…","…"]}');
+  return L.join('\n');
+}
+function candsText(){
+  const p=(S.turns||[]).join(' ');
+  const hard=(p.match(/滚|闭嘴|少管|打|踢|踹|烦/g)||[]).length;
+  const soft=(p.match(/谢谢|还好吗|累|别勉强|陪你|冷/g)||[]).length;
+  const out=[];
+  out.push('1. [main] 顺着原剧本往下推一步');
+  if(hard>soft){ out.push('2. [conflict] 他被你顶得下不来台，把话挑明'); out.push('3. [detour] 她冷下来，把话题岔开'); }
+  else if(soft>hard){ out.push('2. [intimacy] 她第一次主动提起自己的事'); out.push('3. [detour] 她用一件小事遮住刚才的松动'); }
+  else { out.push('2. [intimacy] 她试探着问一句关于你的事'); out.push('3. [conflict] 她被你戳到痛处，回一句难听的'); }
+  return out.join('\n');
 }
 
 async function aiReply(text){
@@ -89,7 +126,9 @@ async function aiReply(text){
   if(s.startsWith('```'))s=s.split('```')[1].replace(/^json/,'').trim();
   const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i)s=s.slice(i,j+1);
   let o={}; try{o=JSON.parse(s);}catch(e){o={say:s.slice(0,200),act:''};}
-  return {say:o.say||'……',act:o.act||'',aff:Number(o.aff||0),trust:Number(o.trust||0),memory:o.memory||'',choices:Array.isArray(o.choices)?o.choices.slice(0,3):[]};
+  return {say:o.say||'……',act:o.act||'',aff:Number(o.aff||0),trust:Number(o.trust||0),memory:o.memory||'',
+    advance:o.advance||'',open_thread:o.open_thread||'',close_thread:o.close_thread||'',
+    choices:Array.isArray(o.choices)?o.choices.slice(0,3):[]};
 }
 
 let busy=false;
@@ -106,9 +145,14 @@ async function send(text){
   S.aff=Math.max(-20,Math.min(40,S.aff+d.aff)); S.trust=Math.max(-20,Math.min(40,S.trust+d.trust));
   S.turns.push(text); S.turns.push(CHARS[route].name+'：「'+d.say+'」'+d.act);
   if(d.memory)S.facts.push(d.memory);
+  if(d.advance){ S.log=(S.log||[]).concat([d.advance]).slice(-12);
+    const adv=document.createElement('div'); adv.className='adv'; adv.textContent='剧情：'+d.advance; log.appendChild(adv); log.scrollTop=log.scrollHeight; }
+  if(d.open_thread){ S.threads=S.threads||[]; if(!S.threads.some(x=>x.slice(0,6)===d.open_thread.slice(0,6))) S.threads.push(d.open_thread); S.threads=S.threads.slice(-4); }
+  if(d.close_thread){ S.threads=(S.threads||[]).filter(x=>!x.includes(d.close_thread)); }
   remember(text);
   if(S.turns.length>40){const old=S.turns.slice(0,-24).filter(x=>x.startsWith(CHARS[route].name)).slice(0,4);
     S.summary=((S.summary||'')+' '+old.map(x=>x.slice(0,40)).join('；')).trim().slice(-400);S.turns=S.turns.slice(-24);}
+  S.stage = S.aff<5?'陌生':S.aff<15?'熟人':S.aff<25?'交心':'不可替代';
   advance();save();render();
   d.choices.forEach(c=>{const b=document.createElement('button');b.textContent=c;b.onclick=()=>send(c);$('choices').appendChild(b);});
   busy=false;$('send').disabled=false;$('inp').focus();
