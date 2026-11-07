@@ -177,7 +177,7 @@ async function send(text){
   let d;
   try{ d = KEY? await aiReply(text) : mockReply(text); }
   catch(e){ holder.innerHTML='<span style="color:#e39aa2">（'+e.message+'）已退回模板</span>'; d=mockReply(text); }
-  holder.innerHTML='「'+d.say+'」'+(d.act?'<div class="act">'+d.act+'</div>':'');
+  holder.innerHTML=(/^[「『]/.test(d.say)?d.say:'「'+d.say+'」')+(d.act?'<div class="act">'+d.act+'</div>':'');
   S.aff=Math.max(-20,Math.min(40,S.aff+d.aff)); S.trust=Math.max(-20,Math.min(40,S.trust+d.trust));
   S.turns.push(text); S.turns.push(CHARS[route].name+'：「'+d.say+'」'+d.act);
   if(d.memory)S.facts.push(d.memory);
