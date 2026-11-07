@@ -337,10 +337,10 @@ function makeOutline(){
   return out;
 }
 
-const TIERS={                    // 基线（未乘系数）；台词按字算，再按系数缩放
-  short:{sent:2, per:'8-18', nar:70,  seg:1},
-  mid:  {sent:3, per:'8-22', nar:150, seg:2},
-  long: {sent:4, per:'10-26',nar:260, seg:3}
+const TIERS={                    // 基线（未乘系数）；台词只按字数，不问句数
+  short:{say:55, nar:70,  seg:1},
+  mid:  {say:110,nar:150, seg:2},
+  long: {say:190,nar:260, seg:3}
 };
 function pickTier(text){
   const t=String(text||'');
@@ -356,9 +356,8 @@ function targetLen(text){
   const tier=pickTier(text);
   const base=TIERS[tier];
   const k=VERBOSITY[CUR]||0.8;
-  const sent=Math.max(1, Math.round(base.sent*k));      // 系数只作用于句数
-  const per=base.per;                                   // 每句目标字数
-  return {tier, sent, per, say:base.say, nar:base.nar, seg:base.seg};
+  const say=Math.max(12, Math.round(base.say*k));       // 系数只作用于台词总字数
+  return {tier, say, nar:base.nar, seg:base.seg};
 }
 function sysPrompt(userText){
   const c=CHARS[CUR]||{}, L=[];
@@ -453,20 +452,21 @@ async function callTurnStream(text, onSections){
   }
   let sec=parseSections(all);
   // 复核：模型自报 short/mid/long，程序核对字数是否落在该档区间，偏了就让模型按目标重写一次
-  const BAND={short:[10,45],mid:[35,90],long:[60,150]};       // 台词字数区间
+  const T2=targetLen(text);
+  const BAND={short:0,mid:0,long:0, _t:T2.say};               // 台词：围绕目标 ±60%
   const NBAND={short:[30,120],mid:[80,260],long:[160,460]};   // 叙述字数区间
   {
     const cls=(sec.meta&&sec.meta.len)||'';
     const chars=(sec.say||'').replace(/[“”「」\s]/g,'').length;   // 只数台词
     const nchars=(sec.nar||'').length;
     if(BAND[cls]){
-      const [lo,hi]=BAND[cls];
+      const tgt=BAND._t; const lo=Math.round(tgt*0.6), hi=Math.round(tgt*1.6);
       const nb=NBAND[cls]||[0,9999];
-      const badSay=(chars<lo*0.75 || chars>hi*1.4);
+      const badSay=(chars<lo || chars>hi);
       const badNar=(nchars<nb[0]*0.75 || nchars>nb[1]*1.4);
       if(badSay||badNar){
         try{
-          const target=Math.round((lo+hi)/2);
+          const target=tgt;
           const r3=await fetch(SET.api.base,{method:'POST',
             headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
             body:JSON.stringify({model:SET.api.model,temperature:0.9,max_tokens:SET.reply,
