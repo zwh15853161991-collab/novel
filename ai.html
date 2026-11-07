@@ -119,7 +119,7 @@ function sysPrompt(){
   L.push(c.desc||''); L.push('口吻：'+(c.voice||''));
   L.push('');
   L.push('规矩：');
-  L.push('1 输出三部分：nar（两句之间的叙述：先写环境/物件，再写她的动作，20-60 字，不写心理判断）、say（你说的话，用「」包住）、act（收尾小动作，可空）');
+  L.push('1 输出三部分：nar（两句之间的叙述，20-80 字，可用 \\n 分成两段：先环境后动作）、say（你说的话，用「」包住）、act（收尾小动作，可空）');
   L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
   L.push('2b 「动作」用第三人称写她做了什么（例：「把椅子往后一蹬」），不要写「我」');
   L.push('3 每次 30–110 字，最多两段');
@@ -181,7 +181,10 @@ async function send(text){
   let d;
   try{ d = KEY? await aiReply(text) : mockReply(text); }
   catch(e){ holder.innerHTML='<span style="color:#e39aa2">（'+e.message+'）已退回模板</span>'; d=mockReply(text); }
-  if(d.nar){ const n=document.createElement('div'); n.className='nar'; n.textContent=d.nar; log.insertBefore(n, holder); log.scrollTop=log.scrollHeight; }
+  if(d.nar){ String(d.nar).split('\n').filter(x=>x.trim()).forEach(line=>{
+      const n=document.createElement('div'); n.className='nar'; n.textContent=line.trim();
+      log.insertBefore(n, holder); });
+    log.scrollTop=log.scrollHeight; }
   holder.innerHTML=(/^[「『]/.test(d.say)?d.say:'「'+d.say+'」');
   if(d.act){ const a=document.createElement('div'); a.className='nar end'; a.textContent=d.act; log.appendChild(a); log.scrollTop=log.scrollHeight; }
   S.aff=Math.max(-20,Math.min(40,S.aff+d.aff)); S.trust=Math.max(-20,Math.min(40,S.trust+d.trust));
