@@ -1,0 +1,1011 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#12100e">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
+<title>借你一场雨</title>
+<style>
+:root{
+  --fs:17px;
+  --bg:#12100e; --bg2:#181614; --ink:#ece6de; --dim:#a49b90; --faint:#6f6862;
+  --line:rgba(255,255,255,.09); --accent:#c9a06a; --accent-ink:#1a140e;
+  --bubble:rgba(255,255,255,.055); --bubble-me:rgba(201,160,106,.14);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Songti SC","Noto Serif SC",serif;
+  font-size:var(--fs);line-height:1.8;display:flex;flex-direction:column;overscroll-behavior:none}
+.view{position:fixed;inset:0;display:none;flex-direction:column}
+.view.on{display:flex}
+/* ---------- 首页 ---------- */
+#home{background:linear-gradient(180deg,var(--bg2),var(--bg) 40%)}
+.hhead{padding:calc(18px + env(safe-area-inset-top)) 20px 6px}
+.hhead h1{margin:0;font-size:calc(var(--fs) * 1.42);letter-spacing:.06em;font-weight:500}
+.hhead p{margin:4px 0 0;color:var(--faint);font-size:12.5px;letter-spacing:.14em}
+.hmain{flex:1;overflow-y:auto;padding:8px 16px calc(78px + env(safe-area-inset-bottom))}
+.card{background:var(--bubble);border:1px solid var(--line);border-radius:16px;padding:13px 15px;margin:0 0 10px}
+.row{display:flex;align-items:center;gap:12px}
+.av{width:42px;height:42px;border-radius:14px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  font-size:17px;color:var(--accent-ink);background:linear-gradient(135deg,var(--accent),rgba(201,160,106,.55))}
+.grow{flex:1;min-width:0}
+.nm{font-size:calc(var(--fs) * .92)}
+.sub{color:var(--faint);font-size:calc(var(--fs) * .74);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:11.5px;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.sect{color:var(--faint);font-size:12px;letter-spacing:.14em;margin:18px 4px 9px}
+.empty{color:var(--faint);font-size:13.5px;text-align:center;padding:26px 0}
+.tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(10,9,8,.86);
+  backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabbar button{flex:1;background:none;border:0;color:var(--faint);font-family:inherit;font-size:12.5px;
+  padding:10px 0 9px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar button.on{color:var(--accent)}
+.tabbar svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6}
+/* ---------- 对话 ---------- */
+#chat{background:var(--bg)}
+.chead{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 8px;
+  border-bottom:1px solid var(--line)}
+.iconbtn{background:none;border:1px solid var(--line);color:var(--dim);border-radius:11px;
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.log{flex:1;overflow-y:auto;padding:14px 15px 6px}
+.nar{max-width:94%;margin:0 auto 13px;text-align:center;color:var(--dim);font-size:.94em;line-height:1.95;white-space:pre-wrap}
+.b{max-width:87%;font-size:var(--fs);padding:11px 14px;border-radius:15px;margin:0 0 13px;white-space:pre-wrap}
+.b.her{background:var(--bubble);border:1px solid var(--line);border-left:2px solid var(--accent)}
+.b.me{margin-left:auto;background:var(--bubble-me);border:1px solid rgba(201,160,106,.26);text-align:right}
+.act{color:var(--faint);font-size:.88em;margin-top:6px}
+.adv{color:var(--faint);font-size:.82em;border-left:2px solid var(--line);padding-left:9px;margin:-6px 0 14px;line-height:1.65}
+.endcard{margin:16px 0;padding:15px 17px;border-radius:16px;border:1px solid rgba(201,160,106,.3);
+  background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.eb{line-height:1.95}
+.choices{display:flex;gap:8px;overflow-x:auto;padding:0 14px 9px}
+.choices button{flex:0 0 auto;background:var(--bubble);color:var(--ink);border:1px solid var(--line);
+  border-radius:999px;padding:9px 14px;font-size:calc(var(--fs) * .8);font-family:inherit;min-height:38px;white-space:nowrap}
+.cfoot{display:flex;gap:8px;padding:8px 13px calc(11px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.cfoot textarea{flex:1;font-family:inherit;font-size:16px;color:var(--ink);background:var(--bubble);
+  border:1px solid var(--line);border-radius:14px;padding:11px 13px;outline:none;resize:none;height:44px;max-height:110px}
+.send{background:var(--accent);color:var(--accent-ink);border:0;border-radius:14px;padding:0 17px;
+  font-size:calc(var(--fs) * .9);font-weight:600;font-family:inherit}
+.intro{position:absolute;inset:0;z-index:5;background:var(--bg);display:none;overflow-y:auto}
+.intro.on{display:block}
+.introbox{padding:calc(26px + env(safe-area-inset-top)) 22px calc(28px + env(safe-area-inset-bottom))}
+.ikicker{color:var(--faint);font-size:12px;letter-spacing:.18em}
+.introbox h2{margin:8px 0 4px;font-size:calc(var(--fs) * 1.6);font-weight:500;letter-spacing:.04em}
+.imeta{color:var(--dim);font-size:calc(var(--fs) * .82);margin-bottom:18px}
+.isect{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:18px 0 6px}
+.introbox p{margin:0;color:var(--ink);font-size:calc(var(--fs) * .95);line-height:2;opacity:.92}
+.ihint{color:var(--faint);font-size:12px;text-align:center;margin-top:14px}
+
+/* ---------- 面板 ---------- */
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:40}
+.sheet.on{display:flex;align-items:flex-end}
+.sheetbox{width:100%;max-height:86dvh;overflow-y:auto;background:var(--bg2);border-radius:20px 20px 0 0;
+  padding:16px 18px calc(20px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.sheettitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.sheettitle b{font-size:16px;font-weight:500}
+.close{background:none;border:0;color:var(--faint);font-size:20px}
+.sgroup{color:var(--faint);font-size:12px;letter-spacing:.14em;margin:16px 0 8px}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.opt:last-child{border-bottom:0}
+.opt .lbl{font-size:14.5px}
+.opt .hint{color:var(--faint);font-size:12px;margin-top:2px}
+.swatches{display:flex;gap:8px}
+.sw{width:26px;height:26px;border-radius:9px;border:2px solid transparent}
+.sw.on{border-color:var(--ink)}
+.segs{display:flex;gap:6px}
+.segs button{background:var(--bubble);border:1px solid var(--line);color:var(--dim);border-radius:10px;
+  padding:6px 11px;font-size:13px;font-family:inherit}
+.segs button.on{color:var(--accent);border-color:rgba(201,160,106,.5)}
+.val{color:var(--accent);font-size:13px;border:1px solid var(--line);border-radius:8px;padding:2px 8px}
+input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);border-radius:12px;
+  padding:11px 13px;color:var(--ink);font-size:14px;font-family:inherit;outline:none}
+.btn{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:13px;
+  padding:12px;font-size:15px;font-weight:600;font-family:inherit;margin-top:10px}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--dim);font-weight:400}
+</style></head><body>
+
+<!-- 首页 -->
+<div class="view on" id="home">
+  <div class="hhead"><h1>借你一场雨</h1><p>LEAVE THE RAIN TO YOU</p></div>
+  <div class="hmain" id="homeBody"></div>
+  <div class="tabbar" id="tabbar">
+    <button data-tab="stories" class="on"><svg viewBox="0 0 24 24"><path d="M4 5h11a3 3 0 013 3v11H7a3 3 0 01-3-3z"/><path d="M4 5v11a3 3 0 003 3"/></svg>我的故事</button>
+    <button data-tab="pick"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>选择故事</button>
+    <button data-tab="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>我的</button>
+  </div>
+</div>
+
+<!-- 对话 -->
+<div class="view" id="chat">
+  <div class="chead">
+    <button class="iconbtn" id="back">‹</button>
+    <div class="av" id="cav">晞</div>
+    <div class="grow"><div class="nm" id="cnm">林未晞</div><div class="sub" id="csub"></div></div>
+    <button class="iconbtn" id="memBtn">记</button>
+    <button class="iconbtn" id="setBtn2">⚙</button>
+    <button class="iconbtn" id="moreBtn">⋯</button>
+  </div>
+  <div class="intro" id="intro">
+    <div class="introbox">
+      <div class="ikicker" id="iKicker"></div>
+      <h2 id="iName"></h2>
+      <div class="imeta" id="iMeta"></div>
+      <div class="isect">故事背景</div><p id="iWorld"></p>
+      <div class="isect">前情提要</div><p id="iPremise"></p>
+      <div class="isect">她</div><p id="iPersona"></p>
+      <button class="btn" id="iStart">开始</button>
+      <div class="ihint">开头会让你先看见她，再看见她说什么。</div>
+    </div>
+  </div>
+  <div class="log" id="log" style="display:none"></div>
+  <div class="choices" id="choices"></div>
+  <div class="cfoot"><textarea id="inp" placeholder="（动作）「台词」——只想说一句也行"></textarea>
+    <button class="send" id="send">发送</button></div>
+</div>
+
+<!-- 设置 -->
+<div class="sheet" id="sheet"><div class="sheetbox" id="sheetBox"></div></div>
+
+<script>
+const CHARS={"wan": {"name": "林未晞", "meta": "23 · 旧书店店员 · 画画的", "desc": "慢热、克制。她把没画完的东西都藏起来。", "voice": "慢、低、克制，话少但每句都有信息", "start_chapter": "第一章 雨的形状"}, "yao": {"name": "沈之遥", "meta": "26 · 中学音乐老师 · 弹琴的", "desc": "外放、爱笑，用玩笑挡问题。三年前不告而别。", "voice": "亮、快一点，爱笑，用玩笑挡问题", "start_chapter": "第一章 旧调重弹"}, "wen": {"name": "闻笛", "meta": "27 · 深夜电台主持 · 便利店夜班", "desc": "声音比人先认识你。白天她不太会说话。", "voice": "电台压低，气声多，说话像在对麦克风", "start_chapter": "第一章 零点之后"}, "xiao": {"name": "萧明烛", "meta": "26 · 摄政长公主 · 掌兵符", "desc": "她只问你能做什么，不问你想什么。", "voice": "最慢、最平，命令句多，少用问号", "start_chapter": "第一章 抄书"}, "lu": {"name": "陆知白", "meta": "22 · 刑部主事 · 寒门进士", "desc": "她把自己活成了另一个人，只为把父亲没读完的书读完。", "voice": "稳、短、公文腔，偶尔冒出一句很软的", "start_chapter": "第一章 同僚"}, "shen": {"name": "沈知微", "meta": "18 · 替嫁庶女 · 开布铺", "desc": "她替姐姐嫁进裴家，进门前就记了半年的账。", "voice": "算账式，先说数字再说感受", "start_chapter": "第一章 替嫁"}, "jian": {"name": "程简简", "meta": "17 · 高三（七）班 · 垫底但嘴硬", "desc": "自尊心比成绩单硬。越紧张越贫嘴，从不说我不行。", "voice": "快、贫嘴，嘴硬，越紧张话越多", "start_chapter": "第一章 倒计时 180 天"}, "qing": {"name": "顾青梧", "meta": "29 · 建筑事务所合伙人", "desc": "六年前拿走了你的方案。她只会发号施令，正在学怎么问。", "voice": "干脆，习惯下指令，正在学怎么问", "start_chapter": "第一章 归来"}}, SCENES={"第一章 雨的形状": [{"id": "c1s1", "route": "wan", "beat": "半小时后，雨没有停的意思。屋檐的水连成一道帘子，街对面的人在跑，伞面被风吹得翻了边。"}, {"id": "c1s2", "route": "wan", "beat": "杯子是温的。握久了有点烫，得换手。柚子皮的苦味被热气顶着往上走，很淡。"}, {"id": "c1s3", "route": "wan", "beat": "你去书架深处闲逛。书是按颜色排的，不是按类别，红的一排、蓝的一排，最后一排全是褪成灰黄的旧译本。"}, {"id": "c1s4", "route": "wan", "beat": "八点，雨大到雨刷都来不及的那种程度。玻璃门外面什么也看不清，路灯只剩几团橘色的光。"}, {"id": "c1s5", "route": "wan", "beat": "伞下的空间窄得过分。她的肩膀和你的手臂之间隔着一层湿布料，能感觉到温度，也能感觉到那层布很薄。"}, {"id": "c1s6", "route": "wan", "beat": "她住的老楼没有电梯。楼梯间的声控灯坏了一半，走两步亮一下，暗下去的时候能听见雨水从伞尖滴到台阶上的声音。"}, {"id": "c1s7", "route": "wan", "beat": "第二天你带了两杯柚子茶，一杯正常，一杯少糖。塑料袋在手上晃，杯壁的水汽把袋子洇出一层白。"}, {"id": "c1s8", "route": "wan", "beat": "傍晚她在后门接电话。门没关严，声音一串一串飘进来，被雨打得很碎。"}, {"id": "c1s9", "route": "wan", "beat": "打烊之前，她在收银台后面写什么，写完撕下来，又揉掉。纸团在脚边堆了三个。"}], "第二章 未完成的画": [{"id": "c2s1", "route": "wan", "beat": "隔了一天，雨小了一些，成了很细的、落在脸上没有声音的那种。她带你穿过旧城区的巷子，两边是关着门的裁缝铺和修表摊。"}, {"id": "c2s90", "route": "wan", "beat": "书店下午没有客人。她蹲在书架和柜台之间的空地上，速写本摊在膝头，铅笔搁在耳朵上。"}, {"id": "c2s2", "route": "wan", "beat": "巷子尽头是一段废弃的站台。铁轨被雨泡得发黑，枕木间长满了草，草尖上挂着水。远处的信号灯还亮着，红得没有意义。"}, {"id": "c2s3", "route": "wan", "beat": "雨棚的缺口那边，水一层一层往下掉。她把本子从你手里拿回去，合上，两只手压在封面上。"}, {"id": "c2s4", "route": "wan", "beat": "她把手机递过来，屏幕上是一封邮件。退稿信只有三行，最下面是已经看过很多遍的“感谢您的投稿”。"}, {"id": "c2s5", "route": "wan", "beat": "她把本子合上，声音第一次变硬。硬得很干脆，像一块玻璃被人从中间掰断。"}, {"id": "c2s6", "route": "wan", "beat": "你到的时候她已经在搬了。书架最下面两层要清空，纸箱摞在门口，箱子上用马克笔写着文学、画册、不要了。"}, {"id": "c2s7", "route": "wan", "beat": "八点十七分，整条街的灯一起灭掉。"}, {"id": "c2s10", "route": "wan", "beat": "第三次退稿信是当面退的。编辑把稿子放在柜台上，往外推了两寸。"}, {"id": "c2s8", "route": "wan", "beat": "电一直没有来。后来你打开手机的灯，光柱里全是浮尘，慢慢地转，像雪。"}, {"id": "c2s9", "route": "wan", "beat": "十一点，她站起来，拍了拍裤子上的灰，从包里拿出那本速写本。"}], "第三章 雨停之前": [{"id": "c3s1", "route": "wan", "beat": "台风过境那两天，风把雨吹成横的。街上的树被剪掉了半边，断枝堆在路边，像谁随手扔下的骨头。"}, {"id": "c3s90", "route": "wan", "beat": "雨在半夜停过一阵，天亮又落下来。水顺着门檐往下滴，砸在石阶上，声音是闷的。"}, {"id": "c3s2", "route": "wan", "beat": "她靠在门口的纸箱上，把雨衣的帽子放下来。头发有点乱，被雨气压得贴着头皮。"}, {"id": "c3s3", "route": "wan", "beat": "最后一箱书搬上了租来的小货车。司机在车上抽烟，把烟灰弹在雨里。"}, {"id": "c3s4", "route": "wan", "beat": "她没有立刻回答。风把雨丝吹成斜的，落在她的帽檐上，一滴，两滴。"}, {"id": "c3s5", "route": "wan", "beat": "两天后，十点零七分。站台上风很大，把人的衣服吹得贴在身上。LED 屏上的车次一格一格翻，每翻一次就响一声。"}, {"id": "c3s6", "route": "wan", "beat": "她把雨衣的帽子放下来，头发立刻被打湿，一绺一绺贴在脸侧。"}, {"id": "c3s7", "route": "wan", "beat": "那天晚上雨停了一会儿。云裂开一道口子，路灯的光斜斜地照下来，像有人把世界擦了一下。"}, {"id": "c3s1", "route": "yao", "beat": "台风过后第三天，天放晴了一会儿。琴房的地板被泡翘了边，她拿着一把螺丝刀，蹲在地上撬。"}, {"id": "c3s2", "route": "yao", "beat": "木板被撬起来，底下全是积水，一股旧纸和潮气的味道涌上来。"}, {"id": "c3s3", "route": "yao", "beat": "她坐在琴凳上，弹了一小段，又停。那首卡农，她弹到第二声部就断了。"}, {"id": "c3s4", "route": "yao", "beat": "她停下手，转过来，很认真地看着你。三年来第一次，她没有先笑。"}, {"id": "c3s905", "route": "yao", "beat": "车停在教学楼下面，后厢门开着，纸箱摞到车窗那么高。雨不大，落在箱盖上，洇出一片深色。"}, {"id": "c3s5", "route": "yao", "beat": "她拿过一个旧录音笔，放在琴盖上，按下去。"}], "第一章 旧调重弹": [{"id": "c1s1", "route": "yao", "beat": "你还没进门就先听见了琴声——一段弹到一半停下的旋律，停了很久，没有接下去。"}, {"id": "c1s2", "route": "yao", "beat": "曲子断在一个休止符上。她转过来，头发比三年前短，笑起来还是先动眼睛。"}, {"id": "c1s3", "route": "yao", "beat": "她把手从琴键上收回去，掌心在裙子上擦了一下。"}, {"id": "c1s4", "route": "yao", "beat": "谱架是松的，你扶起来，它又歪。她伸手来按，两个人的手背撞在一起。"}, {"id": "c1s5", "route": "yao", "beat": "楼下有人喊「沈老师」，是来上课的学生，在门口抖伞。"}, {"id": "c1s6", "route": "yao", "beat": "晚上八点，雨小了些。琴要挪到窗边，给漏雨的天花板腾出地方。"}], "第二章 卡农": [{"id": "c2s1", "route": "yao", "beat": "台风「白鹭」要来那几天，琴房的天花板开始漏雨，一滴滴落在琴盖上，滴出一小片水声。"}, {"id": "c2s2", "route": "yao", "beat": "雨声太大，两个人都不说话。她把一块旧毛毯搭在琴上，拍了拍，像拍一只动物。"}, {"id": "c2s3", "route": "yao", "beat": "她按着你的手，一节一节地带。指尖是凉的，掌心很热。"}, {"id": "c2s4", "route": "yao", "beat": "手机在琴凳上震，她看了一眼，按掉，又震，又按掉。"}, {"id": "c2s5", "route": "yao", "beat": "雨小了一点。她坐回琴凳，手指搭在琴盖上，没弹。"}, {"id": "c2s906", "route": "yao", "beat": "下午最后一节课下了，琴房的门没关，里头还有人在弹，一句一句地停。"}, {"id": "c2s6", "route": "yao", "beat": "台风登陆那晚，琴房的玻璃一直在响。你们在窗上一条一条贴胶带，贴成一张网。"}], "第二章 裂缝": [{"id": "c2s7", "route": "yao", "beat": "市里合唱比赛那天，第三排中间那个男生在第二段抢了半拍，整个声部跟着塌了一片。"}], "第三章 裂缝": [{"id": "c3s6", "route": "yao", "beat": "琴房的钥匙交还那天，管理员在登记本上划掉了她的名字。"}], "第一章 零点之后": [{"id": "c1s1", "route": "wen", "beat": "凌晨一点，你先把收音机打开，再关上门。那个声音已经在里面了——她说「欢迎收听」，像在跟房间里的人打招呼。"}, {"id": "c1s2", "route": "wen", "beat": "她把收音机的音量调小了一格，动作很熟练，像每天都在做。"}, {"id": "c1s3", "route": "wen", "beat": "她终于抬头，看了你两秒。那两秒里，收音机正好播到一句「晚安」。"}, {"id": "c1s4", "route": "wen", "beat": "之后你几乎每天都来。她夜班，你就买一盒关东煮，坐到窗边那张高脚凳上。"}, {"id": "c1s5", "route": "wen", "beat": "那只耳机里正放着同一档节目，延迟半秒。她的声音在耳朵里，也在耳朵外。"}, {"id": "c1s6", "route": "wen", "beat": "五点，天要亮了。她要交班，把收音机关掉，动作比开的时候慢。"}], "第二章 声音的形状": [{"id": "c2s1", "route": "wen", "beat": "那周的节目里，她说了一句话，说到一半笑场。"}, {"id": "c2s2", "route": "wen", "beat": "她关掉收音机，收银台一下就安静了。安静得能听见冰柜的嗡嗡声。"}, {"id": "c2s3", "route": "wen", "beat": "那天她提前下班，说想去看一眼电台。老楼十二层，电梯常年坏。"}, {"id": "c2s4", "route": "wen", "beat": "她在录音室里坐下，把耳机挂在脖子上，习惯性地开口："}, {"id": "c2s5", "route": "wen", "beat": "她戴上耳机，手指在调音台上滑了一下，推子慢慢推上去。"}, {"id": "c2s906", "route": "wen", "beat": "上午十点，便利店的灯调得很亮。柜台后面换了人，她站在货架边上，穿一件洗得发白的衬衫，手里拎着一瓶水。"}, {"id": "c2s6", "route": "wen", "beat": "那一期节目她做了四十分钟。你在走廊上靠着墙，听见门缝里漏出来的声音，忽远忽近。"}], "第二章 一夜之间": [{"id": "c2s7", "route": "wen", "beat": "凌晨三点，便利店的自动门开了两次，没有人进来——风把门口的塑料帘吹得直响。"}], "第三章 闭麦之前": [{"id": "c3s1", "route": "wen", "beat": "她走之前的最后一周，便利店照常营业，收音机里换成了别的节目。"}, {"id": "c3s2", "route": "wen", "beat": "最后一班，她破例把收音机打开了，调到一个没有信号的空白频道。"}, {"id": "c3s3", "route": "wen", "beat": "五点，天要亮了。她把工牌摘下来，放在收银台上，像放下一件很重的东西。"}, {"id": "c3s4", "route": "wen", "beat": "门口的天已经蓝了，路灯一盏一盏灭下去。她站在光里，你站在阴影里。"}, {"id": "c3s905", "route": "wen", "beat": "四点四十，最后一班的点快到了。她蹲在货架前把糖盒一盒一盒摆直，盒沿对着盒沿，留出一指宽的缝。"}, {"id": "c3s5", "route": "wen", "beat": "她低头看了很久地面，然后抬起头，眼睛亮得不像熬了夜。"}], "第三章 最后一期": [{"id": "c3s6", "route": "wen", "beat": "录最后一期那天，台里已经搬空了一半。隔壁办公室的桌子都掀了，地上剩一圈圈电线。"}], "第一章 抄书": [{"id": "c1s1", "route": "xiao", "beat": "调令是三天前送来的：着国史馆抄书吏一人，赴长公主府听候。调令上没写为什么，只盖了一个印。"}, {"id": "c1s2", "route": "xiao", "beat": "屋里只有三个人：她、一个老嬷嬷、一个捧着朱笔的小宫女。"}, {"id": "c1s3", "route": "xiao", "beat": "帘子动了一下。她伸手把帘子掀开半尺，露出半张脸，眼睛很静，像在看一件器物值不值钱。"}, {"id": "c1s4", "route": "xiao", "beat": "她笑了一声，很短，像咳嗽。"}, {"id": "c1s5", "route": "xiao", "beat": "三天的第二天夜里，你在偏房抄到三更。灯芯爆了一下，你才发现门外站着人。"}, {"id": "c1s6", "route": "xiao", "beat": "她在外间的椅子上坐下，离你有三步，隔着半张案。"}], "第二章 把柄": [{"id": "c2s1", "route": "xiao", "beat": "第三天，书校完了。你把改好的那一页铺在案上，字是你的，意思不是。"}, {"id": "c2s2", "route": "xiao", "beat": "她没有生气，只是把纸又推回来，指尖在那行字上敲了一下。"}, {"id": "c2s3", "route": "xiao", "beat": "她沉默了一会儿。窗外有人打更，三更三点。"}, {"id": "c2s4", "route": "xiao", "beat": "她没有回答，只把那份弹劾往前推了半寸。"}, {"id": "c2s5", "route": "xiao", "beat": "天没亮，东华门的采买车排了一长队。你把纸压在萝卜下面，手心全是汗。"}, {"id": "c2s906", "route": "xiao", "beat": "御史台来人的时候，雨还没停。两个人站在偏房门口，靴底带进来一脚泥。"}, {"id": "c2s6", "route": "xiao", "beat": "她走近两步，在你面前停下。这是你第一次在白天、在宫墙外、离她这么近。"}], "第三章 宫门": [{"id": "c3s1", "route": "xiao", "beat": "那一夜宫门闭得很早。街上巡防比平日多了一倍，家家户户关窗。"}, {"id": "c3s2", "route": "xiao", "beat": "她第一次看着你的眼睛说完整句话。"}, {"id": "c3s3", "route": "xiao", "beat": "她听完，没有立刻说话。灯芯烧短了，光很小。"}, {"id": "c3s4", "route": "xiao", "beat": "四更天，宫里传来第一声更鼓。她站起来，走到窗边，把窗推开一条缝。"}, {"id": "c3s905", "route": "xiao", "beat": "天没亮，宫门还闭着。她在廊下等你，手里握着一枚铜符，符上的字被手汗磨得发亮。"}, {"id": "c3s5", "route": "xiao", "beat": "她背对着你站了很久，肩膀有一次很轻的起伏。"}], "第三章 案结之前": [{"id": "c3s7", "route": "xiao", "beat": "消息压在偏殿的案上，一整天没动。她坐在灯下，没有翻开任何一本折子。"}, {"id": "c3s6", "route": "xiao", "beat": "折子是次日早朝递的。你站在殿外第三排，按规矩该跪，你站着。"}, {"id": "c3s1", "route": "lu", "beat": "上奏前夜，她把官服叠得整整齐齐，摆在案上，像摆一件借来的东西。"}, {"id": "c3s90", "route": "lu", "beat": "殿门关了三个时辰。檐下的更漏滴得很慢，里面一直没有声音传出来。"}, {"id": "c3s2", "route": "lu", "beat": "她看着你，看了很久。"}, {"id": "c3s3", "route": "lu", "beat": "天亮之前，宫里来了人，比她的折子早了两个时辰。"}, {"id": "c3s4", "route": "lu", "beat": "案子结了，十年前的漕运账被翻出来，牵出三个人。陆知白在朝上把话说完，没有一个人敢接。"}, {"id": "c3s5", "route": "lu", "beat": "雨停了。宫里的人来请她，说陛下要见。"}], "第一章 同僚": [{"id": "c1s1", "route": "lu", "beat": "你在刑部二门口被拦下，值守的老吏把你的官牌翻过来看了三遍，才让开半步。"}, {"id": "c1s2", "route": "lu", "beat": "她指给你看：同一份供词，三处「画押」的字迹深浅不同，日期却是一天。"}, {"id": "c1s3", "route": "lu", "beat": "案卷查到一起，天就黑了。她起身时扶了一下案角，袖子滑上去半寸。"}, {"id": "c1s4", "route": "lu", "beat": "她没有立刻答，手在案下攥了一下，攥得指节发白。"}, {"id": "c1s5", "route": "lu", "beat": "那晚她没走。两个人对着一盏灯坐到三更，她把话说得很慢。"}, {"id": "c1s6", "route": "lu", "beat": "第二天，漕运案的卷宗被调走了，说是上头要看。调走的人连回执都没留。"}], "第二章 替她瞒": [{"id": "c2s1", "route": "lu", "beat": "为了查那桩旧案，你们换了便装去城南的茶楼。她穿男装比穿官服更自然，走路带风。"}, {"id": "c2s90", "route": "lu", "beat": "吏部来了文书，要刑部各员报一份年貌册：籍贯、年岁、面貌，另附一只手印。"}, {"id": "c2s2", "route": "lu", "beat": "茶楼里坐着几个刑部的老吏。有人认出她，端了酒过来。"}, {"id": "c2s3", "route": "lu", "beat": "出了茶楼，她走了一段才开口，声音有点闷。"}, {"id": "c2s7", "route": "lu", "beat": "夜里刑部的门要落三道锁。她值夜那次，第三道锁卡住了，钥匙插进去转不动。"}, {"id": "c2s4", "route": "lu", "beat": "查到第七天，那个替死人签字的老吏死在了牢里，说是自尽。"}, {"id": "c2s5", "route": "lu", "beat": "三天后，有人递了折子，参刑部主事陆知白「行止不端，恐非男子」。"}, {"id": "c2s6", "route": "lu", "beat": "她一个人去的，回来时天快亮了。官服上沾了酒气，人倒是没事。"}], "第三章 同僚": [{"id": "c3s6", "route": "lu", "beat": "停尸房在西角，只有一盏油灯。仵作把验状摊在石台上，指尖点着最后一行。"}], "第一章 替嫁": [{"id": "c1s1", "route": "shen", "beat": "喜棚搭好那天下了雨，红绸被打湿，颜色深了一块。府里说，沈家的小姐明日进门。"}, {"id": "c1s2", "route": "shen", "beat": "册子上的字很干净，一笔一划，不像仓促写的。她把每一项都记了：米、布、银，连两匹绢的颜色都注了。"}, {"id": "c1s3", "route": "shen", "beat": "喜宴散得早。二公子身子弱，拜完堂就被扶回房里，咳嗽声隔着两道墙都听得见。"}, {"id": "c1s4", "route": "shen", "beat": "她愣了一下，手抬起来，又放下。"}, {"id": "c1s5", "route": "shen", "beat": "三更，府里忽然乱起来。二公子咳血，请了大夫，大夫摇头。"}], "第二章 守寡": [{"id": "c2s1", "route": "shen", "beat": "二公子死在第七天。府里换了白，红绸被扯下来，堆在院角，像一堆没人要的东西。"}, {"id": "c2s9936", "route": "shen", "beat": "祠堂散了之后，府里换了白。她把袖子里的册子摊在桌上，摊得很平，用手指把折痕压实。"}, {"id": "c2s2", "route": "shen", "beat": "你翻出账房底册，一笔一笔对。三十六抬嫁妆，二十六抬入户，十抬记在「待补」，却有三笔银子早在半年前就出了府。"}, {"id": "c2s3", "route": "shen", "beat": "二管事姓周，管着府里三十年的账。他见了你，笑得很和气。"}, {"id": "c2s4", "route": "shen", "beat": "那晚她来账房，看见你桌上的底册，什么也没问。"}, {"id": "c2s5", "route": "shen", "beat": "族长在祠堂议事，说新妇守寡三年，若不安分，就送回沈家。周管事站在旁边，一句没辩。"}, {"id": "c2s6", "route": "shen", "beat": "祠堂里静了一瞬。族长的目光从底册移到你脸上，又移到门口。"}, {"id": "c2s8", "route": "shen", "beat": "底册在库房最里头的柜子里。第二天她去取，被两个管事拦在门口——一个说钥匙在周管事手上，一个说府里查不到这张凭据。"}, {"id": "c2s7", "route": "shen", "beat": "三天后她一个人去了库房，回来的时候袖口撕了一道口子，头发也有点乱。"}], "第三章 出府": [{"id": "c3s1", "route": "shen", "beat": "族长没有当场发作。三日后，周管事被查，府里封了两间库房。"}, {"id": "c3s9128", "route": "shen", "beat": "门板是新上的，漆味还没散。她一个人把三匹布摞上柜台，摞完退后两步，看了一看高度。"}, {"id": "c3s2", "route": "shen", "beat": "她从床底下拖出一个小箱子。里面有布样、账目、还有一张画得很粗的铺面图。"}, {"id": "c3s3", "route": "shen", "beat": "出府那天要签字画押：退了婚书，嫁妆归沈家，从此与裴府无涉。"}, {"id": "c3s8", "route": "shen", "beat": "退婚书要去沈家拿。她一个人回去的，没让你跟，说这是她家的事。"}, {"id": "c3s4", "route": "shen", "beat": "铺子开在城南，门面不大，招牌是新的，字是她自己写的。"}, {"id": "c3s5", "route": "shen", "beat": "入夜，铺子关门。她把灯芯挑亮，坐下来，第一次没有急着说什么。"}, {"id": "c3s6", "route": "shen", "beat": "开张第十天，来了两个人，说是裴府旧人，来收「例钱」——铺子在城南，归这条街的规矩管。"}, {"id": "c3s7", "route": "shen", "beat": "那两个人走了。她关上门，把门闩插上，回头时眼圈是红的，但没哭。"}], "第一章 倒计时 180 天": [{"id": "c1s1", "route": "jian", "beat": "八月底，明德中学高三（七）班。你被班主任叫到办公室，桌上放了一张座位表，最后一排靠窗的位置用红笔圈了出来，旁边写了个名字：程简简。"}, {"id": "c1s2", "route": "jian", "beat": "第一周同桌。她上课不听讲，低着头在本子上写东西，你以为她在画画，扫了一眼——是错题本，抄得很工整，但一道力学公式抄反了两个符号。"}, {"id": "c1s3", "route": "jian", "beat": "体育课自由活动。你跑完三千米，弯着腰喘气，抬头看见她一个人坐在跑道边的台阶上，膝盖上摊着一本单词本，嘴在动，没出声。"}, {"id": "c1s4", "route": "jian", "beat": "午休。全班趴在桌上睡觉。你没睡着，在改上午数学卷子的错。她也醒着，在改同一张卷子，笔尖很轻，怕吵到别人。"}, {"id": "c1s5", "route": "jian", "beat": "月考成绩贴出来了。你年级第一。她年级四百八十名（设定值，非真实数据），倒数第三排的位置，红纸黑字。"}], "第二章 倒计时 90 天": [{"id": "c2s1", "route": "jian", "beat": "月考后按成绩调座位。她被调到中间第四排，你留在最后一排。她收拾东西时错题本从抽屉滑出来，你弯腰捡起，她手抖了一下，接过去没说话。"}, {"id": "c2s9471", "route": "jian", "beat": "教室后门的锁坏了两天，没人报修。她从后门进来，绕过讲台，把卷子反扣在最后一排的空桌上。"}, {"id": "c2s2", "route": "jian", "beat": "她在新座位跟后排的几个人混熟了。上课传纸条，下课嘻嘻哈哈。你从最后一排看过去，她在笑，笑得很用力。"}, {"id": "c2s7", "route": "jian", "beat": "期中家长会那天下午，她妈在教室门口拉住班主任，声音不大，走廊里的人都听得见。"}, {"id": "c2s3", "route": "jian", "beat": "晚自习突然停电。走廊应急灯亮着，你去接水，走到拐角听见她在走廊尽头打电话，声音很轻，但走廊太安静了。"}, {"id": "c2s4", "route": "jian", "beat": "第二天，她像没事人一样。上课照常贫嘴，跟后排的人借修正带，笑得很大声。你把昨天整理的一套卷子递过去，她没接。"}, {"id": "c2s5", "route": "jian", "beat": "班会课。班主任站在讲台上说：「这次月考有几个同学进步很大，程简简进步了一百多名，主要是同桌帮扶效果好——」"}, {"id": "c2s6", "route": "jian", "beat": "班会后你去了天台。她靠在栏杆上，背对着楼梯口，风吹得她头发乱七八糟。你在门口站了一会儿，她没回头，但开口了。"}], "第三章 倒计时 30 天": [{"id": "c3s1", "route": "jian", "beat": "志愿表草表发下来了。三栏，第一栏最重要。你在第一栏填了一直想考的学校。她坐在新座位上，低头填表，笔停了很久。"}, {"id": "c3s9619", "route": "jian", "beat": "倒计时牌换成三十天。晚自习后教室空了一半，她留在最后一排，桌上摊着草表。"}, {"id": "c3s2", "route": "jian", "beat": "你收到保送确认通知了。信封是导师签的字，最后一栏是你一直想自己考的学校。导师说：「签了就不用高考了，名额给你留着，想清楚。」"}, {"id": "c3s3", "route": "jian", "beat": "她从班主任办公室门口路过，听见了你的名字和「保送」两个字。下午自习，你看见她在志愿表上把第一栏擦掉了，重写。新写的学校在另一个省。"}, {"id": "c3s4", "route": "jian", "beat": "高考前三天的晚自习。她翻开错题本的最后一页，写了一行字，又划掉了。你以为她没发现你在看，但她头也没抬就开口了。"}, {"id": "c3s5", "route": "jian", "beat": "高考前一天，全班拍毕业照。她站在最后一排最角落，你站在前排中间。摄影师喊一二三，她在最后一排做了个鬼脸——吐舌头那种，很幼稚。"}, {"id": "c3s7", "route": "jian", "beat": "志愿表交上去那天，她在办公室门口站了很久，出来的时候表已经交了。"}, {"id": "c3s6", "route": "jian", "beat": "考完最后一科。出考场下大雨，没带伞。她站在校门口的梧桐树下，头发湿了一半，贴在脸上。你也没带伞，两人淋着雨沿校门口那条路走。"}], "第一章 归来": [{"id": "c1s1", "route": "qing", "beat": "六年没回这座城。出租车从机场开到老城区，你路过那栋玻璃楼——青梧建筑事务所的招牌挂在十七层，灯亮着。"}, {"id": "c1s2", "route": "qing", "beat": "她转过身来。六年了，她瘦了，颧骨更高了，头发剪到肩膀，不像当年那种长得能扎马尾的样子。她看了你一眼，目光很短，然后看回图纸。"}, {"id": "c1s3", "route": "qing", "beat": "她把红笔搁下了。笔滚了两圈，碰到图纸上的一块橡皮，停了。"}, {"id": "c1s4", "route": "qing", "beat": "她从柜子里翻出一卷图纸，扔在桌上。不是新方案——是你六年前做的那个立面重构，A2图幅，四张，折痕都磨白了，边角起了毛。"}, {"id": "c1s5", "route": "qing", "beat": "她站在门口，手没离开门把。雨声大了，走廊的灯是感应的，亮了一下又灭了。"}, {"id": "c1s6", "route": "qing", "beat": "那天晚上你做了个梦。不是噩梦，是六年前那间会议室。"}], "第二章 对账": [{"id": "c2s1", "route": "qing", "beat": "第二天。事务所十七层，她的办公室门开着。桌上多了一样东西——一个旧模型，巴掌大，是当年你们一起做的社区图书馆草模，你切的纸板，她上的色。"}, {"id": "c2s90", "route": "qing", "beat": "下午三点，她把改过的立面摊在长桌上，用红笔在两处各画了一个圈。笔压得很重，纸背透出红。"}, {"id": "c2s2", "route": "qing", "beat": "你把新图纸展开，跟旧方案并排放。退线多两米，立面确实要重来。但旧方案的结构逻辑还能用——你当年花了三个月推导的那套模数关系，不是白做的。"}, {"id": "c2s7", "route": "qing", "beat": "档案室最里面那一格，标签上的日期是六年前。你抽出来的时候，纸边已经发黄。"}, {"id": "c2s3", "route": "qing", "beat": "她手顿了一下，从口袋里摸出一盒烟，看了看，又塞回去了。没点。"}, {"id": "c2s4", "route": "qing", "beat": "下午，你在她办公室改立面。她出去了，门没锁。你翻她桌上的项目档案，翻到一份会议纪要——日期是六年前，就是那场会。"}, {"id": "c2s5", "route": "qing", "beat": "她回来了，看见桌上的纪要没动过（或者你以为她没看出来）。她坐下来，翻了翻你改的立面初稿，拿红笔圈了两处。"}, {"id": "c2s6", "route": "qing", "beat": "她笔尖停了。红笔戳在图纸上，墨水洇了一个点。她没抬头，但你看见她喉结动了一下。"}], "第三章 问句": [{"id": "c3s1", "route": "qing", "beat": "第三天。你把初稿改完了，两处模数节点保留，但调了比例，绕过了规划局的退线问题。她翻了一遍，没圈红。"}, {"id": "c3s90", "route": "qing", "beat": "雨停了半小时，又落下来。她把那只缺角的模型从柜子最上层搬下来，放在窗前，缺角朝里。"}, {"id": "c3s2", "route": "qing", "beat": "施工节点图铺在桌上。你逐张看过去——结构合理，材料选得准，但有三处节点的逻辑跟她六年前的风格不一样，倒像你当年的思路。"}, {"id": "c3s3", "route": "qing", "beat": "她没接话。把文件合上，站起来，走到窗边。烟盒在窗台上，她拿了一支，没点，夹在指间转。"}, {"id": "c3s4", "route": "qing", "beat": "她回过身来，第一次在这一整天正面看你。烟还夹在手里，没点，滤嘴被她捏扁了。"}, {"id": "c3s5", "route": "qing", "beat": "她把那支捏扁的烟扔进了垃圾桶。纸篓里已经有七八个烟头了，都是今天攒的。"}, {"id": "c3s6", "route": "qing", "beat": "她终于看你了。不是扫一眼，是看。站在窗和桌之间，背后是灰色的雨后天空，光打在她半边脸上。"}, {"id": "c3s7", "route": "qing", "beat": "她在门口站住，转过身来。雨已经停了，路面反着灯，像刚擦过。"}]}, BACKDROPS={"wan": {"world": "南方小城，一条被雨泡旧的街。街上还剩几家店：修表的、裁缝、还有一间叫「浮光」的旧书店，木牌被雨气熏得发黑。", "premise": "雨季第一天，你走进这间书店避雨。她正踩着梯子把最后一摞书摆平。"}, "yao": {"world": "这座城市的琴房在「浮光」书店二楼，隔音很差。楼下卖书，楼上弹琴，中间隔着一层踩上去会响的木地板。", "premise": "三年前她不告而别。今夜你推开门，听见楼上有人在弹卡农——只弹声部，不弹旋律。"}, "wen": {"world": "凌晨的城市，只剩便利店和电台还亮着。收音机里那个声音叫「城市零点」，她从不说自己的名字。", "premise": "你值夜班的第一天，收银台旁的收音机没关。她说：「欢迎收听，这里是城市零点。」"}, "xiao": {"world": "皇城东侧，长公主府比翰林院高两丈。掌兵符的人坐在殿里，只问你能做什么，不问你想什么。", "premise": "你抱着《河渠志》的残本进府时，雨正顺着瓦当往下淌。她要的不是书，是书里的人。"}, "lu": {"world": "刑部的值夜房只有一盏灯。寒门进士当了主事，卷宗堆得比人高，谁也想不到她把自己活成了另一个人。", "premise": "你被派来与她同案。她把门带上，说：「门关上，接下来的话不能出这间屋子。」"}, "shen": {"world": "裴家院子深，规矩多。替嫁进来的庶女在偏院守着寡，一册账本记着这府里所有的进出。", "premise": "你被指给裴家抄账。推开偏院的门，她正拨着算盘，头也没抬：「坐。账还没算完。」"}, "jian": {"world": "明德中学高三（七）班，后墙贴着倒计时牌。最后一排靠窗的位置是空的，桌面被人用铅笔写过又擦掉。", "premise": "班主任把你叫到办公室，指着座位表最后一排那个红圈：「转学生，家里托人来的，你坐她旁边，帮一把。」"}, "qing": {"world": "这座城市的天际线里，有三栋楼是她画的。六年前她拿走了你的方案，署名换成了她自己。", "premise": "项目重启，甲方把她的事务所拉了进来。会议室里，她把图纸摊开：「你迟到了三分钟。」"}};
+const STREAM_RULES='\n注意：叙述要写足（80-200字，可分2-4段），先把环境和她的动作写清，再说话。';
+const $=id=>document.getElementById(id);
+const CN={'一':1,'二':2,'三':3};
+const order=n=>{for(const k in CN) if(n.includes('第'+k+'章')) return CN[k]; return 9;};
+
+/* ---------- 设置（可扩展骨架） ---------- */
+const THEMES={
+  warm:{name:'暖灰',bg:'#12100e',bg2:'#181614',ink:'#ece6de',dim:'#a49b90',faint:'#6f6862'},
+  cool:{name:'雾蓝',bg:'#0e1216',bg2:'#141a20',ink:'#e6ecf2',dim:'#94a0ac',faint:'#5f6b76'},
+  moss:{name:'苔绿',bg:'#0f1310',bg2:'#151b16',ink:'#e7ece5',dim:'#9aa79a',faint:'#63705f'},
+  paper:{name:'宣纸',bg:'#f4efe7',bg2:'#efe8dd',ink:'#241f19',dim:'#6b6156',faint:'#948a7d',light:true}
+};
+const ACCENTS={
+  sand:{name:'沙金',c:'#c9a06a',ink:'#1a140e'},
+  mist:{name:'雾蓝',c:'#8fa8bf',ink:'#101720'},
+  moss:{name:'苔绿',c:'#94ab8e',ink:'#12180f'},
+  clay:{name:'陶土',c:'#c08a72',ink:'#1c1310'}
+};
+const PRESETS={
+  deepseek:{name:'DeepSeek V4.1 Flash', base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'},
+  moonshot:{name:'Moonshot', base:'https://api.moonshot.cn/v1/chat/completions', model:'moonshot-v1-8k'},
+  glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
+  qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
+};
+const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,
+  mem:8000, reply:600, persona:'full',
+  pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
+  api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'}};
+let SET=Object.assign({},DEF,JSON.parse(localStorage.getItem('jieyu.set')||'{}'));
+function saveSet(){localStorage.setItem('jieyu.set',JSON.stringify(SET));}
+if(SET.api && SET.api.model==='deepseek-chat'){ SET.api.model='deepseek-flash'; saveSet(); }
+function applySet(){
+  const t=THEMES[SET.theme]||THEMES.warm, a=ACCENTS[SET.accent]||ACCENTS.sand;
+  const r=document.documentElement.style;
+  r.setProperty('--bg',t.bg); r.setProperty('--bg2',t.bg2); r.setProperty('--ink',t.ink);
+  r.setProperty('--dim',t.dim); r.setProperty('--faint',t.faint);
+  r.setProperty('--accent',a.c); r.setProperty('--accent-ink',a.ink);
+  r.setProperty('--bubble', t.light? 'rgba(0,0,0,.045)':'rgba(255,255,255,.055)');
+  r.setProperty('--bubble-me', t.light? 'rgba(0,0,0,.03)':'rgba(255,255,255,.03)');
+  r.setProperty('--line', t.light? 'rgba(0,0,0,.10)':'rgba(255,255,255,.09)');
+  r.setProperty('--fs', SET.font+'px');
+  document.body.style.background=t.bg;
+}
+applySet();
+
+/* ---------- 会话存储 ---------- */
+const SKEY='jieyu.sessions';
+function allSessions(){ try{return JSON.parse(localStorage.getItem(SKEY)||'{}');}catch(e){return {};} }
+function getS(route){ const a=allSessions(); return a[route]||null; }
+function putS(route,s){ const a=allSessions(); a[route]=s; localStorage.setItem(SKEY,JSON.stringify(a)); }
+function delS(route){ const a=allSessions(); delete a[route]; localStorage.setItem(SKEY,JSON.stringify(a)); }
+
+function blank(route){
+  return {route, aff:0, trust:0, turns:[], facts:[], summary:'', log:[], threads:[], stage:'陌生',
+          chapter:(CHARS[route]||{}).start_chapter||'', outline:[], hits:{}, ended:false, at:Date.now()};
+}
+
+/* ---------- 后端探测：本地服务 or 直连 ---------- */
+let MODE='direct';
+async function detect(){
+  try{ const r=await fetch('/api/key',{cache:'no-store'}); if(r.ok){ MODE='server'; const d=await r.json(); SERVER_KEY=d.configured; } }
+  catch(e){ MODE='direct'; }
+}
+let SERVER_KEY=false;
+let KEY=localStorage.getItem('jieyu.key')||'';
+
+/* ---------- 首页渲染 ---------- */
+let TAB='stories';
+function renderHome(){
+  const box=$('homeBody'); box.innerHTML='';
+  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on', b.dataset.tab===TAB));
+  if(TAB==='stories'){
+    const a=allSessions(); const ids=Object.keys(a).filter(id=>a[id].turns.length||a[id].log.length||a[id].outline.length);
+    if(!ids.length){ box.innerHTML='<div class="empty">还没有开始的故事<br><span style="font-size:12.5px">去「选择故事」挑一个人</span></div>'; return; }
+    ids.sort((x,y)=>(a[y].at||0)-(a[x].at||0));
+    const h=document.createElement('div'); h.className='sect'; h.textContent='进行中 · '+ids.length; box.appendChild(h);
+    ids.forEach(id=>{
+      const s=a[id], c=CHARS[id]||{name:id};
+      const d=document.createElement('div'); d.className='card'; d.onclick=()=>openChat(id);
+      const last=[...(s.turns||[])].reverse().find(x=>x.startsWith(c.name))||'';
+      d.innerHTML='<div class="row"><div class="av">'+c.name.slice(-1)+'</div><div class="grow">'+
+        '<div class="nm">'+c.name+'</div><div class="sub">'+(s.chapter||'')+' · '+(s.stage||'陌生')+' · 好感 '+s.aff+'</div>'+
+        '<div class="sub">'+(last?s_(last).slice(0,26):'刚打开')+'</div></div>'+
+        '<span class="tag">'+(s.ended?'已结局':'继续')+'</span></div>';
+      box.appendChild(d);
+    });
+  }
+  if(TAB==='pick'){
+    const h=document.createElement('div'); h.className='sect'; h.textContent='八个人 · 选一个开始'; box.appendChild(h);
+    Object.keys(CHARS).forEach(id=>{
+      const c=CHARS[id];
+      const d=document.createElement('div'); d.className='card'; d.onclick=()=>openChat(id);
+      d.innerHTML='<div class="row"><div class="av">'+c.name.slice(-1)+'</div><div class="grow">'+
+        '<div class="nm">'+c.name+'</div><div class="sub">'+(c.meta||'')+'</div>'+
+        '<div class="sub">'+(c.desc||'')+'</div></div></div>';
+      box.appendChild(d);
+    });
+  }
+  if(TAB==='me'){
+    const h=document.createElement('div'); h.className='sect'; h.textContent='连接'; box.appendChild(h);
+    const d=document.createElement('div'); d.className='card';
+    const host=(SET.api&&SET.api.base||'').replace(/^https?:\/\//,'').split('/')[0];
+    d.innerHTML='<div class="nm">文字模型 · '+(SET.api.model||'未设')+'</div><div class="sub">'+host+' · '+
+      (MODE==='server' ? (SERVER_KEY?'服务端已配置 key（本地服务在跑）':'服务端没配 key，将使用模板') :
+       (KEY?'已填 key（只存在这台设备）':'未填 key，暂时用模板演示'))+'</div>';
+    d.onclick=openSettings; box.appendChild(d);
+    const h2=document.createElement('div'); h2.className='sect'; h2.textContent='偏好'; box.appendChild(h2);
+    const d2=document.createElement('div'); d2.className='card';
+    d2.innerHTML='<div class="row"><div class="grow"><div class="nm">界面与字体</div>'+
+      '<div class="sub">'+THEMES[SET.theme].name+' · '+ACCENTS[SET.accent].name+' · '+SET.font+'px</div></div><span class="tag">设置</span></div>';
+    d2.onclick=openSettings; box.appendChild(d2);
+    const h3=document.createElement('div'); h3.className='sect'; h3.textContent='其他'; box.appendChild(h3);
+    const d3=document.createElement('div'); d3.className='card';
+    d3.innerHTML='<div class="nm">清除本机所有进度</div><div class="sub">'+Object.keys(allSessions()).length+' 个故事</div>';
+    d3.onclick=()=>{ if(confirm('清掉所有故事的进度？')){ localStorage.removeItem(SKEY); renderHome(); } };
+    box.appendChild(d3);
+  }
+}
+function s_(x){ return String(x).replace(/^[^：]+：/,''); }
+document.querySelectorAll('#tabbar button').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab; renderHome();});
+
+/* ---------- 对话 ---------- */
+let CUR=null, S=null, busy=false;
+const OPEN={wan:'「雨还没停。」她把梯子挪了挪，让你好走过去。',yao:'「来得正好。」她头也没回，手指在琴键上走了一遍。',
+ wen:'「……喂？」她压着声音，像怕吵到谁。',xiao:'「站着。说事。」她手里的朱笔没停。',lu:'「门带上。」她把手里的卷宗翻过一页。',
+ shen:'「坐。账还没算完。」她拨了一下算盘。',jian:'「看什么看。这位置有人了。」她头都没抬。',qing:'「你迟到了三分钟。」她把图纸摊开。'};
+
+async function openChat(route){
+  CUR=route; S=getS(route)||blank(route);
+  $('home').classList.remove('on'); $('chat').classList.add('on');
+  $('cav').style.display=''; $('cav').style.display='flex';
+  $('cnm').textContent=(CHARS[route]||{}).name||route;
+  $('cav').textContent=((CHARS[route]||{}).name||'？').slice(-1);
+  $('csub').textContent=(S.chapter||'')+' · '+((CHARS[route]||{}).meta||'');
+  const log=$('log'); log.innerHTML=''; $('choices').innerHTML='';
+  const bd=BACKDROPS[route]||{};
+  const isNew=!(S.turns.length||S.log.length);
+  if(isNew){
+    $('iKicker').textContent='序 · '+((CHARS[route]||{}).name||'');
+    $('iName').textContent=(CHARS[route]||{}).name||'';
+    $('iMeta').textContent=((CHARS[route]||{}).meta||'');
+    $('iWorld').textContent=bd.world||'';
+    $('iPremise').textContent=bd.premise||'';
+    $('iPersona').textContent=((CHARS[route]||{}).desc||'')+((CHARS[route]||{}).quote?('　'+CHARS[route].quote):'');
+    $('intro').classList.add('on'); log.style.display='none';
+    $('iStart').onclick=()=>{ $('intro').classList.remove('on'); log.style.display=''; if(!log.childNodes.length) nar((S.beat?S.beat+' ':'')+(OPEN[route]||'她抬眼看你。')); };
+  } else { $('intro').classList.remove('on'); log.style.display=''; }
+  if(!S.outline||!S.outline.length) S.outline=makeOutline();
+  if(S.turns.length||S.log.length){ replayLog(); }
+  if(S.ended){
+    const card=document.createElement('div'); card.className='endcard';
+    card.innerHTML='<div class="eth">这一局已经结束</div><div class="eb">'+(S.endText||'（结局已记录）')+'</div>';
+    log.appendChild(card);
+    $('send').disabled=true; $('inp').disabled=true; $('inp').placeholder='这一局结束了';
+    const again=document.createElement('button'); again.className='btn'; again.style.maxWidth='320px';
+    again.textContent='用这个人再开一局';
+    again.onclick=()=>{ delS(route); const r=route; S=blank(r); openChat(r); };
+    $('choices').innerHTML=''; $('choices').appendChild(again);
+  }
+  else { nar((S.beat?S.beat+' ':'')+(OPEN[route]||'她抬眼看你。')); }
+  putS(route,S); renderHome();
+}
+function replayLog(){
+  const log=$('log'); log.innerHTML='';
+  for(let i=0;i<S.turns.length;i+=2){
+    const me=S.turns[i], her=S.turns[i+1]||'';
+    bubble('me', me);
+    if(her) bubble('her', her);
+  }
+}
+function bubble(cls,html){const d=document.createElement('div');d.className='b '+cls;d.innerHTML=html;$('log').appendChild(d);$('log').scrollTop=1e9;return d;}
+function nar(txt){ String(txt).split('\n').filter(x=>x.trim()).forEach(line=>{
+    const d=document.createElement('div'); d.className='nar'; d.textContent=line.trim(); $('log').appendChild(d);});
+  $('log').scrollTop=1e9; }
+$('back').onclick=()=>{ $('chat').classList.remove('on'); $('home').classList.add('on'); renderHome(); };
+$('send').onclick=()=>sendTurn($('inp').value);
+$('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); sendTurn(e.target.value);} });
+
+function makeOutline(){
+  const SEEDS=['雨','台风','月考','家长会','停电','夜自习','剪头发','体检','生日','搬家','感冒','旧同学'];
+  const used=JSON.parse(localStorage.getItem('jieyu.seeds')||'[]');
+  const pool=SEEDS.filter(x=>!used.includes(x));
+  const seed=pool.length?pool[Math.floor(Math.random()*pool.length)]:SEEDS[0];
+  localStorage.setItem('jieyu.seeds',JSON.stringify(used.concat([seed]).slice(-8)));
+  const out=[{t:seed+'（本局的引子）',done:false}];
+  const beats=[]; Object.keys(SCENES).forEach(ch=>SCENES[ch].forEach(b=>{ if(b.route===CUR) beats.push(b); }));
+  for(let i=beats.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[beats[i],beats[j]]=[beats[j],beats[i]];}
+  beats.slice(0,4).forEach(b=>out.push({t:b.beat.slice(0,42),id:b.id,done:false}));
+  return out;
+}
+
+function sysPrompt(){
+  const c=CHARS[CUR]||{}, L=[];
+  L.push('你在一部中文互动小说里扮演'+c.name+'（'+(c.meta||'')+'）。');
+  if(SET.persona==='full'){ L.push(c.desc||''); L.push('口吻：'+(c.voice||'')); }
+  else { L.push('身份：'+(c.meta||'')+'。口吻：'+(c.voice||'')); }
+  L.push('');
+  L.push('规矩：');
+  L.push('1 输出三部分：nar（两句之间的叙述，可用 \\n 分 2-5 段：环境/声音/温度 → 她在做什么 → 动作细节 → 神态语气）、say（台词，用「」包住）、act（收尾小动作，可空）。总长度目标约 '+SET.reply+' tokens，写足但不要注水');
+  L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
+  L.push('2b act 用第三人称写她，不出现「我」');
+  L.push('3 剧情由你推进：玩家行为要真的改变事情走向');
+  L.push('3b 不要重复最近两轮写过的物件/话题；同一线索最多连写两轮');
+  L.push('4 不知道就说不懂或不耐烦地岔开，绝不编造设定');
+  L.push('5 aff 按行为给分：被关心 +1~+2；被挑衅且反击 +0~+1；被羞辱 -1~-2；闲聊 0');
+  L.push('');
+  const paceTxt={slow:'节奏放慢，多写环境与动作，推进克制',normal:'节奏正常，每轮推进一小步',fast:'节奏快些，尽快把关键冲突摆出来'}[SET.pace]||'';
+  const toneTxt={sweet:'整体基调偏暖，允许软化',balanced:'基调中性',bitter:'基调偏冷，别急着给甜头'}[SET.tone]||'';
+  L.push('【叙事偏好】'+paceTxt+'；'+toneTxt);
+  if(SET.me && (SET.me.name||SET.me.call||SET.me.traits)){
+    L.push('【读者】'+(SET.me.name?('名字：'+SET.me.name+'；'):'')+(SET.me.call?('身份：'+SET.me.call+'；'):'')+(SET.me.traits?('性格：'+SET.me.traits):''));
+  }
+  L.push('【当下处境】'+(S.chapter||'')+'。'+(S.beat||''));
+  L.push('【关系】好感 '+S.aff+'／信任 '+S.trust+'／阶段 '+S.stage);
+  L.push('【本局大纲】（打勾的已发生，要演出来，也可加戏）');
+  L.push((S.outline||[]).map((o,i)=>(o.done?'√ ':'· ')+(i+1)+'. '+o.t).join('\n')||'（无）');
+  const banned=Object.keys(S.hits||{}).filter(k=>(S.hits[k]||0)>=2);
+  L.push('【本轮禁止再写的细节】'+(banned.join('、')||'（无）'));
+  L.push('【剧情年表】'+((S.log||[]).slice(-6).join('；')||'（无）'));
+  L.push('【未解的线索】'+((S.threads||[]).join('；')||'（无）'));
+  L.push('【你记得的事】'+((S.facts||[]).slice(-10).join('；')||'（无）'));
+  {
+    const budget=SET.mem; let acc=0, keep=[];
+    for(let i=(S.turns||[]).length-1;i>=0;i--){ const t=S.turns[i]; acc+=t.length; if(acc>budget*0.9) break; keep.unshift(t); }
+    L.push('【刚才聊到】'+(keep.join('\n')||'（刚见面）'));
+  }
+  L.push('');
+  L.push('输出格式（必须用这四个标签，标签名不许改）：');
+  L.push('顺序必须是：<nar> → <say> → <act> → <meta>。act 用第三人称写她，不要出现「我」。');
+  L.push('<nar>两句之间的叙述，写足不压缩</nar><say>「台词」</say><act>收尾小动作</act><meta>{"advance":"这一轮剧情推进一句话","open_thread":"","close_thread":"","outline_hit":0,"aff":0,"trust":0,"memory":"","choices":["…","…","…"]}</meta>');
+  return L.join('\n');
+}
+
+function parseSections(all){
+  const pick=(tag)=>{
+    const re=new RegExp('<'+tag+'>([\\s\\S]*?)(?:</'+tag+'>|$)');
+    const m=all.match(re); return m?m[1].replace(/<[^>]*>/g,'').trim():'';
+  };
+  let nar=pick('nar'), say=pick('say'), act=pick('act');
+  if(!say){ // 容错：模型用了别的前缀
+    const m=all.match(/\[S[^\]]*\]([\s\S]*?)(?=\[A|\[META|$)/);
+    if(m) say=m[1].replace(/\[[^\]]*\]/g,'').trim();
+  }
+  let meta={};
+  const mt=all.match(/<meta>([\s\S]*?)(?:<\/meta>|$)/);
+  const src=mt?mt[1]:(all.match(/\{[\s\S]*\}/)||[''])[0];
+  try{ const i=src.indexOf('{'), j=src.lastIndexOf('}'); meta=JSON.parse(src.slice(i,j+1)); }catch(e){ meta={}; }
+  return {nar,say,act,meta};
+}
+async function callTurnStream(text, onSections){
+  if(MODE==='server'){ return await callTurn(text); }
+  if(!KEY) throw new Error('还没填 key（我的 → API key）');
+  const body={model:SET.api.model,temperature:0.95,max_tokens:SET.reply,stream:true,
+    messages:[{role:'system',content:sysPrompt()+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
+  const r=await fetch(SET.api.base,{method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},body:JSON.stringify(body)});
+  if(!r.ok){ const map={401:'key 无效或已失效',402:'余额不足',429:'请求太频繁'};
+    throw new Error(map[r.status]||('接口 '+r.status)); }
+  const reader=r.body.getReader(); const dec=new TextDecoder();
+  let buf='', all='';
+  while(true){
+    const {value,done}=await reader.read(); if(done) break;
+    buf+=dec.decode(value,{stream:true});
+    const lines=buf.split('\n'); buf=lines.pop();
+    let got=false;
+    for(const line of lines){
+      const t=line.trim(); if(!t.startsWith('data:')) continue;
+      const p=t.slice(5).trim(); if(p==='[DONE]') continue;
+      try{ const j=JSON.parse(p); const d=(j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content)||'';
+        if(d){ all+=d; got=true; } }catch(e){}
+    }
+    if(got){ const sec=parseSections(all); onSections(sec); }
+  }
+  const sec=parseSections(all);
+  return {nar:sec.nar, say:sec.say, act:sec.act, ...sec.meta};
+}
+async function sendTurn(text){
+  if(busy||!text.trim()||!CUR) return;
+  busy=true; $('send').disabled=true;
+  bubble('me', text.replace(/[<>]/g,''));
+  $('inp').value=''; $('choices').innerHTML='';
+  let d;
+  const narBox=document.createElement('div'); narBox.className='nar'; narBox.style.display='none';
+  const herBox=document.createElement('div'); herBox.className='b her'; herBox.style.display='none';
+  const actBox=document.createElement('div'); actBox.className='nar'; actBox.style.display='none';
+  $('log').appendChild(narBox); $('log').appendChild(herBox); $('log').appendChild(actBox);
+  const onSec=sec=>{
+    if(sec.nar){ narBox.style.display=''; narBox.textContent=sec.nar; }
+    if(sec.say){ herBox.style.display=''; herBox.textContent=sec.say; }
+    if(sec.act){ actBox.style.display=''; actBox.textContent=sec.act; }
+    $('log').scrollTop=1e9;
+  };
+  try{ d=await callTurnStream(text, onSec); }
+  catch(e){
+    narBox.style.display='none'; herBox.style.display=''; herBox.textContent='（'+e.message+'）';
+    actBox.style.display='none'; busy=false; $('send').disabled=false; return;
+  }
+  narBox.textContent=(d.nar||narTxt); if(narBox.textContent) narBox.style.display='';
+  herBox.textContent=(/^[「『]/.test(d.say||'')?d.say:'「'+(d.say||sayTxt||'……')+'」');
+  if(d.act){ actBox.textContent=d.act; actBox.style.display=''; } else actBox.style.display='none';
+  if(d.advance){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+d.advance; $('log').appendChild(ad); }
+
+  S.aff=Math.max(-20,Math.min(40,S.aff+Number(d.aff||0)));
+  S.trust=Math.max(-20,Math.min(40,S.trust+Number(d.trust||0)));
+  S.turns.push(text); S.turns.push((CHARS[CUR].name)+'：'+(d.say||''));
+  if(d.memory) S.facts.push(d.memory);
+  if(d.advance) S.log=S.log.concat([d.advance]).slice(-12);
+  if(d.open_thread) S.threads=S.threads.concat([d.open_thread]).slice(-4);
+  if(d.close_thread) S.threads=S.threads.filter(x=>!String(x).includes(d.close_thread));
+  if(d.outline_hit && S.outline[d.outline_hit-1]) S.outline[d.outline_hit-1].done=true;
+  countHits((d.nar||'')+' '+(d.say||'')+' '+(d.act||''));
+  S.stage = S.aff>=25||S.turns.length/2>=20 ? '不可替代' : S.aff>=15||S.turns.length/2>=14 ? '交心' : S.aff>=5||S.turns.length/2>=8 ? '熟人':'陌生';
+  S.at=Date.now();
+  putS(CUR,S);
+  (d.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.textContent=c; b.onclick=()=>sendTurn(c); $('choices').appendChild(b); });
+  busy=false; $('send').disabled=false; $('log').scrollTop=1e9;
+  if((S.turns.length/2)>=24||S.aff>=25||S.aff<=-6) await endGame();
+}
+function countHits(txt){ const w=['座位表','小字','红圈','外套','错题本','笔袋','琴房','图纸','伞','账本'];
+  w.forEach(k=>{ if(txt.includes(k)) S.hits[k]=(S.hits[k]||0)+1; }); }
+
+async function endGame(){
+  if(S.ended) return;
+  S.ended=true; putS(CUR,S);
+  const tier = S.aff>=25&&S.trust>=10?'A 走成了':S.aff>=15?'B 差一步':S.aff>=5?'C 停在原地':'D 散了';
+  let title='结局', body='';
+  try{
+    if(MODE==='server'){
+      const r=await fetch('/api/ending?session='+CUR); const e=await r.json();
+      title=e.title||title; body=e.ending||'';
+    }else{
+      const ask='你在写一部中文互动小说的结局。角色：'+CHARS[CUR].name+'。已知：好感'+S.aff+'，信任'+S.trust+'，阶段'+S.stage
+        +'，未解线索：'+((S.threads||[]).join('；')||'无')+'；剧情年表：'+((S.log||[]).slice(-6).join('；')||'无')
+        +'；请写结局：'+tier+'。120-180字，纯叙述，必须回应至少一条线索，落在一个具体物件上。只输出 JSON：{"title":"4-8字","ending":"…"}';
+      const r=await fetch(SET.api.base,{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+        body:JSON.stringify({model:SET.api.model,temperature:0.95,max_tokens:600,
+          messages:[{role:'system',content:ask},{role:'user',content:'写结局'}]})});
+      const d=await r.json(); let s=d.choices[0].message.content.trim();
+      if(s.startsWith('```')) s=s.split('```')[1].replace(/^json/,'').trim();
+      const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i) s=s.slice(i,j+1);
+      const o=JSON.parse(s); title=o.title||title; body=o.ending||'';
+    }
+  }catch(e){ body='（结局没能生成：'+e.message+'）'; }
+  S.endText=body; S.endTitle=title; S.endTier=tier; putS(CUR,S);
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+title+' · '+tier+'</div><div class="eb">'+body+'</div>';
+  $('log').appendChild(card); $('log').scrollTop=1e9;
+  $('send').disabled=true; $('inp').disabled=true; $('inp').placeholder='这一局结束了，返回首页开始新的';
+  const again=document.createElement('button'); again.className='btn'; again.textContent='用这个人再开一局';
+  again.onclick=()=>{ delS(CUR); const r=CUR; S=blank(r); openChat(r); $('send').disabled=false; $('inp').disabled=false; $('inp').placeholder='（动作）「台词」'; };
+  $('choices').innerHTML=''; $('choices').appendChild(again);
+}
+
+/* ---------- 设置面板 ---------- */
+function openSettings(){
+  const box=$('sheetBox');
+  box.innerHTML=`
+   <div class="sheettitle"><b>设置</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">界面 · 色彩</div>
+   <div class="opt"><div><div class="lbl">界面配色</div><div class="hint">低饱和，长时间看不累</div></div>
+     <div class="swatches" id="themeRow"></div></div>
+   <div class="opt"><div><div class="lbl">强调色</div><div class="hint">按钮、高亮、进度条</div></div>
+     <div class="swatches" id="accentRow"></div></div>
+   <div class="opt"><div><div class="lbl">字体大小</div></div>
+     <div class="segs" id="fontRow">
+       <button data-f="15">小</button><button data-f="17">标准</button><button data-f="19">大</button><button data-f="21">更大</button>
+     </div></div>
+   <div class="sgroup">文字模型 · 控制消耗</div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">记忆长度</div><span class="val" id="memVal"></span></div>
+     <div class="hint">她能看到多远的过去。越大越连贯，也越贵。</div>
+     <input type="range" id="memRange" min="2000" max="128000" step="2000" style="width:100%;accent-color:var(--accent)">
+   </div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">回复长度</div><span class="val" id="repVal"></span></div>
+     <div class="hint">她一次说话+叙述的字数上限（越大描写越厚）。</div>
+     <input type="range" id="repRange" min="200" max="4000" step="100" style="width:100%;accent-color:var(--accent)">
+   </div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">人设理解深度</div><span class="val" id="perVal"></span></div>
+     <div class="hint">给她多少背景：精简 = 只给身份与口吻；完整 = 加性格、雷点、关系史。</div>
+     <div class="segs" id="perRow"><button data-p="lite">精简</button><button data-p="full">完整</button></div>
+   </div>
+   <div class="opt"><div><div class="lbl">每轮预估消耗</div><div class="hint">按上面三项估算，仅输入+输出</div></div><span class="val" id="costVal">—</span></div>
+   <div class="sgroup">连接</div>
+   <div class="opt" style="display:block">
+     <div class="lbl">DeepSeek API key</div>
+     <div class="hint" style="margin:4px 0 8px">${MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):'存在这台设备，不上传'}</div>
+     <input class="txt" id="keyInput" type="password" placeholder="sk-..." value="${KEY?'••••••••':''}">
+     <div class="hint" style="margin:10px 0 6px">服务商预设</div>
+     <div class="segs" id="presetRow">
+       <button data-p="deepseek">DeepSeek</button><button data-p="moonshot">Moonshot</button>
+       <button data-p="glm">智谱</button><button data-p="qwen">通义</button></div>
+     <div class="hint" style="margin:10px 0 4px">接口地址（OpenAI 兼容即可）</div>
+     <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="${SET.api.base}">
+     <div class="hint" style="margin:10px 0 4px">模型名</div>
+     <input class="txt" id="modelInput" placeholder="deepseek-flash" value="${SET.api.model}">
+     <button class="btn" onclick="saveKey()">保存</button>
+     <button class="btn ghost" onclick="testKey()">测试连接</button>
+     <div class="hint" id="keyMsg" style="margin-top:8px"></div>
+     <button class="btn ghost" onclick="clearKey()">清除 key</button>
+   </div>
+   <div class="sgroup">其他（占位，后续补）</div>
+   <div class="opt"><div class="lbl">声音与朗读</div><span class="tag">未开放</span></div>
+   <div class="opt"><div class="lbl">存档导出 / 导入</div><span class="tag">未开放</span></div>
+   <div class="opt"><div class="lbl">关于</div><span class="tag">v2</span></div>`;
+  $('sheet').classList.add('on');
+  const tR=$('themeRow');
+  Object.keys(THEMES).forEach(k=>{
+    const b=document.createElement('button'); b.className='sw'+(SET.theme===k?' on':'');
+    b.style.background=THEMES[k].bg; b.style.borderColor=SET.theme===k?'var(--ink)':'var(--line)';
+    b.title=THEMES[k].name; b.onclick=()=>{ SET.theme=k; saveSet(); applySet(); openSettings(); };
+    tR.appendChild(b);
+  });
+  const aR=$('accentRow');
+  Object.keys(ACCENTS).forEach(k=>{
+    const b=document.createElement('button'); b.className='sw'+(SET.accent===k?' on':'');
+    b.style.background=ACCENTS[k].c; b.onclick=()=>{ SET.accent=k; saveSet(); applySet(); openSettings(); };
+    aR.appendChild(b);
+  });
+  const memR=$('memRange'), repR=$('repRange');
+  memR.value=SET.mem; repR.value=SET.reply;
+  const showCost=()=>{
+    $('memVal').textContent=SET.mem;
+    $('repVal').textContent=SET.reply;
+    $('perVal').textContent=SET.persona==='lite'?'精简':'完整';
+    const inp=Math.round(SET.mem*0.55)+(SET.persona==='full'?900:450);
+    const out=Math.round(SET.reply*0.75);
+    $('costVal').textContent='≈'+(inp+out).toLocaleString()+' tokens';
+  };
+  memR.oninput=()=>{ SET.mem=Number(memR.value); saveSet(); showCost(); };
+  repR.oninput=()=>{ SET.reply=Number(repR.value); saveSet(); showCost(); };
+  $('perRow').querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('on', SET.persona===b.dataset.p);
+    b.onclick=()=>{ SET.persona=b.dataset.p; saveSet(); openSettings(); };
+  });
+  showCost();
+  const pr=$('presetRow');
+  if(pr) pr.querySelectorAll('button').forEach(b=>{
+    const P=PRESETS[b.dataset.p];
+    b.classList.toggle('on', SET.api && SET.api.base===P.base);
+    b.onclick=()=>{ SET.api={base:P.base, model:P.model}; saveSet();
+      const bi=$('baseInput'), mi=$('modelInput'); if(bi) bi.value=P.base; if(mi) mi.value=P.model;
+      pr.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.p===b.dataset.p)); };
+  });
+  $('fontRow').querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('on', Number(b.dataset.f)===SET.font);
+    b.onclick=()=>{ SET.font=Number(b.dataset.f); saveSet(); applySet(); openSettings(); };
+  });
+}
+function closeSheet(){ $('sheet').classList.remove('on'); }
+$('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
+$('setBtn2').onclick=openSettings;
+function saveKey(){
+  const v=($('keyInput').value||'').trim();
+  const base=($('baseInput').value||'').trim() || 'https://api.deepseek.com/chat/completions';
+  const model=($('modelInput').value||'').trim() || 'deepseek-chat';
+  SET.api={base, model}; saveSet();
+  if(v && v.startsWith('sk-')){ KEY=v; localStorage.setItem('jieyu.key',v); }
+  else if(v && !v.startsWith('sk-')){ alert('key 一般是 sk- 开头；如果这个服务商不用 sk- 前缀，也可以直接保存'); KEY=v; localStorage.setItem('jieyu.key',v); }
+  closeSheet(); renderHome();
+}
+async function testKey(){
+  const box=$('keyMsg');
+  const v=($('keyInput').value||'').trim();
+  const k=(v&&v.startsWith('sk-'))?v:KEY;
+  box.style.color='var(--dim)'; box.textContent='测试中…';
+  if(MODE==='server'){
+    try{ const r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({session:'__probe__',route:'wan',text:'（测试）',max_tokens:60})});
+      box.style.color = r.ok?'var(--accent)':'#d98b7a';
+      box.textContent = r.ok?'服务端可用 ✅':('服务端返回 '+r.status);
+    }catch(e){ box.style.color='#d98b7a'; box.textContent='连不上本地服务'; }
+    return;
+  }
+  if(!k){ box.style.color='#d98b7a'; box.textContent='还没填 key'; return; }
+  try{
+    const r=await fetch(SET.api.base,{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
+      body:JSON.stringify({model:SET.api.model,messages:[{role:'user',content:'ping'}],max_tokens:5})});
+    if(r.ok){ box.style.color='var(--accent)'; box.textContent='key 可用 ✅'; }
+    else if(r.status===401){ box.style.color='#d98b7a'; box.textContent='key 无效或已过期 ❌'; }
+    else if(r.status===402){ box.style.color='#d98b7a'; box.textContent='余额不足 ❌'; }
+    else { box.style.color='#d98b7a'; box.textContent='返回 '+r.status+' ❌'; }
+  }catch(e){ box.style.color='#d98b7a'; box.textContent='网络不通：'+e.message; }
+}
+function clearKey(){ KEY=''; localStorage.removeItem('jieyu.key'); closeSheet(); renderHome(); }
+
+/* ---------- 对话菜单 ---------- */
+$('moreBtn').onclick=()=>{
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>这一局</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">操作</div>
+   <div class="opt" onclick="regen()"><div class="lbl">↻ 重新生成</div><span class="tag">换一版</span></div>
+   <div class="opt" onclick="undoTurn()"><div class="lbl">↺ 撤回最后一轮</div></div>
+   <div class="opt" onclick="newChat()"><div class="lbl">＋ 新建对话（同一人重开）</div></div>
+   <div class="sgroup">设置</div>
+   <div class="opt" onclick="editStory()"><div class="lbl">剧情选项设置</div><span class="tag">${SET.pace==='fast'?'快':SET.pace==='slow'?'慢':'正常'} · ${SET.tone==='sweet'?'偏甜':SET.tone==='bitter'?'偏苦':'均衡'}</span></div>
+   <div class="opt" onclick="editMe()"><div class="lbl">我的人设</div><span class="tag">${SET.me.name||'未填'}</span></div>
+   <div class="opt" onclick="openSettings()"><div class="lbl">文字模型设置</div></div>`;
+  $('sheet').classList.add('on');
+};
+function undoTurn(){
+  if(!S||!S.turns.length) return closeSheet();
+  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S); closeSheet(); openChat(CUR);
+}
+function regen(){
+  if(!S||!S.turns.length) return closeSheet();
+  const last=S.turns.length>=2?S.turns[S.turns.length-2]:S.turns[0];
+  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S);
+  closeSheet(); openChat(CUR);
+  setTimeout(()=>sendTurn(last),120);
+}
+function newChat(){ delS(CUR); const r=CUR; S=blank(r); closeSheet(); openChat(r); $('send').disabled=false; $('inp').disabled=false; }
+function editStory(){
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>剧情选项</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">节奏</div>
+   <div class="segs" id="paceRow">
+     <button data-v="slow">慢（多描写）</button><button data-v="normal">正常</button><button data-v="fast">快（推主线）</button></div>
+   <div class="sgroup">基调</div>
+   <div class="segs" id="toneRow">
+     <button data-v="sweet">偏甜</button><button data-v="balanced">均衡</button><button data-v="bitter">偏苦</button></div>`;
+  $('sheet').classList.add('on');
+  $('paceRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.pace===b.dataset.v);
+    b.onclick=()=>{SET.pace=b.dataset.v; saveSet(); editStory();}; });
+  $('toneRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.tone===b.dataset.v);
+    b.onclick=()=>{SET.tone=b.dataset.v; saveSet(); editStory();}; });
+}
+function editMe(){
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>我的人设</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">她怎么叫你</div>
+   <input class="txt" id="meName" placeholder="你的名字（可不填）" value="${SET.me.name||''}">
+   <div class="sgroup">称呼 / 身份</div>
+   <input class="txt" id="meCall" placeholder="例如：同班同学、店里常客" value="${SET.me.call||''}">
+   <div class="sgroup">性格（可留空）</div>
+   <input class="txt" id="meTraits" placeholder="例如：话少、心软、爱拆台" value="${SET.me.traits||''}">
+   <button class="btn" onclick="saveMe()">保存</button>`;
+  $('sheet').classList.add('on');
+}
+function saveMe(){ SET.me={name:($('meName').value||'').trim(), call:($('meCall').value||'').trim(), traits:($('meTraits').value||'').trim()};
+  saveSet(); closeSheet(); }
+
+/* ---------- 记忆面板 ---------- */
+$('memBtn').onclick=()=>{
+  if(!S) return;
+  const box=$('sheetBox');
+  box.innerHTML='<div class="sheettitle"><b>这一局</b><button class="close" onclick="closeSheet()">×</button></div>'
+   +'<div class="sgroup">状态</div><div class="card" style="margin-top:0">好感 '+S.aff+' · 信任 '+S.trust+' · 阶段 '+S.stage
+   +'<div class="sub">'+(S.chapter||'')+'</div></div>'
+   +'<div class="sgroup">本局大纲</div><div class="card" style="margin-top:0">'
+   +((S.outline||[]).map((o,i)=>(o.done?'√ ':'· ')+(i+1)+'. '+o.t).join('<br>')||'还没定')+'</div>'
+   +'<div class="sgroup">未解的线索</div><div class="card" style="margin-top:0">'+((S.threads||[]).join('<br>')||'暂无')+'</div>'
+   +'<div class="sgroup">剧情年表</div><div class="card" style="margin-top:0">'+((S.log||[]).slice(-6).join('<br>')||'还没有')+'</div>'
+   +'<div class="sgroup">她记住的事</div><div class="card" style="margin-top:0">'+((S.facts||[]).slice(-8).join('<br>')||'还没有')+'</div>';
+  $('sheet').classList.add('on');
+};
+
+/* ---------- 启动 ---------- */
+(async()=>{
+  await detect();
+  if(location.protocol==='file:' && MODE!=='server'){
+    setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
+  }
+  renderHome();
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+})();
+</script></body></html>
+async function sendTurn(text){
+  if(busy||!text.trim()||!CUR) return;
+  busy=true; $('send').disabled=true;
+  bubble('me', text.replace(/[<>]/g,''));
+  $('inp').value=''; $('choices').innerHTML='';
+  let d;
+  const narBox=document.createElement('div'); narBox.className='nar'; narBox.style.display='none';
+  const herBox=document.createElement('div'); herBox.className='b her'; herBox.style.display='none';
+  const actBox=document.createElement('div'); actBox.className='nar'; actBox.style.display='none';
+  $('log').appendChild(narBox); $('log').appendChild(herBox); $('log').appendChild(actBox);
+  const onSec=sec=>{
+    if(sec.nar){ narBox.style.display=''; narBox.textContent=sec.nar; }
+    if(sec.say){ herBox.style.display=''; herBox.textContent=sec.say; }
+    if(sec.act){ actBox.style.display=''; actBox.textContent=sec.act; }
+    $('log').scrollTop=1e9;
+  };
+  try{ d=await callTurnStream(text, onSec); }
+  catch(e){
+    narBox.style.display='none'; herBox.style.display=''; herBox.textContent='（'+e.message+'）';
+    actBox.style.display='none'; busy=false; $('send').disabled=false; return;
+  }
+  narBox.textContent=(d.nar||narTxt); if(narBox.textContent) narBox.style.display='';
+  herBox.textContent=(/^[「『]/.test(d.say||'')?d.say:'「'+(d.say||sayTxt||'……')+'」');
+  if(d.act){ actBox.textContent=d.act; actBox.style.display=''; } else actBox.style.display='none';
+  if(d.advance){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+d.advance; $('log').appendChild(ad); }
+
+  S.aff=Math.max(-20,Math.min(40,S.aff+Number(d.aff||0)));
+  S.trust=Math.max(-20,Math.min(40,S.trust+Number(d.trust||0)));
+  S.turns.push(text); S.turns.push((CHARS[CUR].name)+'：'+(d.say||''));
+  if(d.memory) S.facts.push(d.memory);
+  if(d.advance) S.log=S.log.concat([d.advance]).slice(-12);
+  if(d.open_thread) S.threads=S.threads.concat([d.open_thread]).slice(-4);
+  if(d.close_thread) S.threads=S.threads.filter(x=>!String(x).includes(d.close_thread));
+  if(d.outline_hit && S.outline[d.outline_hit-1]) S.outline[d.outline_hit-1].done=true;
+  countHits((d.nar||'')+' '+(d.say||'')+' '+(d.act||''));
+  S.stage = S.aff>=25||S.turns.length/2>=20 ? '不可替代' : S.aff>=15||S.turns.length/2>=14 ? '交心' : S.aff>=5||S.turns.length/2>=8 ? '熟人':'陌生';
+  S.at=Date.now();
+  putS(CUR,S);
+  (d.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.textContent=c; b.onclick=()=>sendTurn(c); $('choices').appendChild(b); });
+  busy=false; $('send').disabled=false; $('log').scrollTop=1e9;
+  if((S.turns.length/2)>=24||S.aff>=25||S.aff<=-6) await endGame();
+}
+function countHits(txt){ const w=['座位表','小字','红圈','外套','错题本','笔袋','琴房','图纸','伞','账本'];
+  w.forEach(k=>{ if(txt.includes(k)) S.hits[k]=(S.hits[k]||0)+1; }); }
+
+async function endGame(){
+  if(S.ended) return;
+  S.ended=true; putS(CUR,S);
+  const tier = S.aff>=25&&S.trust>=10?'A 走成了':S.aff>=15?'B 差一步':S.aff>=5?'C 停在原地':'D 散了';
+  let title='结局', body='';
+  try{
+    if(MODE==='server'){
+      const r=await fetch('/api/ending?session='+CUR); const e=await r.json();
+      title=e.title||title; body=e.ending||'';
+    }else{
+      const ask='你在写一部中文互动小说的结局。角色：'+CHARS[CUR].name+'。已知：好感'+S.aff+'，信任'+S.trust+'，阶段'+S.stage
+        +'，未解线索：'+((S.threads||[]).join('；')||'无')+'；剧情年表：'+((S.log||[]).slice(-6).join('；')||'无')
+        +'；请写结局：'+tier+'。120-180字，纯叙述，必须回应至少一条线索，落在一个具体物件上。只输出 JSON：{"title":"4-8字","ending":"…"}';
+      const r=await fetch(SET.api.base,{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+        body:JSON.stringify({model:SET.api.model,temperature:0.95,max_tokens:600,
+          messages:[{role:'system',content:ask},{role:'user',content:'写结局'}]})});
+      const d=await r.json(); let s=d.choices[0].message.content.trim();
+      if(s.startsWith('```')) s=s.split('```')[1].replace(/^json/,'').trim();
+      const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i) s=s.slice(i,j+1);
+      const o=JSON.parse(s); title=o.title||title; body=o.ending||'';
+    }
+  }catch(e){ body='（结局没能生成：'+e.message+'）'; }
+  S.endText=body; S.endTitle=title; S.endTier=tier; putS(CUR,S);
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+title+' · '+tier+'</div><div class="eb">'+body+'</div>';
+  $('log').appendChild(card); $('log').scrollTop=1e9;
+  $('send').disabled=true; $('inp').disabled=true; $('inp').placeholder='这一局结束了，返回首页开始新的';
+  const again=document.createElement('button'); again.className='btn'; again.textContent='用这个人再开一局';
+  again.onclick=()=>{ delS(CUR); const r=CUR; S=blank(r); openChat(r); $('send').disabled=false; $('inp').disabled=false; $('inp').placeholder='（动作）「台词」'; };
+  $('choices').innerHTML=''; $('choices').appendChild(again);
+}
+
+/* ---------- 设置面板 ---------- */
+function openSettings(){
+  const box=$('sheetBox');
+  box.innerHTML=`
+   <div class="sheettitle"><b>设置</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">界面 · 色彩</div>
+   <div class="opt"><div><div class="lbl">界面配色</div><div class="hint">低饱和，长时间看不累</div></div>
+     <div class="swatches" id="themeRow"></div></div>
+   <div class="opt"><div><div class="lbl">强调色</div><div class="hint">按钮、高亮、进度条</div></div>
+     <div class="swatches" id="accentRow"></div></div>
+   <div class="opt"><div><div class="lbl">字体大小</div></div>
+     <div class="segs" id="fontRow">
+       <button data-f="15">小</button><button data-f="17">标准</button><button data-f="19">大</button><button data-f="21">更大</button>
+     </div></div>
+   <div class="sgroup">文字模型 · 控制消耗</div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">记忆长度</div><span class="val" id="memVal"></span></div>
+     <div class="hint">她能看到多远的过去。越大越连贯，也越贵。</div>
+     <input type="range" id="memRange" min="2000" max="128000" step="2000" style="width:100%;accent-color:var(--accent)">
+   </div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">回复长度</div><span class="val" id="repVal"></span></div>
+     <div class="hint">她一次说话+叙述的字数上限（越大描写越厚）。</div>
+     <input type="range" id="repRange" min="200" max="4000" step="100" style="width:100%;accent-color:var(--accent)">
+   </div>
+   <div class="opt" style="display:block">
+     <div class="row"><div class="lbl grow">人设理解深度</div><span class="val" id="perVal"></span></div>
+     <div class="hint">给她多少背景：精简 = 只给身份与口吻；完整 = 加性格、雷点、关系史。</div>
+     <div class="segs" id="perRow"><button data-p="lite">精简</button><button data-p="full">完整</button></div>
+   </div>
+   <div class="opt"><div><div class="lbl">每轮预估消耗</div><div class="hint">按上面三项估算，仅输入+输出</div></div><span class="val" id="costVal">—</span></div>
+   <div class="sgroup">连接</div>
+   <div class="opt" style="display:block">
+     <div class="lbl">DeepSeek API key</div>
+     <div class="hint" style="margin:4px 0 8px">${MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):'存在这台设备，不上传'}</div>
+     <input class="txt" id="keyInput" type="password" placeholder="sk-..." value="${KEY?'••••••••':''}">
+     <div class="hint" style="margin:10px 0 6px">服务商预设</div>
+     <div class="segs" id="presetRow">
+       <button data-p="deepseek">DeepSeek</button><button data-p="moonshot">Moonshot</button>
+       <button data-p="glm">智谱</button><button data-p="qwen">通义</button></div>
+     <div class="hint" style="margin:10px 0 4px">接口地址（OpenAI 兼容即可）</div>
+     <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="${SET.api.base}">
+     <div class="hint" style="margin:10px 0 4px">模型名</div>
+     <input class="txt" id="modelInput" placeholder="deepseek-flash" value="${SET.api.model}">
+     <button class="btn" onclick="saveKey()">保存</button>
+     <button class="btn ghost" onclick="testKey()">测试连接</button>
+     <div class="hint" id="keyMsg" style="margin-top:8px"></div>
+     <button class="btn ghost" onclick="clearKey()">清除 key</button>
+   </div>
+   <div class="sgroup">其他（占位，后续补）</div>
+   <div class="opt"><div class="lbl">声音与朗读</div><span class="tag">未开放</span></div>
+   <div class="opt"><div class="lbl">存档导出 / 导入</div><span class="tag">未开放</span></div>
+   <div class="opt"><div class="lbl">关于</div><span class="tag">v2</span></div>`;
+  $('sheet').classList.add('on');
+  const tR=$('themeRow');
+  Object.keys(THEMES).forEach(k=>{
+    const b=document.createElement('button'); b.className='sw'+(SET.theme===k?' on':'');
+    b.style.background=THEMES[k].bg; b.style.borderColor=SET.theme===k?'var(--ink)':'var(--line)';
+    b.title=THEMES[k].name; b.onclick=()=>{ SET.theme=k; saveSet(); applySet(); openSettings(); };
+    tR.appendChild(b);
+  });
+  const aR=$('accentRow');
+  Object.keys(ACCENTS).forEach(k=>{
+    const b=document.createElement('button'); b.className='sw'+(SET.accent===k?' on':'');
+    b.style.background=ACCENTS[k].c; b.onclick=()=>{ SET.accent=k; saveSet(); applySet(); openSettings(); };
+    aR.appendChild(b);
+  });
+  const memR=$('memRange'), repR=$('repRange');
+  memR.value=SET.mem; repR.value=SET.reply;
+  const showCost=()=>{
+    $('memVal').textContent=SET.mem;
+    $('repVal').textContent=SET.reply;
+    $('perVal').textContent=SET.persona==='lite'?'精简':'完整';
+    const inp=Math.round(SET.mem*0.55)+(SET.persona==='full'?900:450);
+    const out=Math.round(SET.reply*0.75);
+    $('costVal').textContent='≈'+(inp+out).toLocaleString()+' tokens';
+  };
+  memR.oninput=()=>{ SET.mem=Number(memR.value); saveSet(); showCost(); };
+  repR.oninput=()=>{ SET.reply=Number(repR.value); saveSet(); showCost(); };
+  $('perRow').querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('on', SET.persona===b.dataset.p);
+    b.onclick=()=>{ SET.persona=b.dataset.p; saveSet(); openSettings(); };
+  });
+  showCost();
+  const pr=$('presetRow');
+  if(pr) pr.querySelectorAll('button').forEach(b=>{
+    const P=PRESETS[b.dataset.p];
+    b.classList.toggle('on', SET.api && SET.api.base===P.base);
+    b.onclick=()=>{ SET.api={base:P.base, model:P.model}; saveSet();
+      const bi=$('baseInput'), mi=$('modelInput'); if(bi) bi.value=P.base; if(mi) mi.value=P.model;
+      pr.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.p===b.dataset.p)); };
+  });
+  $('fontRow').querySelectorAll('button').forEach(b=>{
+    b.classList.toggle('on', Number(b.dataset.f)===SET.font);
+    b.onclick=()=>{ SET.font=Number(b.dataset.f); saveSet(); applySet(); openSettings(); };
+  });
+}
+function closeSheet(){ $('sheet').classList.remove('on'); }
+$('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
+$('setBtn2').onclick=openSettings;
+function saveKey(){
+  const v=($('keyInput').value||'').trim();
+  const base=($('baseInput').value||'').trim() || 'https://api.deepseek.com/chat/completions';
+  const model=($('modelInput').value||'').trim() || 'deepseek-chat';
+  SET.api={base, model}; saveSet();
+  if(v && v.startsWith('sk-')){ KEY=v; localStorage.setItem('jieyu.key',v); }
+  else if(v && !v.startsWith('sk-')){ alert('key 一般是 sk- 开头；如果这个服务商不用 sk- 前缀，也可以直接保存'); KEY=v; localStorage.setItem('jieyu.key',v); }
+  closeSheet(); renderHome();
+}
+async function testKey(){
+  const box=$('keyMsg');
+  const v=($('keyInput').value||'').trim();
+  const k=(v&&v.startsWith('sk-'))?v:KEY;
+  box.style.color='var(--dim)'; box.textContent='测试中…';
+  if(MODE==='server'){
+    try{ const r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({session:'__probe__',route:'wan',text:'（测试）',max_tokens:60})});
+      box.style.color = r.ok?'var(--accent)':'#d98b7a';
+      box.textContent = r.ok?'服务端可用 ✅':('服务端返回 '+r.status);
+    }catch(e){ box.style.color='#d98b7a'; box.textContent='连不上本地服务'; }
+    return;
+  }
+  if(!k){ box.style.color='#d98b7a'; box.textContent='还没填 key'; return; }
+  try{
+    const r=await fetch(SET.api.base,{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
+      body:JSON.stringify({model:SET.api.model,messages:[{role:'user',content:'ping'}],max_tokens:5})});
+    if(r.ok){ box.style.color='var(--accent)'; box.textContent='key 可用 ✅'; }
+    else if(r.status===401){ box.style.color='#d98b7a'; box.textContent='key 无效或已过期 ❌'; }
+    else if(r.status===402){ box.style.color='#d98b7a'; box.textContent='余额不足 ❌'; }
+    else { box.style.color='#d98b7a'; box.textContent='返回 '+r.status+' ❌'; }
+  }catch(e){ box.style.color='#d98b7a'; box.textContent='网络不通：'+e.message; }
+}
+function clearKey(){ KEY=''; localStorage.removeItem('jieyu.key'); closeSheet(); renderHome(); }
+
+/* ---------- 对话菜单 ---------- */
+$('moreBtn').onclick=()=>{
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>这一局</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">操作</div>
+   <div class="opt" onclick="regen()"><div class="lbl">↻ 重新生成</div><span class="tag">换一版</span></div>
+   <div class="opt" onclick="undoTurn()"><div class="lbl">↺ 撤回最后一轮</div></div>
+   <div class="opt" onclick="newChat()"><div class="lbl">＋ 新建对话（同一人重开）</div></div>
+   <div class="sgroup">设置</div>
+   <div class="opt" onclick="editStory()"><div class="lbl">剧情选项设置</div><span class="tag">${SET.pace==='fast'?'快':SET.pace==='slow'?'慢':'正常'} · ${SET.tone==='sweet'?'偏甜':SET.tone==='bitter'?'偏苦':'均衡'}</span></div>
+   <div class="opt" onclick="editMe()"><div class="lbl">我的人设</div><span class="tag">${SET.me.name||'未填'}</span></div>
+   <div class="opt" onclick="openSettings()"><div class="lbl">文字模型设置</div></div>`;
+  $('sheet').classList.add('on');
+};
+function undoTurn(){
+  if(!S||!S.turns.length) return closeSheet();
+  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S); closeSheet(); openChat(CUR);
+}
+function regen(){
+  if(!S||!S.turns.length) return closeSheet();
+  const last=S.turns.length>=2?S.turns[S.turns.length-2]:S.turns[0];
+  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S);
+  closeSheet(); openChat(CUR);
+  setTimeout(()=>sendTurn(last),120);
+}
+function newChat(){ delS(CUR); const r=CUR; S=blank(r); closeSheet(); openChat(r); $('send').disabled=false; $('inp').disabled=false; }
+function editStory(){
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>剧情选项</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">节奏</div>
+   <div class="segs" id="paceRow">
+     <button data-v="slow">慢（多描写）</button><button data-v="normal">正常</button><button data-v="fast">快（推主线）</button></div>
+   <div class="sgroup">基调</div>
+   <div class="segs" id="toneRow">
+     <button data-v="sweet">偏甜</button><button data-v="balanced">均衡</button><button data-v="bitter">偏苦</button></div>`;
+  $('sheet').classList.add('on');
+  $('paceRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.pace===b.dataset.v);
+    b.onclick=()=>{SET.pace=b.dataset.v; saveSet(); editStory();}; });
+  $('toneRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.tone===b.dataset.v);
+    b.onclick=()=>{SET.tone=b.dataset.v; saveSet(); editStory();}; });
+}
+function editMe(){
+  const box=$('sheetBox');
+  box.innerHTML=`<div class="sheettitle"><b>我的人设</b><button class="close" onclick="closeSheet()">×</button></div>
+   <div class="sgroup">她怎么叫你</div>
+   <input class="txt" id="meName" placeholder="你的名字（可不填）" value="${SET.me.name||''}">
+   <div class="sgroup">称呼 / 身份</div>
+   <input class="txt" id="meCall" placeholder="例如：同班同学、店里常客" value="${SET.me.call||''}">
+   <div class="sgroup">性格（可留空）</div>
+   <input class="txt" id="meTraits" placeholder="例如：话少、心软、爱拆台" value="${SET.me.traits||''}">
+   <button class="btn" onclick="saveMe()">保存</button>`;
+  $('sheet').classList.add('on');
+}
+function saveMe(){ SET.me={name:($('meName').value||'').trim(), call:($('meCall').value||'').trim(), traits:($('meTraits').value||'').trim()};
+  saveSet(); closeSheet(); }
+
+/* ---------- 记忆面板 ---------- */
+$('memBtn').onclick=()=>{
+  if(!S) return;
+  const box=$('sheetBox');
+  box.innerHTML='<div class="sheettitle"><b>这一局</b><button class="close" onclick="closeSheet()">×</button></div>'
+   +'<div class="sgroup">状态</div><div class="card" style="margin-top:0">好感 '+S.aff+' · 信任 '+S.trust+' · 阶段 '+S.stage
+   +'<div class="sub">'+(S.chapter||'')+'</div></div>'
+   +'<div class="sgroup">本局大纲</div><div class="card" style="margin-top:0">'
+   +((S.outline||[]).map((o,i)=>(o.done?'√ ':'· ')+(i+1)+'. '+o.t).join('<br>')||'还没定')+'</div>'
+   +'<div class="sgroup">未解的线索</div><div class="card" style="margin-top:0">'+((S.threads||[]).join('<br>')||'暂无')+'</div>'
+   +'<div class="sgroup">剧情年表</div><div class="card" style="margin-top:0">'+((S.log||[]).slice(-6).join('<br>')||'还没有')+'</div>'
+   +'<div class="sgroup">她记住的事</div><div class="card" style="margin-top:0">'+((S.facts||[]).slice(-8).join('<br>')||'还没有')+'</div>';
+  $('sheet').classList.add('on');
+};
+
+/* ---------- 启动 ---------- */
+(async()=>{
+  await detect();
+  if(location.protocol==='file:' && MODE!=='server'){
+    setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
+  }
+  renderHome();
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+})();
+</script></body></html>
