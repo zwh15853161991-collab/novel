@@ -74,6 +74,10 @@ function memHTML(){
    + '<div style="margin-top:8px"><b>她记住的事</b><br>'+(S.facts.slice(-8).map(x=>'· '+x).join('<br>')||'（还没有）')+'</div>'
    + '<div style="margin-top:8px"><b>更早的事</b><br>'+((S.summary||'').trim()||'（还没有）')+'</div>';
 }
+function remember(t){
+  const pats = [/(?:我|俺)(?:很|特别|最)?(?:喜欢|爱)([^，。！？]{1,10})/, /(?:我|俺)(?:很|特别|最)?怕([^，。！？]{1,10})/, /(?:我|俺)(?:叫|是)([^，。！？]{1,8})/];
+  for(const p of pats){ const m=t.match(p); if(m && m[1]){ S.facts.push(t.slice(0,26)); S.facts=S.facts.slice(-12); return; } }
+}
 function reply(text){
   const t = text.trim();
   const k = /踢|踹|打|推|撞/.test(t) ? 'hit'
@@ -81,7 +85,8 @@ function reply(text){
           : /累|还好|别|休息|冷|饿|疼/.test(t) ? 'care'
           : t.length<=4 ? 'quiet' : 'other';
   const tbl = MOCK[route] || MOCK.wan;
-  const [say, act] = tbl[k] || ['「嗯。」','点了点头。'];
+  const pair = tbl[k] || ['「嗯。」','点了点头。'];
+  const [say, act] = pair;
   const d = {say, act, aff:{hit:1,care:2,ask:1,quiet:0,other:1}[k], trust:k==='care'?1:0,
              choices:{hit:['道歉','继续说狠话','转身走'],ask:['再问一句','换个话题','不说了'],
                       care:['把外套给她','装作没听见','开个玩笑'],quiet:['先开口','继续沉默','起身离开'],
@@ -89,6 +94,7 @@ function reply(text){
   S.aff = Math.max(-20, Math.min(40, S.aff + d.aff));
   S.trust = Math.max(-20, Math.min(40, S.trust + d.trust));
   S.turns.push(t); S.turns.push(CHARS[route].name+'：「'+d.say+'」'+d.act);
+  remember(t);
   if(S.turns.length>40){ const old=S.turns.slice(0,-24).filter(x=>x.startsWith(CHARS[route].name)).slice(0,4);
     S.summary = ((S.summary||'')+' '+old.map(x=>x.slice(0,40)).join('；')).trim().slice(-400); S.turns=S.turns.slice(-24); }
   advance(); save(); render();
@@ -113,5 +119,15 @@ $('pick').onclick = ()=>{ const ids=Object.keys(CHARS);
 
 // 开场
 advance(); render();
-bubble('her', '「……」她抬眼看你，等你先开口。' + (S.beat?'<div class="act">'+S.beat+'</div>':''));
+const OPEN = {
+ wan:'「雨还没停。」她把梯子挪了挪，让你好走过去。',
+ yao:'「来得正好。」她头也没回，手指在琴键上走了一遍。',
+ wen:'「……喂？」她压着声音，像怕吵到谁。',
+ xiao:'「站着。说事。」她手里的朱笔没停。',
+ lu:'「门带上。」她把手里的卷宗翻过一页。',
+ shen:'「坐。账还没算完。」她拨了一下算盘。',
+ jian:'「看什么看。这位置有人了。」她头都没抬。',
+ qing:'「你迟到了三分钟。」她把图纸摊开。'
+};
+bubble('her', OPEN[route] + (S.beat?'<div class="act">'+S.beat+'</div>':''));
 </script></body></html>
