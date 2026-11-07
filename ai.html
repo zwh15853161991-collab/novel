@@ -48,7 +48,7 @@ const CN={'一':1,'二':2,'三':3};
 function order(n){for(const k in CN){if(n.includes('第'+k+'章'))return CN[k];}return 9;}
 let route=new URLSearchParams(location.search).get('r')||'wan';
 let KEY=localStorage.getItem('jieyu.key')||'';
-let S=JSON.parse(localStorage.getItem('ai.'+route)||'null')||{aff:0,trust:0,turns:[],facts:[],summary:'',chapter:CHARS[route].start_chapter||'',log:[],threads:[],stage:'陌生',hits:{}};
+let S=JSON.parse(localStorage.getItem('ai.'+route)||'null')||{aff:0,trust:0,turns:[],facts:[],summary:'',chapter:CHARS[route].start_chapter||'',log:[],threads:[],stage:'陌生',hits:{},outline:[]};
 const $=id=>document.getElementById(id), log=$('log');
 function bubble(c,h){const d=document.createElement('div');d.className='b '+c;d.innerHTML=h;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
 function setBar(v){$('affBar').style.width=Math.max(0,Math.min(100,(v+20)/60*100))+'%';}
@@ -68,6 +68,7 @@ function endingHint(){const a=S.aff,t=S.trust,closed=(S.threads||[]).length===0;
   return (a>=30&&t>=20&&closed)?'A 走成了':(a>=20&&t>=10)?'B 差一步':(a>=10)?'C 停在原地':'D 散了';}
 function memHTML(){return '<div><b>好感</b> '+S.aff+' · <b>信任</b> '+S.trust+' · <b>阶段</b> '+S.stage+' · <b>章节</b> '+(S.chapter||'—')+' · <b>倾向</b> '+endingHint()+'</div>'
   +'<div style="margin-top:8px"><b>未解的线索</b><br>'+(((S.threads||[]).map(x=>'· '+x).join('<br>'))||'（暂无）')+'</div>'
+  +'<div style="margin-top:8px"><b>本局大纲</b><br>'+(((S.outline||[]).map((o,i)=>(o.done?'√ ':'· ')+(i+1)+'. '+o.t).join('<br>'))||'（还没定）')+'</div>'
   +'<div style="margin-top:8px"><b>剧情年表</b><br>'+(((S.log||[]).slice(-6).map(x=>'· '+x).join('<br>'))||'（还没有）')+'</div>'
   +'<div style="margin-top:8px"><b>她记住的事</b><br>'+(S.facts.slice(-8).map(x=>'· '+x).join('<br>')||'（还没有）')+'</div>'
   +'<div style="margin-top:8px"><b>更早的事</b><br>'+((S.summary||'').trim()||'（还没有）')+'</div>';}
@@ -75,6 +76,22 @@ function memHTML(){return '<div><b>好感</b> '+S.aff+' · <b>信任</b> '+S.tru
 function remember(t){const ps=[/(?:我|俺)(?:很|特别|最)?(?:喜欢|爱)([^，。！？]{1,10})/,/(?:我|俺)(?:很|特别|最)?怕([^，。！？]{1,10})/,/(?:我|俺)(?:叫|是)([^，。！？]{1,8})/];
   for(const p of ps){const m=t.match(p);if(m&&m[1]){S.facts.push(t.slice(0,26));S.facts=S.facts.slice(-12);return;}}}
 
+const SEEDS=['雨','台风','月考','家长会','停电','夜自习','剪头发','体检','生日','搬家','感冒','旧同学'];
+function makeOutline(){
+  const out=[{t:SEEDS[Math.floor(Math.random()*SEEDS.length)]+'（本局的引子）',done:false}];
+  const bs=Object.keys(SCENES).filter(c=>beatsFor(c).length).sort((a,b)=>order(a)-order(b));
+  const pool=[]; bs.forEach(c=>beatsFor(c).forEach(b=>{ if(!(S.used_ids||[]).includes(b.id)) pool.push(b); }));
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  pool.slice(0,4).forEach(b=>out.push({t:b.beat.slice(0,42),id:b.id,done:false}));
+  return out;
+}
+function outlineText(){
+  const ol=S.outline||[]; if(!ol.length) return '（还没定大纲）';
+  return ol.map((o,i)=>(o.done?'√ ': '· ')+(i+1)+'. '+o.t).join('\n');
+}
+function tickOutline(idx){
+  const ol=S.outline||[]; if(idx>=1&&idx<=ol.length) ol[idx-1].done=true;
+}
 function countHits(txt){
   S.hits=S.hits||{}; const w=['座位表','小字','红圈','外套','错题本','笔袋','琴房','图纸'];
   w.forEach(k=>{ if(txt.includes(k)) S.hits[k]=(S.hits[k]||0)+1; });
@@ -109,10 +126,12 @@ function sysPrompt(){
   L.push('【剧情年表】（已经发生过的事，不要重复）');
   L.push(((S.log||[]).slice(-6).map(x=>'· '+x).join('\n'))||'（还没有）');
   L.push('【未解的线索】'+(((S.threads||[]).map(x=>'· '+x).join('\n'))||'（暂无）'));
+  L.push('【本局大纲】（打勾的已发生；你要把它们演出来，也可以加戏）');
+  L.push(outlineText());
   L.push('【本轮禁止再写的细节】（已写够两次，必须换新的物件/话题）'+((bannedList().join('、'))||'（无）'));
   L.push('【这一轮可以往哪推】'+candsText());
   L.push('');
-  L.push('只输出 JSON：{"say":"…","act":"第三人称动作","advance":"这一轮剧情推进的一句话(15-40字)","open_thread":"新埋的线索或不填","close_thread":"解开的线索或不填","aff":-2到2,"trust":-2到2,"memory":"要长期记住的一句话或不填","choices":["…","…","…"]}');
+  L.push('只输出 JSON：{"say":"…","act":"第三人称动作","advance":"这一轮剧情推进的一句话(15-40字)","open_thread":"新埋的线索或不填","close_thread":"解开的线索或不填","outline_hit":0到5的整数(这轮演了大纲第几条,没演写0),"aff":-2到2,"trust":-2到2,"memory":"要长期记住的一句话或不填","choices":["…","…","…"]}');
   return L.join('\n');
 }
 function candsText(){
@@ -139,7 +158,7 @@ async function aiReply(text){
   const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i)s=s.slice(i,j+1);
   let o={}; try{o=JSON.parse(s);}catch(e){o={say:s.slice(0,200),act:''};}
   return {say:o.say||'……',act:o.act||'',aff:Number(o.aff||0),trust:Number(o.trust||0),memory:o.memory||'',
-    advance:o.advance||'',open_thread:o.open_thread||'',close_thread:o.close_thread||'',
+    advance:o.advance||'',open_thread:o.open_thread||'',close_thread:o.close_thread||'',outline_hit:Number(o.outline_hit||0),
     choices:Array.isArray(o.choices)?o.choices.slice(0,3):[]};
 }
 
@@ -158,6 +177,7 @@ async function send(text){
   S.turns.push(text); S.turns.push(CHARS[route].name+'：「'+d.say+'」'+d.act);
   if(d.memory)S.facts.push(d.memory);
   countHits((d.advance||'')+' '+(d.say||'')+' '+(d.act||''));
+  if(d.outline_hit) tickOutline(d.outline_hit);
   if(d.advance){ S.log=(S.log||[]).concat([d.advance]).slice(-12);
     const adv=document.createElement('div'); adv.className='adv'; adv.textContent='剧情：'+d.advance; log.appendChild(adv); log.scrollTop=log.scrollHeight; }
   if(d.open_thread){ S.threads=S.threads||[]; if(!S.threads.some(x=>x.slice(0,6)===d.open_thread.slice(0,6))) S.threads.push(d.open_thread); S.threads=S.threads.slice(-4); }
@@ -215,6 +235,7 @@ $('aibtn').onclick=()=>{const k=prompt('粘贴 DeepSeek API key（只存在这�
 $('pick').onclick=()=>{const ids=Object.keys(CHARS);const n=prompt('换谁？输入序号：\n'+ids.map((id,i)=>(i+1)+'. '+CHARS[id].name).join('\n'));
   const id=ids[(parseInt(n,10)||0)-1];if(id)location.search='?r='+id;};
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+if(!S.outline||!S.outline.length){ S.outline=makeOutline(); save(); }
 advance();render();
 const OPEN={wan:'「雨还没停。」她把梯子挪了挪，让你好走过去。',yao:'「来得正好。」她头也没回，手指在琴键上走了一遍。',
  wen:'「……喂？」她压着声音，像怕吵到谁。',xiao:'「站着。说事。」她手里的朱笔没停。',lu:'「门带上。」她把手里的卷宗翻过一页。',
