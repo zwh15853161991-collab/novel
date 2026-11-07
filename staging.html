@@ -366,7 +366,12 @@ function sysPrompt(userText){
   else { L.push('身份：'+(c.meta||'')+'。口吻：'+(c.voice||'')); }
   L.push('');
   L.push('规矩：');
-  L.push('1 输出三部分：nar（两句之间的叙述，可用 \\n 分 2-5 段：环境/声音/温度 → 她在做什么 → 动作细节 → 神态语气）、say（台词，用中文双引号“”包住）、act（收尾小动作，可空）。总长度目标约 '+SET.reply+' tokens，写足但不要注水');
+  const TL=targetLen(userText);
+  L.push('1 输出三部分：<nar>叙述</nar><say>台词</say><act>收尾小动作</act><meta>JSON</meta>');
+  L.push('1b 硬限额（必须遵守）：');
+  L.push('   · 台词（双引号内的全部字符合计）约 '+TL.say+' 字。说几句不限，由你按人物与处境决定；说完这件事就停，不要铺陈');
+  L.push('   · 叙述约 '+TL.nar+' 字，最多 '+TL.seg+' 段；动作与神态写进叙述，不计入台词字数');
+  L.push('   · 超了算不合格；宁可少说一句，不要凑字数');
   L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
   L.push('2b act 用第三人称写她，不出现「我」');
   L.push('3 剧情由你推进：玩家行为要真的改变事情走向');
