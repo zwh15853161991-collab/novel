@@ -1,5 +1,8 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#12100e">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
 <title>借你一场雨</title>
@@ -11,10 +14,10 @@
   --bubble:rgba(255,255,255,.055); --bubble-me:rgba(201,160,106,.14);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
+html,body{height:100%;height:100dvh;overflow:hidden;position:fixed;width:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Songti SC","Noto Serif SC",serif;
   font-size:var(--fs);line-height:1.8;display:flex;flex-direction:column;overscroll-behavior:none}
-.view{position:fixed;inset:0;display:none;flex-direction:column}
+.view{position:fixed;inset:0;height:100dvh;display:none;flex-direction:column;overflow:hidden}
 .view.on{display:flex}
 /* ---------- 首页 ---------- */
 #home{background:linear-gradient(180deg,var(--bg2),var(--bg) 40%)}
@@ -58,6 +61,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Songti SC","Not
 .choices{display:flex;gap:8px;overflow-x:auto;padding:0 14px 9px}
 .choices button{flex:0 0 auto;background:var(--bubble);color:var(--ink);border:1px solid var(--line);
   border-radius:999px;padding:9px 14px;font-size:calc(var(--fs) * .8);font-family:inherit;min-height:38px;white-space:nowrap}
+.typing{display:none;gap:7px;overflow-x:auto;padding:0 13px 7px}
+.typing.on{display:flex}
+.typing button{flex:0 0 auto;background:var(--bubble);border:1px solid var(--line);color:var(--dim);
+  border-radius:999px;padding:7px 12px;font-size:13px;font-family:inherit;min-height:34px;white-space:nowrap}
 .cfoot{display:flex;gap:8px;padding:8px 13px calc(11px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .cfoot textarea{flex:1;font-family:inherit;font-size:16px;color:var(--ink);background:var(--bubble);
   border:1px solid var(--line);border-radius:14px;padding:11px 13px;outline:none;resize:none;height:44px;max-height:110px}
@@ -136,6 +143,14 @@ input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);borde
   </div>
   <div class="log" id="log" style="display:none"></div>
   <div class="choices" id="choices"></div>
+  <div class="typing" id="typingBar">
+    <button data-w="（）">（动作）</button>
+    <button data-w="“”">“台词”</button>
+    <button data-w="（沉默）">沉默</button>
+    <button data-w="（点头）">点头</button>
+    <button data-w="（靠近一点）">靠近</button>
+    <button data-w="（后退半步）">退开</button>
+  </div>
   <div class="cfoot"><textarea id="inp" placeholder="（动作）“台词”——只想说一句也行"></textarea>
     <button class="send" id="send">发送</button></div>
 </div>
@@ -321,6 +336,22 @@ function nar(txt){ String(txt).split('\n').filter(x=>x.trim()).forEach(line=>{
     const d=document.createElement('div'); d.className='nar'; d.textContent=line.trim(); $('log').appendChild(d);});
   $('log').scrollTop=1e9; }
 $('back').onclick=()=>{ $('chat').classList.remove('on'); $('home').classList.add('on'); renderHome(); };
+const INP=$('inp'), BAR=$('typingBar');
+let barTimer=null;
+INP.addEventListener('focus',()=>{ BAR.classList.add('on'); clearTimeout(barTimer); });
+INP.addEventListener('blur',()=>{ barTimer=setTimeout(()=>BAR.classList.remove('on'),180); });
+BAR.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('mousedown',e=>e.preventDefault());   // 别丢焦点
+  b.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+  b.onclick=()=>{
+    const w=b.dataset.w, mid=w.slice(1,-1);
+    const v=INP.value, st=INP.selectionStart??v.length, en=INP.selectionEnd??v.length;
+    const sel=v.slice(st,en)||mid;
+    INP.value=v.slice(0,st)+w[0]+sel+w[1]+v.slice(en);
+    const pos=st+1+sel.length;
+    INP.focus(); INP.setSelectionRange(pos,pos);
+  };
+});
 $('send').onclick=()=>sendTurn($('inp').value);
 $('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); sendTurn(e.target.value);} });
 
@@ -510,7 +541,7 @@ async function sendTurn(text){
   if(busy||!text.trim()||!CUR) return;
   busy=true; $('send').disabled=true;
   bubble('me', text.replace(/[<>]/g,''));
-  $('inp').value=''; $('choices').innerHTML='';
+  INP.value=''; $('choices').innerHTML='';
   let d;
   const narBox=document.createElement('div'); narBox.className='nar'; narBox.style.display='none';
   const herBox=document.createElement('div'); herBox.className='b her'; herBox.style.display='none';
@@ -805,7 +836,7 @@ async function sendTurn(text){
   if(busy||!text.trim()||!CUR) return;
   busy=true; $('send').disabled=true;
   bubble('me', text.replace(/[<>]/g,''));
-  $('inp').value=''; $('choices').innerHTML='';
+  INP.value=''; $('choices').innerHTML='';
   let d;
   const narBox=document.createElement('div'); narBox.className='nar'; narBox.style.display='none';
   const herBox=document.createElement('div'); herBox.className='b her'; herBox.style.display='none';
