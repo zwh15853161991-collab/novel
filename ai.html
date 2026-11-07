@@ -29,6 +29,9 @@ footer{padding:7px 13px calc(11px + env(safe-area-inset-bottom));display:flex;ga
 #send[disabled]{opacity:.5}
 #mem{display:none;padding:10px 14px;border-top:1px solid var(--line);max-height:38dvh;overflow:auto;font-size:13.5px;color:var(--dim);max-width:760px;margin:0 auto;width:100%}
 .tip{color:var(--dim);font-size:12.5px;text-align:center;margin:4px 0 10px}
+.endcard{margin:14px 0;padding:14px 16px;border-radius:16px;border:1px solid rgba(233,182,137,.35);background:linear-gradient(180deg,rgba(233,182,137,.10),rgba(233,182,137,.03))}
+.eth{font-size:13px;letter-spacing:.12em;color:var(--warm);margin-bottom:8px}
+.eb{font-size:16px;line-height:1.9}
 .adv{color:#b9a894;font-size:13px;border-left:2px solid rgba(185,168,148,.4);padding:4px 0 4px 9px;margin:-4px 0 12px;line-height:1.6}
 </style></head><body>
 <header><div class="ava" id="ava">晞</div>
@@ -90,6 +93,8 @@ function sysPrompt(){
   L.push('3 每次 30–110 字，最多两段');
   L.push('4 你只知道你知道的事，不知道就说不懂或不耐烦地岔开，绝不编造设定');
   L.push('5 剧情由你推进：玩家的行为要真的改变事情走向，不能聊完又回到原样');
+  L.push('5b 不要重复最近两轮写过的物件、动作、话题；同一线索最多连写两轮，第三轮必须换新的');
+  L.push('5c aff 按行为给分：被关心/被理解 +1~+2；被挑衅且她反击 +0~+1；被羞辱/被戳痛处 -1~-2；闲聊 0');
   L.push('');
   L.push('【当下处境】'+S.chapter+'。'+(S.beat||''));
   L.push('【关系】好感 '+S.aff+'／信任 '+S.trust+'／阶段 '+S.stage);
@@ -152,10 +157,42 @@ async function send(text){
   remember(text);
   if(S.turns.length>40){const old=S.turns.slice(0,-24).filter(x=>x.startsWith(CHARS[route].name)).slice(0,4);
     S.summary=((S.summary||'')+' '+old.map(x=>x.slice(0,40)).join('；')).trim().slice(-400);S.turns=S.turns.slice(-24);}
-  S.stage = S.aff<5?'陌生':S.aff<15?'熟人':S.aff<25?'交心':'不可替代';
+  const t=(S.turns||[]).length/2;
+  S.stage = (S.aff>=25||t>=20)?'不可替代':(S.aff>=15||t>=14)?'交心':(S.aff>=5||t>=8)?'熟人':'陌生';
   advance();save();render();
   d.choices.forEach(c=>{const b=document.createElement('button');b.textContent=c;b.onclick=()=>send(c);$('choices').appendChild(b);});
-  busy=false;$('send').disabled=false;$('inp').focus();
+  busy=false;
+  if(shouldEnd()){ await askEnding(); return; }
+  $('send').disabled=false;$('inp').focus();
+}
+function tier(){ if(S.aff>=25&&S.trust>=10) return 'A（走成了）'; if(S.aff>=15) return 'B（差一步）'; if(S.aff>=5) return 'C（停在原地）'; return 'D（散了）'; }
+function shouldEnd(){ return (S.turns||[]).length>=24 || S.aff>=25 || S.aff<=-6; }
+async function askEnding(){
+  if(S.ended) return;
+  S.ended=true;
+  const c=CHARS[route];
+  const L=['你在写一部中文互动小说的结局。角色：'+c.name+'（'+(c.meta||'')+'）。'+(c.desc||''),
+    '已知：好感 '+S.aff+'，信任 '+S.trust+'，阶段 '+S.stage+'，未解线索：'+(((S.threads||[]).join('；'))||'无'),
+    '剧情年表：'+(((S.log||[]).slice(-6).join('；'))||'无'),
+    '请写这个结局：'+tier()+'。要求：120-180 字，纯叙述（不要对白占一半以上），必须回应至少一条线索，最后落在一个具体物件上，不解释道理。',
+    '只输出 JSON：{"ending":"…","title":"4-8字的结局名"}'];
+  let title='结局', body='（结局生成失败）';
+  try{
+    const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+      body:JSON.stringify({model:'deepseek-chat',temperature:0.95,max_tokens:500,
+        messages:[{role:'system',content:L.join('\n')},{role:'user',content:'写结局'}]})});
+    const d=await r.json(); let s=d.choices[0].message.content.trim();
+    if(s.startsWith('```'))s=s.split('```')[1].replace(/^json/,'').trim();
+    const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i)s=s.slice(i,j+1);
+    const o=JSON.parse(s); title=o.title||'结局'; body=o.ending||body;
+  }catch(e){ body='（结局没能生成：'+e.message+'）'; }
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+title+' · '+tier()+'</div><div class="eb">'+body+'</div>';
+  log.appendChild(card); log.scrollTop=log.scrollHeight;
+  $('send').disabled=true; $('inp').disabled=true;
+  $('inp').placeholder='这一局结束了，点「重开」再来一次';
+  save();
 }
 $('send').onclick=()=>send($('inp').value);
 $('inp').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(e.target.value);}});
