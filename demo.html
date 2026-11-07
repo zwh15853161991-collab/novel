@@ -1,5 +1,8 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d12">
+<link rel="apple-touch-icon" href="icon.svg">
 <title>借你一场雨 · AI 版演示</title>
 <style>
 :root{--bg:#0a0d12;--ink:#eef1f5;--dim:#9aa4b2;--warm:#e9b689;--line:rgba(255,255,255,.12)}
@@ -27,7 +30,7 @@ footer{padding:7px 13px calc(11px + env(safe-area-inset-bottom));display:flex;ga
 </style></head><body>
 <header><div class="ava" id="ava">晞</div>
 <div class="who"><div class="nm" id="nm">林未晞</div><div class="pl" id="pl"></div><div id="bar"><i id="affBar"></i></div></div>
-<button class="mini" id="pick">换人</button><button class="mini" id="mbtn">记忆</button><button class="mini" id="rst">重开</button></header>
+<button class="mini" id="pick">换人</button><button class="mini" id="mbtn">记忆</button><button class="mini" id="rst">重开</button><button class="mini" id="exp">存档</button></header>
 <main id="log"><div class="tip">这是<b>离线演示</b>：界面/记忆/章节推进是真的，她的回话是模板。<br>接真模型后同一套界面直接换成 AI 生成。</div></main>
 <div id="choices"></div>
 <div id="mem"></div>
@@ -112,11 +115,20 @@ function say(text){
 $('send').onclick = ()=> say($('inp').value);
 $('inp').addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();say(e.target.value);} });
 $('mbtn').onclick = ()=>{ const m=$('mem'); if(m.style.display==='block'){m.style.display='none';} else {m.innerHTML=memHTML(); m.style.display='block';} };
-$('rst').onclick = ()=>{ localStorage.removeItem('aidemo.'+route); location.reload(); };
+$('rst').onclick = ()=>{ if(confirm('清掉和这位的进度？')){ localStorage.removeItem('aidemo.'+route); location.reload(); } };
+$('exp').onclick = ()=>{
+  const all={}; Object.keys(CHARS).forEach(id=>{ const v=localStorage.getItem('aidemo.'+id); if(v) all[id]=JSON.parse(v); });
+  const data=JSON.stringify({v:1,at:new Date().toISOString(),saves:all});
+  const a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(data);
+  a.download='借你一场雨-存档.json'; a.click();
+};
 $('pick').onclick = ()=>{ const ids=Object.keys(CHARS);
   const n=prompt('换谁？输入序号：\n'+ids.map((id,i)=>(i+1)+'. '+CHARS[id].name).join('\n'));
   const id=ids[(parseInt(n,10)||0)-1]; if(id){ location.search='?r='+id; } };
 
+// 离线缓存（装到主屏后断网也能开）
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 // 开场
 advance(); render();
 const OPEN = {
