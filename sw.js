@@ -1,14 +1,44 @@
-const C='jieyu-ai-v1';
-const ASSETS=['./demo.html','./manifest.json','./icon.svg'];
-self.addEventListener('install', e=>{ self.skipWaiting(); e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS)).catch(()=>{})); });
-self.addEventListener('activate', e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k))))); });
-self.addEventListener('fetch', e=>{
-  const u=new URL(e.request.url);
-  if(e.request.method!=='GET') return;
-  if(u.pathname.endsWith('demo.html')){
-    e.respondWith(fetch(e.request).then(r=>{ const cp=r.clone(); caches.open(C).then(c=>c.put(e.request,cp)); return r; })
-      .catch(()=>caches.match(e.request).then(r=>r||caches.match('./demo.html'))));
+// 缓存策略：HTML 永远走网络优先（避免装到主屏后拿到旧版），静态资源缓存优先
+const CACHE = 'jieyu-v3';
+const STATIC = ['./icon.svg', './manifest-app.json', './manifest-staging.json'];
+
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(STATIC)).catch(() => {}));
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  const isHTML = req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
+  if (isHTML) {
+    e.respondWith((async () => {
+      try {
+        const fresh = await fetch(req, { cache: 'no-store' });
+        const c = await caches.open(CACHE);
+        c.put(req, fresh.clone());
+        return fresh;
+      } catch (err) {
+        const hit = await caches.match(req);
+        return hit || new Response('离线，且没有缓存到这一页', { status: 503 });
+      }
+    })());
     return;
   }
-  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
+  e.respondWith((async () => {
+    const hit = await caches.match(req);
+    if (hit) return hit;
+    const fresh = await fetch(req);
+    try { const c = await caches.open(CACHE); c.put(req, fresh.clone()); } catch (e) {}
+    return fresh;
+  })());
 });
