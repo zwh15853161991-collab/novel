@@ -142,7 +142,8 @@ const ACCENTS={
 };
 const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,
   mem:8000, reply:600, persona:'full',
-  pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''}};
+  pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
+  api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-chat'}};
 let SET=Object.assign({},DEF,JSON.parse(localStorage.getItem('jieyu.set')||'{}'));
 function saveSet(){localStorage.setItem('jieyu.set',JSON.stringify(SET));}
 function applySet(){
@@ -402,9 +403,9 @@ async function endGame(){
       const ask='你在写一部中文互动小说的结局。角色：'+CHARS[CUR].name+'。已知：好感'+S.aff+'，信任'+S.trust+'，阶段'+S.stage
         +'，未解线索：'+((S.threads||[]).join('；')||'无')+'；剧情年表：'+((S.log||[]).slice(-6).join('；')||'无')
         +'；请写结局：'+tier+'。120-180字，纯叙述，必须回应至少一条线索，落在一个具体物件上。只输出 JSON：{"title":"4-8字","ending":"…"}';
-      const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',
+      const r=await fetch(SET.api.base,{method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
-        body:JSON.stringify({model:'deepseek-chat',temperature:0.95,max_tokens:600,
+        body:JSON.stringify({model:SET.api.model,temperature:0.95,max_tokens:600,
           messages:[{role:'system',content:ask},{role:'user',content:'写结局'}]})});
       const d=await r.json(); let s=d.choices[0].message.content.trim();
       if(s.startsWith('```')) s=s.split('```')[1].replace(/^json/,'').trim();
@@ -458,6 +459,10 @@ function openSettings(){
      <div class="lbl">DeepSeek API key</div>
      <div class="hint" style="margin:4px 0 8px">${MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):'存在这台设备，不上传'}</div>
      <input class="txt" id="keyInput" type="password" placeholder="sk-..." value="${KEY?'••••••••':''}">
+     <div class="hint" style="margin:10px 0 4px">接口地址（OpenAI 兼容即可）</div>
+     <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="${SET.api.base}">
+     <div class="hint" style="margin:10px 0 4px">模型名</div>
+     <input class="txt" id="modelInput" placeholder="deepseek-chat" value="${SET.api.model}">
      <button class="btn" onclick="saveKey()">保存</button>
      <button class="btn ghost" onclick="testKey()">测试连接</button>
      <div class="hint" id="keyMsg" style="margin-top:8px"></div>
@@ -506,7 +511,15 @@ function openSettings(){
 function closeSheet(){ $('sheet').classList.remove('on'); }
 $('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
 $('setBtn2').onclick=openSettings;
-function saveKey(){ const v=($('keyInput').value||'').trim(); if(!v.startsWith('sk-')){ alert('看起来不是 key（应以 sk- 开头）'); return; } KEY=v; localStorage.setItem('jieyu.key',v); closeSheet(); renderHome(); }
+function saveKey(){
+  const v=($('keyInput').value||'').trim();
+  const base=($('baseInput').value||'').trim() || 'https://api.deepseek.com/chat/completions';
+  const model=($('modelInput').value||'').trim() || 'deepseek-chat';
+  SET.api={base, model}; saveSet();
+  if(v && v.startsWith('sk-')){ KEY=v; localStorage.setItem('jieyu.key',v); }
+  else if(v && !v.startsWith('sk-')){ alert('key 一般是 sk- 开头；如果这个服务商不用 sk- 前缀，也可以直接保存'); KEY=v; localStorage.setItem('jieyu.key',v); }
+  closeSheet(); renderHome();
+}
 async function testKey(){
   const box=$('keyMsg');
   const v=($('keyInput').value||'').trim();
@@ -522,9 +535,9 @@ async function testKey(){
   }
   if(!k){ box.style.color='#d98b7a'; box.textContent='还没填 key'; return; }
   try{
-    const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',
+    const r=await fetch(SET.api.base,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
-      body:JSON.stringify({model:'deepseek-chat',messages:[{role:'user',content:'ping'}],max_tokens:5})});
+      body:JSON.stringify({model:SET.api.model,messages:[{role:'user',content:'ping'}],max_tokens:5})});
     if(r.ok){ box.style.color='var(--accent)'; box.textContent='key 可用 ✅'; }
     else if(r.status===401){ box.style.color='#d98b7a'; box.textContent='key 无效或已过期 ❌'; }
     else if(r.status===402){ box.style.color='#d98b7a'; box.textContent='余额不足 ❌'; }
