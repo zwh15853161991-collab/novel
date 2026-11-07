@@ -48,7 +48,7 @@ const CN={'一':1,'二':2,'三':3};
 function order(n){for(const k in CN){if(n.includes('第'+k+'章'))return CN[k];}return 9;}
 let route=new URLSearchParams(location.search).get('r')||'wan';
 let KEY=localStorage.getItem('jieyu.key')||'';
-let S=JSON.parse(localStorage.getItem('ai.'+route)||'null')||{aff:0,trust:0,turns:[],facts:[],summary:'',chapter:CHARS[route].start_chapter||'',log:[],threads:[],stage:'陌生'};
+let S=JSON.parse(localStorage.getItem('ai.'+route)||'null')||{aff:0,trust:0,turns:[],facts:[],summary:'',chapter:CHARS[route].start_chapter||'',log:[],threads:[],stage:'陌生',hits:{}};
 const $=id=>document.getElementById(id), log=$('log');
 function bubble(c,h){const d=document.createElement('div');d.className='b '+c;d.innerHTML=h;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
 function setBar(v){$('affBar').style.width=Math.max(0,Math.min(100,(v+20)/60*100))+'%';}
@@ -75,6 +75,12 @@ function memHTML(){return '<div><b>好感</b> '+S.aff+' · <b>信任</b> '+S.tru
 function remember(t){const ps=[/(?:我|俺)(?:很|特别|最)?(?:喜欢|爱)([^，。！？]{1,10})/,/(?:我|俺)(?:很|特别|最)?怕([^，。！？]{1,10})/,/(?:我|俺)(?:叫|是)([^，。！？]{1,8})/];
   for(const p of ps){const m=t.match(p);if(m&&m[1]){S.facts.push(t.slice(0,26));S.facts=S.facts.slice(-12);return;}}}
 
+function countHits(txt){
+  S.hits=S.hits||{}; const w=['座位表','小字','红圈','外套','错题本','笔袋','琴房','图纸'];
+  w.forEach(k=>{ if(txt.includes(k)) S.hits[k]=(S.hits[k]||0)+1; });
+  (S.threads||[]).forEach(th=>{ const key=th.slice(0,8); if(key&&txt.includes(key)) S.hits[key]=(S.hits[key]||0)+1; });
+}
+function bannedList(){ return Object.keys(S.hits||{}).filter(k=>(S.hits[k]||0)>=2).slice(-6); }
 function intent(t){return /踢|踹|打|推|撞/.test(t)?'hit':/[?？]|吗|什么|为什么|怎么/.test(t)?'ask':/累|还好|别|休息|冷|饿|疼/.test(t)?'care':t.length<=4?'quiet':'other';}
 function mockReply(t){const k=intent(t),tb=MOCK[route]||MOCK.wan,p=tb[k]||['「嗯。」','点了点头。'];
   return {say:p[0],act:p[1],aff:{hit:1,care:2,ask:1,quiet:0,other:1}[k],trust:k==='care'?1:0,memory:'',
@@ -103,6 +109,7 @@ function sysPrompt(){
   L.push('【剧情年表】（已经发生过的事，不要重复）');
   L.push(((S.log||[]).slice(-6).map(x=>'· '+x).join('\n'))||'（还没有）');
   L.push('【未解的线索】'+(((S.threads||[]).map(x=>'· '+x).join('\n'))||'（暂无）'));
+  L.push('【本轮禁止再写的细节】（已写够两次，必须换新的物件/话题）'+((bannedList().join('、'))||'（无）'));
   L.push('【这一轮可以往哪推】'+candsText());
   L.push('');
   L.push('只输出 JSON：{"say":"…","act":"第三人称动作","advance":"这一轮剧情推进的一句话(15-40字)","open_thread":"新埋的线索或不填","close_thread":"解开的线索或不填","aff":-2到2,"trust":-2到2,"memory":"要长期记住的一句话或不填","choices":["…","…","…"]}');
@@ -150,6 +157,7 @@ async function send(text){
   S.aff=Math.max(-20,Math.min(40,S.aff+d.aff)); S.trust=Math.max(-20,Math.min(40,S.trust+d.trust));
   S.turns.push(text); S.turns.push(CHARS[route].name+'：「'+d.say+'」'+d.act);
   if(d.memory)S.facts.push(d.memory);
+  countHits((d.advance||'')+' '+(d.say||'')+' '+(d.act||''));
   if(d.advance){ S.log=(S.log||[]).concat([d.advance]).slice(-12);
     const adv=document.createElement('div'); adv.className='adv'; adv.textContent='剧情：'+d.advance; log.appendChild(adv); log.scrollTop=log.scrollHeight; }
   if(d.open_thread){ S.threads=S.threads||[]; if(!S.threads.some(x=>x.slice(0,6)===d.open_thread.slice(0,6))) S.threads.push(d.open_thread); S.threads=S.threads.slice(-4); }
