@@ -136,7 +136,7 @@ input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);borde
   </div>
   <div class="log" id="log" style="display:none"></div>
   <div class="choices" id="choices"></div>
-  <div class="cfoot"><textarea id="inp" placeholder="（动作）「台词」——只想说一句也行"></textarea>
+  <div class="cfoot"><textarea id="inp" placeholder="（动作）“台词”——只想说一句也行"></textarea>
     <button class="send" id="send">发送</button></div>
 </div>
 
@@ -170,7 +170,7 @@ const PRESETS={
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
 };
 const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,
-  mem:8000, reply:600, persona:'full',
+  mem:8000, reply:1200, persona:'full',
   pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
   api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'}};
 let SET=Object.assign({},DEF,JSON.parse(localStorage.getItem('jieyu.set')||'{}'));
@@ -336,14 +336,26 @@ function makeOutline(){
   return out;
 }
 
-function sysPrompt(){
+function targetLen(text){
+  const t=String(text||'');
+  const keyWords=/转学|离开|走|分手|喜欢|爱|表白|吵架|滚|别管|死|病|家|妈|爸|哭|对不起|谢谢/;
+  const emo=/[!！?？]{1,}|累|难受|害怕|心疼|生气|难过/;
+  let nar=60, seg=1, say=1;
+  if(t.length>18){ nar+=30; }
+  if(emo.test(t)){ nar+=40; say+=1; seg=2; }
+  if(keyWords.test(t)){ nar+=120; say+=2; seg=3; }
+  if(S.stage==='交心'||S.stage==='不可替代'){ nar+=40; say+=1; }
+  nar=Math.min(nar, Math.max(200, Math.round(SET.reply*0.6)));
+  return {nar, seg, say};
+}
+function sysPrompt(userText){
   const c=CHARS[CUR]||{}, L=[];
   L.push('你在一部中文互动小说里扮演'+c.name+'（'+(c.meta||'')+'）。');
   if(SET.persona==='full'){ L.push(c.desc||''); L.push('口吻：'+(c.voice||'')); }
   else { L.push('身份：'+(c.meta||'')+'。口吻：'+(c.voice||'')); }
   L.push('');
   L.push('规矩：');
-  L.push('1 输出三部分：nar（两句之间的叙述，可用 \\n 分 2-5 段：环境/声音/温度 → 她在做什么 → 动作细节 → 神态语气）、say（台词，用「」包住）、act（收尾小动作，可空）。总长度目标约 '+SET.reply+' tokens，写足但不要注水');
+  L.push('1 输出三部分：nar（两句之间的叙述，可用 \\n 分 2-5 段：环境/声音/温度 → 她在做什么 → 动作细节 → 神态语气）、say（台词，用中文双引号“”包住）、act（收尾小动作，可空）。总长度目标约 '+SET.reply+' tokens，写足但不要注水');
   L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
   L.push('2b act 用第三人称写她，不出现「我」');
   L.push('3 剧情由你推进：玩家行为要真的改变事情走向');
@@ -374,7 +386,7 @@ function sysPrompt(){
   L.push('');
   L.push('输出格式（必须用这四个标签，标签名不许改）：');
   L.push('顺序必须是：<nar> → <say> → <act> → <meta>。act 用第三人称写她，不要出现「我」。');
-  L.push('<nar>两句之间的叙述，写足不压缩</nar><say>「台词」</say><act>收尾小动作</act><meta>{"advance":"这一轮剧情推进一句话","open_thread":"","close_thread":"","outline_hit":0,"aff":0,"trust":0,"memory":"","choices":["…","…","…"]}</meta>');
+  L.push('<nar>两句之间的叙述，写足不压缩</nar><say>“台词”</say><act>收尾小动作</act><meta>{"advance":"这一轮剧情推进一句话","open_thread":"","close_thread":"","outline_hit":0,"aff":0,"trust":0,"memory":"","choices":["…","…","…"]}</meta>');
   return L.join('\n');
 }
 
@@ -384,9 +396,18 @@ function parseSections(all){
     const m=all.match(re); return m?m[1].replace(/<[^>]*>/g,'').trim():'';
   };
   let nar=pick('nar'), say=pick('say'), act=pick('act');
-  if(!say){ // 容错：模型用了别的前缀
+  if(!say){ // 容错 1：模型用了 [SAY]/[SA] 之类前缀
     const m=all.match(/\[S[^\]]*\]([\s\S]*?)(?=\[A|\[META|$)/);
     if(m) say=m[1].replace(/\[[^\]]*\]/g,'').trim();
+  }
+  if(!say){ // 容错 2：从中文双引号里抽台词
+    const q=all.match(/[“"]([^”"]{2,300})[”"]/g);
+    if(q) say=q.map(x=>x.slice(1,-1)).join(' ');
+  }
+  if(!nar){ // 容错 3：引号之外的文字当叙述
+    const cleaned=all.replace(/<[^>]*>/g,'').replace(/\{[\s\S]*\}/g,'')
+      .replace(/[“"][^”"]*[”"]/g,'').replace(/\[[A-Z]+[^\]]*\]/g,'').trim();
+    if(cleaned) nar=cleaned;
   }
   let meta={};
   const mt=all.match(/<meta>([\s\S]*?)(?:<\/meta>|$)/);
@@ -398,7 +419,7 @@ async function callTurnStream(text, onSections){
   if(MODE==='server'){ return await callTurn(text); }
   if(!KEY) throw new Error('还没填 key（我的 → API key）');
   const body={model:SET.api.model,temperature:0.95,max_tokens:SET.reply,stream:true,
-    messages:[{role:'system',content:sysPrompt()+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
+    messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
   const r=await fetch(SET.api.base,{method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},body:JSON.stringify(body)});
   if(!r.ok){ const map={401:'key 无效或已失效',402:'余额不足',429:'请求太频繁'};
@@ -418,7 +439,20 @@ async function callTurnStream(text, onSections){
     }
     if(got){ const sec=parseSections(all); onSections(sec); }
   }
-  const sec=parseSections(all);
+  let sec=parseSections(all);
+  if(!sec.nar){   // 叙述缺失就补一次（只补叙述，很便宜）
+    try{
+      const t2=targetLen(text);
+      const r2=await fetch(SET.api.base,{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
+        body:JSON.stringify({model:SET.api.model,temperature:0.9,max_tokens:400,
+          messages:[{role:'system',content:'写一段小说叙述（'+t2.nar+'字，2 段）：先写环境，再写这个人的动作。不要对白，不要解释。只输出 <nar>…</nar>'},
+                    {role:'user',content:'场景：'+(S.chapter||'')+'；刚才发生：'+(sec.say||'')}]})});
+      const j2=await r2.json();
+      const extra=parseSections(j2.choices[0].message.content||'');
+      if(extra.nar){ sec.nar=extra.nar; onSections(sec); }
+    }catch(e){}
+  }
   return {nar:sec.nar, say:sec.say, act:sec.act, ...sec.meta};
 }
 async function sendTurn(text){
@@ -443,7 +477,8 @@ async function sendTurn(text){
     actBox.style.display='none'; busy=false; $('send').disabled=false; return;
   }
   narBox.textContent=(d.nar||narTxt); if(narBox.textContent) narBox.style.display='';
-  herBox.textContent=(/^[「『]/.test(d.say||'')?d.say:'「'+(d.say||sayTxt||'……')+'」');
+  const _s=(d.say||sayTxt||'……');
+  herBox.textContent=(/^[“"「]/.test(_s)?_s:'“'+_s+'”');
   if(d.act){ actBox.textContent=d.act; actBox.style.display=''; } else actBox.style.display='none';
   if(d.advance){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+d.advance; $('log').appendChild(ad); }
 
@@ -520,8 +555,8 @@ function openSettings(){
      <input type="range" id="memRange" min="2000" max="128000" step="2000" style="width:100%;accent-color:var(--accent)">
    </div>
    <div class="opt" style="display:block">
-     <div class="row"><div class="lbl grow">回复长度</div><span class="val" id="repVal"></span></div>
-     <div class="hint">她一次说话+叙述的字数上限（越大描写越厚）。</div>
+     <div class="row"><div class="lbl grow">最大回复长度</div><span class="val" id="repVal"></span></div>
+     <div class="hint">这是上限，不是每次都要写满。实际长短由 AI 按人设、场景、关系决定：闲聊短，关键处才长。</div>
      <input type="range" id="repRange" min="200" max="4000" step="100" style="width:100%;accent-color:var(--accent)">
    </div>
    <div class="opt" style="display:block">
@@ -737,7 +772,8 @@ async function sendTurn(text){
     actBox.style.display='none'; busy=false; $('send').disabled=false; return;
   }
   narBox.textContent=(d.nar||narTxt); if(narBox.textContent) narBox.style.display='';
-  herBox.textContent=(/^[「『]/.test(d.say||'')?d.say:'「'+(d.say||sayTxt||'……')+'」');
+  const _s=(d.say||sayTxt||'……');
+  herBox.textContent=(/^[“"「]/.test(_s)?_s:'“'+_s+'”');
   if(d.act){ actBox.textContent=d.act; actBox.style.display=''; } else actBox.style.display='none';
   if(d.advance){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+d.advance; $('log').appendChild(ad); }
 
@@ -814,8 +850,8 @@ function openSettings(){
      <input type="range" id="memRange" min="2000" max="128000" step="2000" style="width:100%;accent-color:var(--accent)">
    </div>
    <div class="opt" style="display:block">
-     <div class="row"><div class="lbl grow">回复长度</div><span class="val" id="repVal"></span></div>
-     <div class="hint">她一次说话+叙述的字数上限（越大描写越厚）。</div>
+     <div class="row"><div class="lbl grow">最大回复长度</div><span class="val" id="repVal"></span></div>
+     <div class="hint">这是上限，不是每次都要写满。实际长短由 AI 按人设、场景、关系决定：闲聊短，关键处才长。</div>
      <input type="range" id="repRange" min="200" max="4000" step="100" style="width:100%;accent-color:var(--accent)">
    </div>
    <div class="opt" style="display:block">
