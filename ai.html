@@ -32,6 +32,10 @@ footer{padding:7px 13px calc(11px + env(safe-area-inset-bottom));display:flex;ga
 .endcard{margin:14px 0;padding:14px 16px;border-radius:16px;border:1px solid rgba(233,182,137,.35);background:linear-gradient(180deg,rgba(233,182,137,.10),rgba(233,182,137,.03))}
 .eth{font-size:13px;letter-spacing:.12em;color:var(--warm);margin-bottom:8px}
 .eb{font-size:16px;line-height:1.9}
+.nar{max-width:92%;margin:2px auto 10px;text-align:center;color:#a9a29a;font-size:14.5px;line-height:1.85;letter-spacing:.01em}
+.nar:before{content:'· ';opacity:.5}
+.nar.end{color:#8f8983;font-size:13.5px}
+.nar.end:before{content:'';}
 .adv{color:#b9a894;font-size:13px;border-left:2px solid rgba(185,168,148,.4);padding:4px 0 4px 9px;margin:-4px 0 12px;line-height:1.6}
 </style></head><body>
 <header><div class="ava" id="ava">晞</div>
@@ -115,7 +119,7 @@ function sysPrompt(){
   L.push(c.desc||''); L.push('口吻：'+(c.voice||''));
   L.push('');
   L.push('规矩：');
-  L.push('1 只输出两点：你说的话（用「」包住），和你做的一个动作（一句，不要清单）');
+  L.push('1 输出三部分：nar（两句之间的叙述：先写环境/物件，再写她的动作，20-60 字，不写心理判断）、say（你说的话，用「」包住）、act（收尾小动作，可空）');
   L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
   L.push('2b 「动作」用第三人称写她做了什么（例：「把椅子往后一蹬」），不要写「我」');
   L.push('3 每次 30–110 字，最多两段');
@@ -136,7 +140,7 @@ function sysPrompt(){
   L.push('【本轮禁止再写的细节】（已写够两次，必须换新的物件/话题）'+((bannedList().join('、'))||'（无）'));
   L.push('【这一轮可以往哪推】'+candsText());
   L.push('');
-  L.push('只输出 JSON：{"say":"…","act":"第三人称动作","advance":"这一轮剧情推进的一句话(15-40字)","open_thread":"新埋的线索或不填","close_thread":"解开的线索或不填","outline_hit":0到5的整数(这轮演了大纲第几条,没演写0),"aff":-2到2,"trust":-2到2,"memory":"要长期记住的一句话或不填","choices":["…","…","…"]}');
+  L.push('只输出 JSON：{"nar":"两句之间的叙述","say":"…","act":"第三人称小动作","advance":"这一轮剧情推进的一句话(15-40字)","open_thread":"新埋的线索或不填","close_thread":"解开的线索或不填","outline_hit":0到5的整数(这轮演了大纲第几条,没演写0),"aff":-2到2,"trust":-2到2,"memory":"要长期记住的一句话或不填","choices":["…","…","…"]}');
   return L.join('\n');
 }
 function candsText(){
@@ -162,7 +166,7 @@ async function aiReply(text){
   if(s.startsWith('```'))s=s.split('```')[1].replace(/^json/,'').trim();
   const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i)s=s.slice(i,j+1);
   let o={}; try{o=JSON.parse(s);}catch(e){o={say:s.slice(0,200),act:''};}
-  return {say:o.say||'……',act:o.act||'',aff:Number(o.aff||0),trust:Number(o.trust||0),memory:o.memory||'',
+  return {nar:o.nar||'',say:o.say||'……',act:o.act||'',aff:Number(o.aff||0),trust:Number(o.trust||0),memory:o.memory||'',
     advance:o.advance||'',open_thread:o.open_thread||'',close_thread:o.close_thread||'',outline_hit:Number(o.outline_hit||0),
     choices:Array.isArray(o.choices)?o.choices.slice(0,3):[]};
 }
@@ -177,7 +181,9 @@ async function send(text){
   let d;
   try{ d = KEY? await aiReply(text) : mockReply(text); }
   catch(e){ holder.innerHTML='<span style="color:#e39aa2">（'+e.message+'）已退回模板</span>'; d=mockReply(text); }
-  holder.innerHTML=(/^[「『]/.test(d.say)?d.say:'「'+d.say+'」')+(d.act?'<div class="act">'+d.act+'</div>':'');
+  if(d.nar){ const n=document.createElement('div'); n.className='nar'; n.textContent=d.nar; log.insertBefore(n, holder); log.scrollTop=log.scrollHeight; }
+  holder.innerHTML=(/^[「『]/.test(d.say)?d.say:'「'+d.say+'」');
+  if(d.act){ const a=document.createElement('div'); a.className='nar end'; a.textContent=d.act; log.appendChild(a); log.scrollTop=log.scrollHeight; }
   S.aff=Math.max(-20,Math.min(40,S.aff+d.aff)); S.trust=Math.max(-20,Math.min(40,S.trust+d.trust));
   S.turns.push(text); S.turns.push(CHARS[route].name+'：「'+d.say+'」'+d.act);
   if(d.memory)S.facts.push(d.memory);
@@ -245,5 +251,5 @@ advance();render();
 const OPEN={wan:'「雨还没停。」她把梯子挪了挪，让你好走过去。',yao:'「来得正好。」她头也没回，手指在琴键上走了一遍。',
  wen:'「……喂？」她压着声音，像怕吵到谁。',xiao:'「站着。说事。」她手里的朱笔没停。',lu:'「门带上。」她把手里的卷宗翻过一页。',
  shen:'「坐。账还没算完。」她拨了一下算盘。',jian:'「看什么看。这位置有人了。」她头都没抬。',qing:'「你迟到了三分钟。」她把图纸摊开。'};
-bubble('her',OPEN[route]+(S.beat?'<div class="act">'+S.beat+'</div>':''));
+const n0=document.createElement('div'); n0.className='nar'; n0.textContent=(S.beat? S.beat+' ':'')+OPEN[route]; log.appendChild(n0);
 </script></body></html>
