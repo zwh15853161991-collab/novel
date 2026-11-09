@@ -1,0 +1,77 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>新玩家指南 · 借你一场雨</title>
+<style>
+:root{--bg:#12100e;--bg2:#181614;--ink:#ece6de;--dim:#a49b90;--faint:#6f6862;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e;--card:rgba(255,255,255,.05)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.9 "Songti SC","Noto Serif SC",serif}
+header{max-width:760px;margin:0 auto;padding:calc(22px + env(safe-area-inset-top)) 20px 4px}
+h1{margin:0;font-size:25px;font-weight:500;letter-spacing:.04em}
+.sub{color:var(--faint);font-size:12.5px;letter-spacing:.12em;margin-top:6px}
+nav{max-width:760px;margin:14px auto 0;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap}
+nav a{color:var(--dim);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px}
+main{max-width:760px;margin:0 auto;padding:10px 20px 60px}
+h2{color:var(--accent);font-size:14px;letter-spacing:.14em;margin:30px 0 10px;font-weight:500}
+h3{font-size:15px;margin:18px 0 6px;font-weight:500}
+p{color:var(--dim);margin:0 0 10px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin:0 0 10px}
+.step b{color:var(--ink);font-weight:500}
+code{background:rgba(255,255,255,.07);border-radius:6px;padding:1px 6px;font-size:13.5px;color:#e6d3b8}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0 4px}
+th{text-align:left;color:var(--faint);font-weight:400;font-size:12px;letter-spacing:.08em;border-bottom:1px solid var(--line);padding:8px 6px}
+td{padding:9px 6px;border-bottom:1px solid var(--line);color:var(--dim)}
+td.n{color:var(--ink);white-space:nowrap}
+.qa{margin:0 0 12px}
+.qa b{color:var(--ink);font-weight:500;display:block;margin-bottom:2px}
+.btn{display:inline-block;margin-top:16px;background:var(--accent);color:var(--acc-ink);border-radius:12px;
+padding:11px 18px;font-size:14.5px;text-decoration:none;font-weight:600}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--dim);font-weight:400;margin-left:8px}
+</style></head><body>
+<header><h1>新玩家指南</h1><div class="sub">第一次打开，照这个顺序来</div>
+<nav><a href="./routes.html">故事总览</a><a href="./index.html">离线完整版</a><a href="./app-v2.html">AI 版</a><a href="./library.html">小说资料库</a></nav></header>
+<main>
+<h2>一、三分钟上手</h2>
+<div class="step"><b>1. 挑一条线</b><br>不知道该从哪条开始就点「<a href="./routes.html" style="color:#c9a06a">故事总览</a>」，标<b>入门</b>的那五条最稳，林未晞那条最完整（约 36 分钟）。</div>
+<div class="step"><b>2. 读开场</b><br>每条线开头有一页「序」：故事背景、前情提要、她是谁。看完点「开始」。</div>
+<div class="step"><b>3. 回她一句</b><br>底部输入框里直接打字。三种写法都行，见下面第二节。</div>
+<div class="step"><b>4. 走完一局</b><br>聊到一定轮数（约 24 轮）或好感够高就会结束，出现结局卡。点「用这个人再开一局」重来。</div>
+
+<h2>二、怎么打字</h2>
+<p>不用选固定句式，三种写法混着用最好：</p>
+<table>
+<tr><th>写法</th><th>例子</th><th>她会怎么接</th></tr>
+<tr><td class="n">动作</td><td><code>（把伞收起来，靠在门边）</code></td><td>回应你做了什么</td></tr>
+<tr><td class="n">台词</td><td><code>“你这店开了多久了？”</code></td><td>按人设回答（有的会岔开）</td></tr>
+<tr><td class="n">混合</td><td><code>（把杯子推过去）“先喝口热的。”</code></td><td>动作与话一起接</td></tr>
+</table>
+<p>打字时输入框上方会浮出一排快捷按钮：<b>（动作） “台词” 沉默 点头 靠近 退开</b>，点一下自动补好括号，光标停在中间。</p>
+<p>不知道说什么，可以点下面的<b>建议选项</b>——那些是系统按当前情境给的三个方向，点了之后她照样会自己写。</p>
+
+<h2>三、界面在哪</h2>
+<table>
+<tr><th>位置</th><th>是什么</th></tr>
+<tr><td class="n">首页底部</td><td>我的故事（进行中）/ 选择故事（挑人）/ 我的（key 与设置）</td></tr>
+<tr><td class="n">对话页右上 ⋯</td><td>重新生成 · 撤回最后一轮 · 新建对话 · 剧情选项 · 我的人设 · 她的这段日子（番外）</td></tr>
+<tr><td class="n">对话页右上 ⚙</td><td>界面配色 · 强调色 · 字号 · 接口与模型 · 测试连接</td></tr>
+<tr><td class="n">对话页右上 记</td><td>这一局：好感、阶段、本局大纲、未解线索、剧情年表</td></tr>
+</table>
+
+<h2>四、三个版本有什么区别</h2>
+<table>
+<tr><th>版本</th><th>是什么</th><th>要不要 key</th></tr>
+<tr><td class="n">离线完整版</td><td>12 条线 240 场全写死，双击即玩</td><td>不要</td></tr>
+<tr><td class="n">AI 版</td><td>11 条线，她每次说的话都不一样，有记忆</td><td>要（DeepSeek）</td></tr>
+<tr><td class="n">逐字版</td><td>沈砚 / 郑迟 / 许照三条新线的纯阅读版</td><td>不要</td></tr>
+</table>
+
+<h2>五、常见问题</h2>
+<div class="qa"><b>进度存在哪？会不会丢？</b>存在你手机或电脑的浏览器里，换设备、清缓存就没了。用「⋯ → 存档」导出一份 json 留底。</div>
+<div class="qa"><b>她为什么有时候回得很短？</b>这是设定：字数按角色性格和当下情境自动调，冷的人不说话、急的才多说。想让她写长，把「设置 → 最大回复长度」拉高，并在话里给点情绪。</div>
+<div class="qa"><b>结局是怎么定的？</b>看好感、信任、以及你之前的选择。同一句话在不同阶段会走向不同结局；结尾按档位分成 A 走成了 / B 差一步 / C 停在原地 / D 散了。</div>
+<div class="qa"><b>key 填了会不会被盗？</b>AI 版是浏览器直连 DeepSeek，key 只存在你自己设备上；不想填就用离线完整版，完全不需要 key。</div>
+<div class="qa"><b>打字她没听懂？</b>直接说「我没听懂」也可以，她会给反应。或者换个更具体的说法——提到具体物件（伞、账本、错题本）通常更有效。</div>
+
+<a class="btn" href="./routes.html">去挑一条线</a>
+<a class="btn ghost" href="./index.html">直接玩离线版</a>
+</main></body></html>
