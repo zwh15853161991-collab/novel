@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>郑迟 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#6f6862;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:14px;margin:0}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">前情提要</div><p class="world" id="premise"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "郑迟", "meta": "31 · 汽修厂老板，兼跑夜路货运", "premise": "台风夜班车停运，你搭上他的货车回城；副驾有把别人落下的旧伞，他腿上有旧伤。", "world": "小城西边的汽修厂，铁皮棚顶，雨点砸上去很响。门口常年停着一辆旧货车，副驾上永远有一把伞。", "chapters": [{"title": "第一章 雨里的副驾", "scenes": [{"lines": [["nar", "台风把站牌吹得斜过去，停运通知贴在玻璃上，边角被雨泡白。"], ["nar", "一辆蓝色货车靠边，雨刷刮开挡风玻璃，副驾座上横着一把旧黑伞，伞骨歪了一根。"], ["say", "“回城？”"], ["nar", "他把伞拎到脚边，手背在裤缝上蹭了一下，推开车门。"], ["say", "“谢谢。”"]], "choices": ["先问伞是谁的", "上车，说声谢谢", "绕到车头看车牌"], "n": 1}, {"lines": [["nar", "雨点砸车顶，雨刷来回两下，灯柱在玻璃上拖成黄线。"], ["say", "“桥下积水。”"], ["nar", "他把暖风拧到一档，出风口吹起旧伞上的灰。"], ["say", "“雨没停。”"], ["nar", "收费站的红灯泡在水里，货车压过一片水响。"]], "choices": ["问他的腿怎么了", "沉默看窗外的雨", "递过去一块糖"], "n": 2}, {"lines": [["nar", "服务区灯管发白，雨从棚檐连成线，货车停在一排水洼里。"], ["nar", "他先下车，右腿落地时停了半拍，手扶住车门，随后绕到前轮，抬脚踢了踢胎壁。"], ["say", "“别拿工具箱。”"], ["nar", "你撑开那把旧伞站到车侧，伞骨歪的一边垂下来，雨打在帆布上。"], ["nar", "他逐只踢过轮胎，裤脚湿到小腿，回来时绕开了你递过去的手。"]], "choices": ["撑伞站在他旁边", "替他提工具箱", "假装没看见回车上"], "n": 3}, {"lines": [["nar", "顶灯亮起，药板在你掌心反光，锡纸边已经捏皱。"], ["say", "“我没事。”"], ["nar", "他两根手指把药板推回来，塞进你包侧袋，拉链头被碰得轻响。"], ["nar", "钥匙拧到底，发动机抖了两下，暖风把雨腥味送进来。"]], "choices": ["让他自己放回去", "拿回来放他杯边", "问他疼几天了"], "n": 4}, {"lines": [["nar", "收音机只剩电流声，旋钮松了一圈，指针在刻度上来回跳。"], ["say", "“随便拧。”"], ["nar", "你转到老歌台，女声从杂音里浮出来，又被雨刷压下去。"], ["say", "“听不清。”"], ["nar", "他把音量调小半格，雨点敲在车顶，一下接一下。"]], "choices": ["调到一个老歌台", "关掉，听雨刷声", "问他平时听什么"], "n": 5}, {"lines": [["nar", "车停在有路灯的路口，水沿着路牙往井盖里灌。"], ["say", "“到了。”"], ["nar", "你推门下车，伞留在副驾脚边，鞋底踩碎一片水光。"], ["nar", "楼道门拉开，感应灯亮到二楼，玻璃上照出车头的轮廓。"], ["nar", "你回头挥了一下手，他才打亮左转向灯，车头慢慢并进雨里。"]], "choices": ["回头朝他挥一下手", "记下他的车牌号", "跑回去还伞"], "n": 6}]}, {"title": "第二章 修车厂的雨", "scenes": [{"lines": [["nar", "卷帘门只拉到一半，里面亮着一盏工作灯。地上的水顺着门口的水泥坡往外流，混着黑色的油花。"], ["nar", "一辆银色面包车停在举升机上，车底垫着纸板，只露出一双鞋，鞋跟磨偏了一边。"], ["say", "“伞。”"], ["nar", "纸板上的人滑出来一截，一只手把工作灯挪了挪。鞋尖在地上点了两下，人没有出来。"], ["say", "“搁门边上。”"], ["nar", "我把伞靠在卷帘门框。铁皮上还有上一场雨留下的印子，一道一道，已经干了。"]], "choices": ["蹲下来说还伞", "把伞挂在门把上", "问他缺不缺人手"], "n": 7}, {"lines": [["nar", "他从车底滑出来，坐起身，用袖口擦脸上的灰。右手袖口靠近手腕的地方洇开一块暗红。"], ["say", "“扳手划的。”"], ["nar", "他把袖子往下扯了扯，重新躺回去。梅花扳手搭在螺丝上，一下，又一下。"], ["say", "“扳手不长眼。”"], ["nar", "工具箱最下面那层抽屉半开着，露出一角白纱布和一卷发黄的电工胶布。我把纱布抽出来，放在他脚边的纸板上。"], ["nar", "他侧头看了一眼，没有作声，手里的扳手又转了一圈。"]], "choices": ["去翻他的医药箱", "抓过他手腕看", "说那我来拧"], "n": 8}, {"lines": [["nar", "隔壁轮胎店的老板端着一碗面站在门口，筷子挑起来，又放下。"], ["say", "“他昨晚跑了一趟，四点多才进来，车灯都没关。”"], ["nar", "郑迟从车底把一块抹布扔出来，抹布正落在水洼里，水花溅到纸板边。"], ["say", "“面凉了。”"], ["nar", "我去了街口的早餐铺，买了两份。回来时，卷帘门全拉开了，那辆面包车已经倒到门外，停在了太阳底下。"]], "choices": ["问店主他腿怎么样", "买了两个人的早饭", "什么也没问"], "n": 9}, {"lines": [["nar", "账本摊在办公桌上，纸页卷了边，上一页的日期是去年的。我照着送货单一行一行往下抄，写错一个数，划掉重来。"], ["nar", "他把一串钥匙丢在桌角。铁的，三把，其中一把的边缘被摩得发亮。"], ["say", "“关门的时候往下压。”"], ["nar", "钥匙在桌面上转了半圈停住。他转身去接门口那辆车，没有再说别的。"], ["nar", "我把它拿起来，揣进外套内袋，和硬币碰了一下。"]], "choices": ["接住，放进兜里", "放回他的桌面", "问他几点关门"], "n": 10}, {"lines": [["nar", "下午三点，一辆白色轿车停在门口。下来的人夹着一个牛皮纸袋，鞋帮上还带着泥。"], ["say", "“事故认定和保险的复印件，都在里面。”"], ["nar", "郑迟接过纸袋，没有拆，把它放到账本底下，用手掌压平。"], ["say", "“车修得怎么样了？”"], ["say", "“还在等。”"], ["nar", "他走到门外，站在屋檐下，摸出一支烟。打火机打了两次才着。屋里那杯茶还剩一半，纸上有一圈水印。"], ["nar", "我拿了外套跟出去，站在他左边半步的地方。檐口的雨滴下来，落在他鞋尖前面。"]], "choices": ["跟出去站他旁边", "留在屋里泡两杯茶", "把材料替他收好"], "n": 11}]}, {"title": "第三章 台风过境", "scenes": [{"lines": [["nar", "台风预警挂到橙色，楼下香樟被剪掉半边枝。门响时他站在门外，肩上扛两块旧模板，裤脚湿到膝盖。"], ["say", "“你家窗户朝东。”"], ["nar", "他没等我让，把模板靠在墙边，从腰包里摸出卷钉，用牙咬住三颗。锤子起落，钉子进去的声音很闷，屋里的玻璃跟着轻轻抖。"], ["say", "“扶一下梯子。”"], ["nar", "我扶着。梯子第三级有道裂缝，他踩上去时侧着脚，右腿始终不肯吃劲，钉子还是照样一锤一锤进去了。"]], "choices": ["扶梯子递钉子", "问他家里钉了没", "让他先进来喝口热的"], "n": 12}, {"lines": [["nar", "雨横着打，楼下广告牌响得像有人敲门。他把锤子收进包，看了一眼积水已经漫过路牙的路面，没动。"], ["say", "“这种天，货不能跑。沙发就行。”"], ["nar", "我从柜顶抽了床厚被子抱到客厅。他已经在拆沙发靠垫，把湿外套搭在椅背上，口袋露出半截伞骨。"], ["say", "“伞不是我的。别人落的。”"], ["nar", "灯关掉后，风雨声把屋子填满。客厅那头传来他翻身的动静，一次，两次，后来就没有了。"]], "choices": ["把厚被子抱到沙发", "说里屋还有一张床", "假装没听见"], "n": 13}, {"lines": [["nar", "半夜起身，阳台方向有压着的呼吸声，一下一下，跟雨点对不上。"], ["nar", "他背对着门，手撑着栏杆，右腿伸直，膝下垫了张折叠凳。拖鞋在脚边摆得整整齐齐。"], ["say", "“吵到你了？”他没回头。"], ["nar", "我倒了杯热水过去，放在栏杆上。杯底磕到铁，响了一声，水汽在风里散得很快。"], ["nar", "他把杯子握进掌心，两只手一起握着，指节泛白，直到水温降下去才喝了一口。"]], "choices": ["倒杯热水放他手边", "装作起来喝水", "隔着门叫他名字"], "n": 14}, {"lines": [["nar", "药箱在电视柜下层。翻到最里面摸出一板止痛片，底下压着张体检单，折了两折；旁边一张纸是邻县一个铺面的租约，起租在下个月一号，三年。"], ["nar", "我把药片抽出来，单子按原来的折痕折回去，压平。"], ["say", "“找到了？”客厅传来他的声音。"], ["say", "“嗯。”我把药和那杯水一起递过去。"], ["nar", "他接过去，拇指在杯壁上停了一下，眼睛看着窗外被风掀起来的雨幕，没看我。"]], "choices": ["把单子放回原处", "拿着单子问他", "只记住上面的日期"], "n": 15}, {"lines": [["nar", "天亮雨小了，檐口还在滴水。他把模板拆下来靠在门外，锤子收进包，被子叠成方块搭在沙发扶手上。"], ["nar", "桌上多了一把钥匙，挂着一枚磨圆了边的铜牌。"], ["say", "“邻县缺个修车的。铺面小，活不重。”"], ["nar", "我拿起钥匙，没说话。他在门口换鞋，鞋带打了两次才系好。"], ["say", "“钥匙先放着。”他拉开门，楼道里的风灌进来，“想好了给我个电话。”"]], "choices": ["把钥匙推回去", "问他什么时候回来", "说我也一起去"], "n": 16}]}], "endings": {"A": {"title": "多一把钥匙", "text": "你说「你可以不被需要」。他沉默很久，久到楼道的灯灭了一次又亮。然后他第一次没说「我没事」，只问你明天几点下班。第二天你把钥匙挂在门边，发现自己的那把不知什么时候换成了新的，铜色，齿口还是热的。"}, "B": {"title": "周四回来一次", "text": "钥匙你收下了。他去了邻县，每周四回来一趟，车停在巷口不进来，电话里只谈天气和路况。有一次信号不好，他连着说了三遍「雨大」，你才听出他不是在报路况。挂了电话，你在窗边站到灯全灭了。"}, "C": {"title": "伞留在店里", "text": "你把伞留在他店里，什么都没说，转身走进雨里。三个月后，楼下有人修车，铁皮工具箱摊开在地上，人蹲着，背对着你。你问是谁叫的，他说是路过。伞就挂在工具箱旁边，还是那把，骨头歪着。"}, "D": {"title": "两块牌子", "text": "你跟他去了邻县。铺面重开，门口挂两块牌子：修车、货运。他仍旧只谈天气，仍旧一句话不超过七个字。夜里你数钥匙，发现有两把——一把是门，一把他没说是什么。窗外雨大，铁皮棚顶响得像有人在上面走。"}}, "vigs": [{"title": "工具箱", "need": 6, "lines": ["他的工具箱是铁皮的，边角磨得发亮，每一格工具都朝着同一个方向摆。", "「这个不用你递。」他把扳手接过去，用袖口擦了擦再放回原位。", "后来你发现，那格里最旧的一把，缠了两圈黑胶布，胶布已经很脆了。"]}, {"title": "体检单", "need": 12, "lines": ["体检单压在收银台下面，折过三次，边角起了毛。", "结论那栏被人用笔尖点过，点出一个针眼大的洞。", "他进来时你正拿着，他伸手抽走，塞进抽屉：「旧纸。」", "抽屉里有半盒止痛药，开封很久了，还剩三片。"]}, {"title": "七个字", "need": 18, "lines": ["他一天说的话，你数过一遍：路况、雨量、螺丝、吃饭了、我没事。", "加起来不到五十个字，最长的一句七个字：「明天有暴雨。」", "只有一次例外。半夜他在阳台咳了很久，你推门出去，他说：「你怎么还没睡。」", "这句话有八个字。"]}], "route": "scar", "arch": "带伤的自持者"};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+$('#world').textContent=D.world; $('#premise').textContent=D.premise;
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach(t=>{
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      if(/陪|等|不|别走|谢|留|帮|说|问|看|递|握/.test(t)) warm++;
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=warm/Math.max(1,total);
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; render(); };
+</script></body></html>
