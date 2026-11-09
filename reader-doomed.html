@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>时雨 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#6f6862;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:14px;margin:0}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">前情提要</div><p class="world" id="premise"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "时雨", "meta": "22 · 书里注定的配角", "premise": "她翻到书的最后，看见自己死在第三章。合上书，她笑着问你：那这一天，我们干什么。", "world": "小城的灯塔、便利店和一条总在下雨的海堤。书本身是道具：纸很薄，边角起了毛。", "chapters": [{"title": "第一章 第三章", "scenes": [{"lines": [["nar", "书摊在桌上，页码停在最后一页。她的食指压住最后一行，指甲边缘沾着一点干掉的红墨水。"], ["say", "“你看这个括号，里面是我。”"], ["nar", "我把台灯往她那边推了推，灯泡闪了一下，纸页上那行小字被照得发白。她把手收回去，搁在膝盖上，指尖还带着墨。"], ["say", "“别念出来。念出来就有点像真的了。”"], ["nar", "她把书合上，按平翘起的书角，一下，又一下。"]], "choices": ["说别信这个", "问她确定吗", "（把书合上）"], "n": 1}, {"lines": [["nar", "她站起来，从椅背上扯下外套，袖子翻了出来，她也不管。钥匙在玄关盘子里撞出两声清脆的响。"], ["say", "“反正第三章就到头了，今天先干点想干的。”"], ["nar", "她把我的鞋踢到门口，一只正的，一只反的。"], ["say", "“哪只脚先穿都行，快点。”"], ["nar", "楼道灯是声控的，她跺了一下脚，灯亮，她先下去了。"]], "choices": ["跟她走", "劝她别乱来", "（问她想去哪）"], "n": 2}, {"lines": [["nar", "铁梯到顶，推开门，风把门板撞在墙上。她走在前面，鞋底踩过生了锈的排水槽。"], ["say", "“过来看，海是灰的。”"], ["nar", "她一只手扶着栏杆，栏杆晃了晃，掉下一点铁屑。她的头发全被吹到一边，贴在脸上。"], ["say", "“这栏杆松的。”"], ["nar", "她没再说，把另一只手也搭上去，整个人往前探。风从她外套下摆灌进去，鼓起来。"]], "choices": ["拉住她", "陪她站着", "（站在下面喊）"], "n": 3}, {"lines": [["say", "“我从来不害怕。”"], ["nar", "她从口袋摸出打火机，打了两下才着，火苗被风吹得横过来，又灭了。她把打火机塞回口袋。"], ["say", "“因为怕没用。”"], ["nar", "她转过身，背靠着栏杆，手腕搭在上面，像搭在一张椅背上。"], ["say", "“你也别怕。怕了也还是在第三章。”"]], "choices": ["说怕也有用", "问她怕过什么", "（不说话）"], "n": 4}, {"lines": [["nar", "她蹲下来，把书摊在塔顶的水泥地上，风掀页，她拿打火机压住一角。空白页朝上。"], ["say", "“后面还有这么厚，全是空的。要不要一起写？”"], ["nar", "她从兜里掏出一支圆珠笔，笔尖在纸角划了两下，没水。她把笔甩了甩，再划。"], ["say", "“写什么？你写第一句。”"], ["nar", "笔递过来，笔杆上还带着她手心的温度。她把手插回口袋，退开半步，看着我。"]], "choices": ["问怎么写", "说写得动吗", "（拿起笔）"], "n": 5}, {"lines": [["nar", "走廊的声控灯亮了一下又灭，门被敲了三下，很轻。我去开，她站在门口，光着脚，抱着那本书。"], ["say", "“睡不着。”"], ["nar", "她走进来，坐在床沿，把书放在腿上，没翻。窗外有车经过，光扫过天花板，一道，又一道。"], ["say", "“做梦了。梦里我翻到第三章，那一页是空白的。”"], ["nar", "她说完，把书扣过来，压住，像压住一只还没飞走的虫子。"]], "choices": ["开门", "问她梦到什么", "（陪她坐到天亮）"], "n": 6}]}, {"title": "第二章 免罪符", "scenes": [{"lines": [["nar", "早上九点，她把手机扣在桌上，屏幕亮了一下，是房东的未接来电。"], ["say", "“你不用去。”"], ["nar", "她把日历翻到下一页，用指甲划了一下格子。"], ["say", "“反正我会死，签不签都一样。”"], ["nar", "铅笔停在半空，纸上的“周四 交租”四个字被窗框的影子切了一半。"]], "choices": ["说这是借口", "不接话", "（把约定划掉）"], "n": 7}, {"lines": [["nar", "她靠着门框，手里捏着那本翻烂的书，笑着。"], ["say", "“你这么认真，是因为你也怕自己只是个过场吧。”"], ["nar", "楼道灯闪了一下，她的影子在墙上短了一截，又长回来。"], ["nar", "书脊被她拇指压出一道白痕。"]], "choices": ["说你伤到我了", "笑回去", "（走开）"], "n": 8}, {"lines": [["nar", "第二天七点，她站在门口，两只塑料袋挂在手腕上，热气把袋子熏得发白。"], ["say", "“肉的。凉了不好吃。”"], ["nar", "她把袋子往你这边递了递，另一只手还插在外套口袋里没拿出来。"]], "choices": ["接过来", "问她算不算道歉", "（不理她）"], "n": 9}, {"lines": [["nar", "包子吃到一半，她把塑料袋折成很小的一块，又展开。"], ["say", "“昨天那句，对不起。”"], ["nar", "说完就低头去擦桌上的油点，纸巾来回擦同一个地方。"], ["nar", "她的耳朵红到了耳垂。"]], "choices": ["说我知道了", "问她为什么", "（说下次别这样）"], "n": 10}, {"lines": [["nar", "夜里她把书摊在膝盖上，翻开第三章。你的名字旁边，“时雨”两个字只剩下一半墨。"], ["nar", "字迹像被水泡过，墨往纸纤维里散开，笔画断开了一个口。"], ["say", "“它在改。”"], ["nar", "她伸出手指，按在那半行字上，指甲边缘压出白印。"]], "choices": ["说这是好事", "问她感觉怎样", "（用手按着那行字）"], "n": 11}, {"lines": [["nar", "她的手还按在纸上，抬起头，灯光落在她的下眼睑。"], ["say", "“如果我活到第四章，你要干什么。”"], ["nar", "窗外有人推着车经过，铁轮碾过水泥地，声音过去之后，房间里很静。"], ["nar", "她把书合上，但没拿走，留在了桌上。"]], "choices": ["说请你吃饭", "说不知道", "（说那就慢慢想）"], "n": 12}]}, {"title": "第三章 被记住", "scenes": [{"lines": [["nar", "窗台上搁着那支中性笔，笔帽被咬出一排牙印。她从抽屉里翻出一张超市小票，摊平，翻到背面。"], ["say", "“第一条，得有个只有你记得的动作。”"], ["nar", "笔尖压下去，写了三个字，又划掉。纸被划破一道，露出白色的纤维。"], ["nar", "她把小票朝你这边推了两厘米，纸边卷着，像被人反复捏过。"], ["say", "“你帮我看看，这样写，会不会太傻。”"]], "choices": ["帮她写", "说太傻", "（念一遍单子）"], "n": 13}, {"lines": [["nar", "书摊在膝盖上，最后一页的边角被她折了个三角。她把手机屏幕转过来，上面是一行地址，字体很旧。"], ["say", "“书里写着这个地址，就在他出场那一段旁边。”"], ["nar", "外面在下雨，雨点打在防盗窗的铁皮上，一下一下。她把公交卡从卡套里抽出来，卡套里还夹着一张过期的电影票。"], ["say", "“我知道他不一定在。可我想去站一会儿。”"], ["nar", "她起身时把书合上，压在小票上面，两样东西一起塞进帆布包。"]], "choices": ["陪她去", "说见不着", "（先查地址）"], "n": 14}, {"lines": [["nar", "便利店的灯管有一根在闪，每隔两秒暗一下。关东煮的锅在冒泡，盖子歪着，蒸汽往收银台那边飘。"], ["nar", "他从收银台后面站起来，工牌上的名字不是书里那个。他比书里写的年轻，眼下有青影，指关节上贴着一小块创可贴。"], ["say", "“……你们怎么找到这儿的。”"], ["nar", "他把手里那袋饭团放回货架，生产日期朝里。扫描枪搁在台面上，红光还亮着。"], ["say", "“你写我的时候，也在夜里吗。”"], ["say", "“……在。”"]], "choices": ["问他为什么写死她", "让她自己问", "（站在门外等）"], "n": 15}, {"lines": [["nar", "他从裤兜里摸出一支笔。笔杆上贴着便利店的价签，撕过一半，还剩个“9”。"], ["nar", "书翻到第三章，页码那儿夹着一根头发。他的手指停在“时雨”两个字后面，停得有点久。"], ["say", "“只能改一个标点。”"], ["nar", "笔尖落下去，添了一个逗号。墨还没干，他低头吹了一下，纸面起了一小道波纹。"], ["nar", "合上书，那一页的边缘比别的页多出一点厚度。"]], "choices": ["问她想要什么", "说这不够", "（把书收好）"], "n": 16}, {"lines": [["nar", "出了便利店，天在亮。路灯一盏一盏灭，从街那头往这头。路面还是湿的，映着招牌的红。"], ["say", "“天要亮了。”"], ["nar", "她把书抱在胸前，手指扣着书脊，指甲压出白印。远处有清洁车的声音。"], ["say", "“那你记住了什么。”"], ["nar", "风把她的头发吹到脸上，她没拨开，等着。"]], "choices": ["说记得你笑", "说记得全部", "（说不上来）"], "n": 17}]}], "endings": {"A": {"title": "一个逗号", "text": "书翻到第四章，她的名字还在，后面跟着一个逗号，逗号后面空着。她把书合上，说这下得活久一点了，语气像在抱怨晚饭太咸。书角被她折了一道印子，说做个记号。"}, "B": {"title": "不止一种", "text": "她活过了第三章，但从那以后书里再没写过她。她说没关系，反正被记住的方式不止一种，然后笑了一下，笑得比平时短。海堤上风很大，她把书举起来挡了挡。"}, "C": {"title": "涂改过的墨迹", "text": "第三章还是来了。书页上有一行被涂改过的墨迹，看不清原来写的是什么，只留下一点毛边。灯还亮着，书摊在桌上没有合，风把最上面几页吹起来，又落回去。"}, "D": {"title": "没按回车", "text": "她没等到改稿。便利店那晚的灯一直亮着，年轻人的手停在键盘上，屏幕上那行字最后也没按回车。天快亮的时候他起身去理货，屏幕自己暗了。"}}, "vigs": [{"title": "书", "need": 6, "lines": ["书的纸很薄，翻页会响。", "她把书带在身上，用橡皮筋捆着。", "有人想借，她说不行。", "「为什么？」「怕少一页。」"]}, {"title": "灯塔", "need": 12, "lines": ["灯塔的楼梯有八十九级，她数过。", "数到第七十级就开始喘，还是要上去。", "「上面有什么？」", "她说：能看到第三章在哪儿结束。"]}, {"title": "单子", "need": 18, "lines": ["单子上写了七种被记住的方式，前六种被划掉。", "只留下最后一条，字写得很小：有人记得我笑起来什么样。", "她把单子折成四折，塞进书里当书签。", "夹的位置正好是第三章。"]}], "route": "doomed", "arch": "被写死者"};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+$('#world').textContent=D.world; $('#premise').textContent=D.premise;
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach(t=>{
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      if(/陪|等|不|别走|谢|留|帮|说|问|看|递|握/.test(t)) warm++;
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=warm/Math.max(1,total);
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; render(); };
+</script></body></html>
