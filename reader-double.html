@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>江栖 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#6f6862;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:14px;margin:0}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">前情提要</div><p class="world" id="premise"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "江栖", "meta": "26 · 旧货铺店员", "premise": "你认识的「她」三个月前失踪了；今天她推门进来，用同一个名字，语气却是另一个人的。", "world": "小城东街的旧货铺，柜台上摆着别人的旧物：一只表、一把钥匙、半盒火柴。店名是别人的。", "chapters": [{"title": "第一章 名字", "scenes": [{"lines": [["nar", "门上的铜铃响到一半卡住，尾巴拖了一下才散。"], ["nar", "她侧身进来，湿伞靠在门框边，伞尖在水泥地上点出一小片深色。"], ["say", "“江栖。”"], ["say", "“我来拿那只樟木箱。”"], ["nar", "抹布停在半只青瓷碗上，水顺着碗沿滴到玻璃柜台，一滴，两滴。台灯的光落在她下颌，比三个月前尖。"]], "choices": ["问她这三个月去哪", "（把门堵上）", "说你不是她"], "n": 1}, {"lines": [["nar", "她从柜台那头绕过来，手指在玻璃上划过去，留下一道浅痕。"], ["say", "“箱子里是七本连环画，两枚铜钱，还有你妈那条蓝布围巾。”"], ["say", "“最上头压着一张一九九三年的粮票。你嫌它旧，我一直没扔。”"], ["nar", "柜台下的抽屉半开着，锁舌露在外面。台灯闪了一下，灯泡里有根细丝在抖。"], ["nar", "她把手收进袖口，站着，脚跟并齐，像在等一个数。"]], "choices": ["追问一件只有她知道的事", "说你再演", "（听她把话说完）"], "n": 2}, {"lines": [["nar", "她讲起去年腊月那场雨，铺子漏，我用搪瓷盆接水。"], ["say", "“盆底磕掉一块瓷。你说缺口朝墙放，别叫人看见。”"], ["nar", "她右手食指在柜台上敲了两下，停半拍，又敲一下。"], ["nar", "搪瓷杯推到她面前，凉白开晃了晃，撞出一圈细响。"], ["nar", "她没有端起来。手指在杯沿上停住，又收回去。"]], "choices": ["问她跟谁学的", "说这不是她的说法", "（把水推过去）"], "n": 3}, {"lines": [["nar", "门帘一掀，老陈进来，帽子夹在腋下，肩头湿了一片。"], ["say", "“小江，这片查暂住，登记一下。”"], ["nar", "她先开口，生日、籍贯、身份证尾号，一个数都没顿。"], ["nar", "老陈在本子上划，划完抬头，看了她一眼，又看我，把帽子重新夹好。"], ["say", "“行，回头把复印件送过来。”"]], "choices": ["帮她挡一句", "看她说", "（不开口）"], "n": 4}, {"lines": [["nar", "门帘落定，铜铃响了一声就没了后文。"], ["nar", "她两只手撑在玻璃柜台上，肩膀一点一点往下塌。"], ["nar", "我从墙角拖过那把矮凳，凳面裂了一道缝，缝里塞着张旧报纸。"], ["say", "“坐。”"], ["nar", "她坐下，膝盖撞了一下柜台，没躲。"]], "choices": ["问她累不累", "问她到底是谁", "（递一把椅子）"], "n": 5}, {"lines": [["nar", "她坐了一会儿，把矮凳往里推了推，推到不挡路的地方。"], ["say", "“这凳子腿短，垫两张报纸正好。”"], ["nar", "台灯的光圈落在她手背上，五根手指并着，搁在膝盖上。"], ["nar", "这句话我上个月对来买座钟的老太太说过，一个字不差。"], ["nar", "架子底下那只樟木箱，锁扣上落着一层灰。我伸手把它拖出来。"]], "choices": ["愣住", "问她在干什么", "（笑了一下）"], "n": 6}]}, {"title": "第二章 谁的语气", "scenes": [{"lines": [["nar", "门上的铜铃响了两声，她走进来，手指顺着玻璃柜台的边沿划过去，停在那只缺了口的搪瓷杯上。"], ["say", "“这杯子还在啊。我上次来就想说，该扔了。”"], ["nar", "她说话的尾音往上翘，顿在“啊”字后面。江栖手里的抹布拧了一下，水滴在柜台上。"], ["say", "“别学我说话。”"], ["nar", "她抬眼看过来，嘴角带着笑，不急着接话，手指把搪瓷杯转了半圈。"]], "choices": ["说别学了", "问她听多久了", "（让她继续）"], "n": 7}, {"lines": [["nar", "她从货架上抽出一串锈了的铜钥匙，在掌心里掂了掂，钥匙碰在一起响了几声。"], ["say", "“我承认，一开始是演的。你的语气，你的口头禅，你擦杯子先擦左边再擦右边。”"], ["nar", "她松开手，钥匙落回铁盘里，声音拖得很长。"], ["say", "“演久了，我也分不清哪句是我自己的。”"], ["nar", "江栖把抹布搭在柜台的角上。她低头看自己的手，指甲剪得很短。"]], "choices": ["说那就别演", "问哪一个是真的", "（不评价）"], "n": 8}, {"lines": [["nar", "江栖把柜台下面的折叠凳抽出来，打开，推到货架旁边。"], ["say", "“你想不想找原来的自己？”"], ["nar", "她没坐，手按在凳面上，指节白了一下。过了一会儿她才坐下来，把手放在膝盖上，眼睛看着货架最上层落了灰的收音机。"], ["say", "“想。又不太敢想。”"]], "choices": ["说慢慢来", "问她怕不怕", "（陪她坐一会儿）"], "n": 9}, {"lines": [["nar", "收音机忽然响了一声，又没了。她抬头看了一眼窗外的天色。"], ["say", "“那天也下雨。我出门的时候穿的是蓝色雨衣，口袋里有一张公交卡，卡上贴了只猫的贴纸。”"], ["nar", "江栖的手停在门把上。那件蓝色雨衣，江栖收在阁楼的纸箱里。她转过身，把“营业中”的牌子翻到“休息”，拉下卷帘门，铁皮哗啦一声响到底。"], ["say", "“那天我也在。”"], ["nar", "她转过头来看江栖，眼睛很安静，没有说话。"]], "choices": ["问她记得多少", "说那天我也在", "（把店门关上）"], "n": 10}, {"lines": [["nar", "卷帘门被拍了两下，外面的人喊了一个名字——是原来那个她的名字。门缝里塞进来一张折了两折的纸，上面写着金额和日期。"], ["say", "“她欠的，别以为人不见了就不用还。”"], ["nar", "她站起来，走到门边，侧过身。脸上的表情平平的，嘴角没有弯。"], ["say", "“你要我怎么办？”"], ["nar", "江栖把她往身后拨了一下，手按在卷帘门的把手上。"]], "choices": ["替她挡", "问她要怎么办", "（看她演）"], "n": 11}, {"lines": [["nar", "人走了以后，她把那张纸摊在柜台上抹平，折痕压得很直。然后她靠在柜台边上，侧头看江栖。"], ["say", "“你觉得我像谁？”"], ["nar", "江栖看着那张纸上的折痕，手指在上面按了一下。"], ["say", "“说不上来。”"], ["nar", "她笑了一下，把那杯缺口的搪瓷杯推到江栖面前。"]], "choices": ["说你像你自己", "说像她", "（说不上来）"], "n": 12}]}, {"title": "第三章 我就是我", "scenes": [{"lines": [["nar", "下午四点，邮递员从门缝底下塞进来一封信。信封是牛皮纸的，没有邮戳，正面只写了“江栖”两个字，墨色发虚。"], ["nar", "我把它放在柜台上，压在那杆铜秤的秤盘底下，秤盘往下一沉。"], ["nar", "门上的铃响了一声，她侧身进来，肩上还带着外头的凉气，把手里的塑料袋放到地上。"], ["say", "“订的搪瓷盆取回来了，两只，都在里头。”"], ["nar", "我把信从秤盘底下抽出来，推到她面前，纸角在台面上刮出一声轻响。"], ["say", "“给你的。”"]], "choices": ["把信给她", "先自己看", "（放着不拆）"], "n": 13}, {"lines": [["nar", "她拿起信封，拇指顺着封口摸了一遍，指甲停在纸边上。"], ["nar", "半空里，那只手停住了。柜台上的钟走了一格，秒针的声音很清楚。"], ["say", "“你拆吧。”"], ["nar", "她没动，眼睛还落在信封上，喉结往下走了一下。"], ["nar", "然后她低下头，把封口撕开一条口子，抽出里面一张对折的纸。"]], "choices": ["说你拆吧", "帮她拆", "（转过身去）"], "n": 14}, {"lines": [["nar", "信纸只有半页，圆珠笔的字，笔画压得很重，划破了两处。她把纸放平在柜台上，用手掌压了压边角。"], ["say", "“她说，这店里所有的东西，还有铺子的租约，都归我。”"], ["nar", "柜台上那杆秤的秤砣还挂着，绳子绕了两圈，没解开。"], ["say", "“这算什么。”"], ["nar", "窗外过去一辆三轮车，铁皮刮着地面，响了一阵，远了。"]], "choices": ["问她信不信", "说这算什么", "（不接话）"], "n": 15}, {"lines": [["nar", "她出门的时候天还阴着，檐下的水一滴一滴砸在石阶上，砸出几个小坑。"], ["nar", "回来时太阳出来了，晾在门口的那块抹布已经干硬，边角翘着。"], ["nar", "她把一张新的身份证放到柜台上，塑料膜反着光，照片里的人头发剪短了。"], ["say", "“新名字叫什么？”"], ["nar", "她报了两个字，很平常的两个字，我没听过。"]], "choices": ["问她新名字", "说挺好听", "（把招牌擦干净）"], "n": 16}, {"lines": [["nar", "傍晚的光斜进门里，把货架上一层灰照得清清楚楚，也照见门槛上那道旧裂缝。"], ["nar", "她站在门口，一只手扶着门框，没有进来，也没有出去。"], ["say", "“以后我就叫这个了。”"], ["nar", "她把门框上翘起的一小块漆皮按了回去，按了两下，没按平。"], ["say", "“嗯。念起来很轻。”"], ["nar", "铃铛响了一下，风从街上灌进来，把柜台上那张信纸吹得翻了个面。"]], "choices": ["听着", "说很轻", "（笑了）"], "n": 17}]}], "endings": {"A": {"title": "念得很慢", "text": "新招牌挂上去的时候钉子偏了一点。她退后两步看了看，说就这样吧，偏着才像这店原来的样子。然后她念了一遍自己的新名字，念得很慢，一个字一个字地念，念完才把钥匙插进锁孔。"}, "B": {"title": "就这个", "text": "信她收进了抽屉最里面，没回。她照旧每天开门，只是不再演谁。客人问起名字，她说：我叫江栖，就这个。说完低头继续擦柜台上那只不属于任何人的旧表。"}, "C": {"title": "没拆的信", "text": "她还是走了，把钥匙放在柜台正中，钥匙下面压着一张纸条，只写了四个字：店你留着。抽屉里那封信没拆，信封上的雨渍干成一圈浅浅的印子，边角翘着。"}, "D": {"title": "另一把钥匙", "text": "真身后来回来过一趟，两人在店里坐了一下午，谁也没提这三个月。走的时候她留了一把钥匙，说店你继续开着，名字你也接着用。门合上之后，店里安静得能听见旧表走秒。"}}, "vigs": [{"title": "旧表", "need": 6, "lines": ["柜台玻璃下压着一只旧表，表带断了，指针停着。", "有人问卖不卖，她说不卖。", "「那你留着干嘛？」", "她说：留着看时间停着的样子。"]}, {"title": "语气", "need": 12, "lines": ["她学人说话只学半句，剩下的留着。", "「你这句话后面本来还有一句。」你会这么说。", "她就笑，说后面那句还说不好。", "后来她把那句补上了，语气是死的。"]}, {"title": "信", "need": 18, "lines": ["信封上的字很轻，像怕写重了就擦不掉。", "邮戳是邻市的，日期差了一天。", "她没有马上拆，先把它放在柜台上，压在那只旧表上面。", "压了三天，信角被表压出一道弧。"]}], "route": "double", "arch": "替身者"};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+$('#world').textContent=D.world; $('#premise').textContent=D.premise;
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach(t=>{
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      if(/陪|等|不|别走|谢|留|帮|说|问|看|递|握/.test(t)) warm++;
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=warm/Math.max(1,total);
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; render(); };
+</script></body></html>
