@@ -185,7 +185,7 @@ const PRESETS={
   glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
 };
-const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,
+const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,read:false,
   mem:8000, reply:1200, persona:'full',
   pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
   api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'}};
@@ -331,8 +331,10 @@ function replayLog(){
     if(her) bubble('her', her);
   }
 }
-function bubble(cls,html){const d=document.createElement('div');d.className='b '+cls;d.innerHTML=html;$('log').appendChild(d);$('log').scrollTop=1e9;return d;}
-function nar(txt){ String(txt).split('\n').filter(x=>x.trim()).forEach(line=>{
+function bubble(cls,html){if(SET.read && cls==='her' && html) speakLine(String(html).replace(/<[^>]+>/g,''));
+const d=document.createElement('div');d.className='b '+cls;d.innerHTML=html;$('log').appendChild(d);$('log').scrollTop=1e9;return d;}
+function nar(txt){ if(SET.read && txt && !/^\s*$/.test(txt)) speakLine(String(txt));
+  String(txt).split('\n').filter(x=>x.trim()).forEach(line=>{
     const d=document.createElement('div'); d.className='nar'; d.textContent=line.trim(); $('log').appendChild(d);});
   $('log').scrollTop=1e9; }
 $('back').onclick=()=>{ $('chat').classList.remove('on'); $('home').classList.add('on'); renderHome(); };
@@ -668,8 +670,9 @@ function openSettings(){
      <button class="btn ghost" onclick="clearKey()">清除 key</button>
    </div>
    <div class="sgroup">其他（占位，后续补）</div>
-   <div class="opt"><div class="lbl">声音与朗读</div><span class="tag">未开放</span></div>
-   <div class="opt"><div class="lbl">存档导出 / 导入</div><span class="tag">未开放</span></div>
+   <div class="opt" onclick="toggleRead()"><div class="lbl">朗读她的台词</div><span class="tag" id="readTag">关</span></div>
+   <div class="opt" onclick="exportSaves()"><div class="lbl">导出存档（下载一份 json）</div><span class="tag">全部线路</span></div>
+   <div class="opt" onclick="importSaves()"><div class="lbl">导入存档（选一份 json）</div><span class="tag">覆盖同名</span></div>
    <div class="opt"><div class="lbl">关于</div><span class="tag">v2</span></div>`;
   $('sheet').classList.add('on');
   const tR=$('themeRow');
@@ -808,6 +811,69 @@ function openVigs(){
      }).join('') : '<div class="empty">这条线还没有番外</div>');
   $('sheet').classList.add('on');
 }
+
+function exportSaves(){
+  try{
+    const data={v:1, at:new Date().toISOString(), sessions:JSON.parse(localStorage.getItem('jieyu.sessions')||'{}'),
+                set:JSON.parse(localStorage.getItem('jieyu.set')||'{}')};
+    const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='借你一场雨-存档-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+    toast('已导出 '+(Object.keys(data.sessions).length)+' 条存档');
+  }catch(e){ toast('导出失败：'+e.message); }
+}
+function importSaves(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=()=>{
+    const f=inp.files && inp.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=()=>{
+      try{
+        const d=JSON.parse(r.result);
+        if(!d || typeof d!=='object' || !d.sessions) throw new Error('不是存档文件');
+        const cur=JSON.parse(localStorage.getItem('jieyu.sessions')||'{}');
+        let n=0;
+        Object.keys(d.sessions).forEach(k=>{ if(CHARS[k]||k==='secret'){ cur[k]=d.sessions[k]; n++; } });
+        localStorage.setItem('jieyu.sessions', JSON.stringify(cur));
+        if(d.set){ localStorage.setItem('jieyu.set', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('jieyu.set')||'{}'), d.set))); SET=JSON.parse(localStorage.getItem('jieyu.set')); applySet(); }
+        toast('已导入 '+n+' 条存档'); closeSheet(); renderHome();
+      }catch(e){ toast('导入失败：'+e.message); }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+function toggleRead(){
+  SET.read = !SET.read; saveSet();
+  const t=document.getElementById('readTag'); if(t) t.textContent = SET.read?'开':'关';
+  if(SET.read){ speakLine('已开启朗读'); } else if(window.speechSynthesis){ speechSynthesis.cancel(); }
+  toast(SET.read?'已开启朗读（系统语音）':'已关闭朗读');
+}
+function speakLine(text){
+  if(!SET.read || !window.speechSynthesis || !text) return;
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(String(text).replace(/[“”"]/g,''));
+    u.lang='zh-CN'; u.rate=0.95; u.pitch=1.02;
+    const vs=speechSynthesis.getVoices().filter(v=>/zh/i.test(v.lang));
+    if(vs.length) u.voice=vs[0];
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function toast(msg){
+  let t=document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast';
+    t.style.cssText='position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:rgba(20,18,16,.94);color:#ece6de;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:9px 14px;font-size:13.5px;z-index:60;max-width:80vw;text-align:center';
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._h); t._h=setTimeout(()=>{ t.style.opacity='0'; }, 2600);
+}
+
 function editMe(){
   const box=$('sheetBox');
   box.innerHTML=`<div class="sheettitle"><b>我的人设</b><button class="close" onclick="closeSheet()">×</button></div>
@@ -979,8 +1045,9 @@ function openSettings(){
      <button class="btn ghost" onclick="clearKey()">清除 key</button>
    </div>
    <div class="sgroup">其他（占位，后续补）</div>
-   <div class="opt"><div class="lbl">声音与朗读</div><span class="tag">未开放</span></div>
-   <div class="opt"><div class="lbl">存档导出 / 导入</div><span class="tag">未开放</span></div>
+   <div class="opt" onclick="toggleRead()"><div class="lbl">朗读她的台词</div><span class="tag" id="readTag">关</span></div>
+   <div class="opt" onclick="exportSaves()"><div class="lbl">导出存档（下载一份 json）</div><span class="tag">全部线路</span></div>
+   <div class="opt" onclick="importSaves()"><div class="lbl">导入存档（选一份 json）</div><span class="tag">覆盖同名</span></div>
    <div class="opt"><div class="lbl">关于</div><span class="tag">v2</span></div>`;
   $('sheet').classList.add('on');
   const tR=$('themeRow');
