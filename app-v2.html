@@ -841,6 +841,8 @@ $('memBtn').onclick=()=>{
 /* ---------- 启动 ---------- */
 (async()=>{
   await detect();
+  const want=new URLSearchParams(location.search).get('r');
+  if(want && CHARS[want]){ setTimeout(()=>openChat(want), 60); }
   if(location.protocol==='file:' && MODE!=='server'){
     setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
   }
@@ -1150,6 +1152,8 @@ $('memBtn').onclick=()=>{
 /* ---------- 启动 ---------- */
 (async()=>{
   await detect();
+  const want=new URLSearchParams(location.search).get('r');
+  if(want && CHARS[want]){ setTimeout(()=>openChat(want), 60); }
   if(location.protocol==='file:' && MODE!=='server'){
     setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
   }
