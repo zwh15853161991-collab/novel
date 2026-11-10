@@ -573,6 +573,7 @@ async function sendTurn(text){
   S.turns.push(text); S.turns.push((CHARS[CUR].name)+'：'+(d.say||''));
   if(d.memory) S.facts.push(d.memory);
   if(d.advance) S.log=S.log.concat([d.advance]).slice(-12);
+  S.uturns=(S.uturns||0)+1; if(!(d.state&&d.state.chapter)) clientAdvance();
   if(d.open_thread) S.threads=S.threads.concat([d.open_thread]).slice(-4);
   if(d.close_thread) S.threads=S.threads.filter(x=>!String(x).includes(d.close_thread));
   if(d.outline_hit && S.outline[d.outline_hit-1]) S.outline[d.outline_hit-1].done=true;
@@ -865,6 +866,18 @@ function speakLine(text){
   }catch(e){}
 }
 
+
+function clientAdvance(){
+  const chs=Object.keys(SCENES).filter(ch=>SCENES[ch].some(b=>b.route===CUR));
+  if(!chs.length) return;
+  const beatsOf=ch=>SCENES[ch].filter(b=>b.route===CUR);
+  let idx=Math.floor((S.uturns||0)*2/3), i=0;
+  while(i+1<chs.length && idx>=beatsOf(chs[i]).length){ idx-=beatsOf(chs[i]).length; i++; }
+  S.chapter=chs[i];
+  const bs=beatsOf(chs[i]);
+  S.beat = bs.length? bs[Math.max(0,Math.min(idx,bs.length-1))].beat : '';
+}
+
 function toast(msg){
   let t=document.getElementById('toast');
   if(!t){ t=document.createElement('div'); t.id='toast';
@@ -948,6 +961,7 @@ async function sendTurn(text){
   S.turns.push(text); S.turns.push((CHARS[CUR].name)+'：'+(d.say||''));
   if(d.memory) S.facts.push(d.memory);
   if(d.advance) S.log=S.log.concat([d.advance]).slice(-12);
+  S.uturns=(S.uturns||0)+1; if(!(d.state&&d.state.chapter)) clientAdvance();
   if(d.open_thread) S.threads=S.threads.concat([d.open_thread]).slice(-4);
   if(d.close_thread) S.threads=S.threads.filter(x=>!String(x).includes(d.close_thread));
   if(d.outline_hit && S.outline[d.outline_hit-1]) S.outline[d.outline_hit-1].done=true;
