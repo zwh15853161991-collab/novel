@@ -771,7 +771,7 @@ function openSettings(){
    <div class="opt" onclick="toggleRead()"><div class="lbl">朗读她的台词</div><span class="tag" id="readTag">关</span></div>
    <div class="opt" onclick="exportSaves()"><div class="lbl">导出存档（下载一份 json）</div><span class="tag">全部线路</span></div>
    <div class="opt" onclick="importSaves()"><div class="lbl">导入存档（选一份 json）</div><span class="tag">覆盖同名</span></div>
-   <div class="opt"><div class="lbl">关于</div><span class="tag">v2</span></div>`;
+   <div class="opt"><div class="lbl">关于</div><span class="tag" id="buildTag">加载中</span></div>`;
   $('sheet').classList.add('on');
   const tR=$('themeRow');
   Object.keys(THEMES).forEach(k=>{
@@ -941,6 +941,7 @@ $('memBtn').onclick=()=>{
 
 /* ---------- 启动 ---------- */
 (async()=>{
+  try{ const bt=document.getElementById('buildTag'); if(bt) bt.textContent='v'+Object.keys(CHARS).length+' · '+new Date().getFullYear(); }catch(e){}
   await detect();
   const want=new URLSearchParams(location.search).get('r');
   if(want && CHARS[want]){ setTimeout(()=>openChat(want), 60); }
@@ -948,6 +949,6 @@ $('memBtn').onclick=()=>{
     setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
   }
   renderHome();
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=4').catch(()=>{}); }
 })();
 </script></body></html>
