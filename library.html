@@ -36,13 +36,19 @@ ol.lines{display:grid;gap:8px;padding-left:20px;margin:0;font-size:13.5px;color:
 details{margin:10px 0}
 summary{cursor:pointer;color:var(--dim);font-size:13.5px}
 .count{color:var(--faint);font-size:12px}
+@media(max-width:560px){
+  .tbl thead{display:none}
+  .tbl tr{display:block;border-bottom:1px solid var(--line);padding:12px 0}
+  .tbl td{display:block;border:0;padding:2px 0;white-space:normal}
+  .tbl td[data-l]:before{content:attr(data-l);display:block;color:var(--faint);font-size:11px;letter-spacing:.1em;margin-bottom:2px}
+}
 footer{max-width:860px;margin:0 auto;padding:0 20px 50px;color:var(--faint);font-size:12px;text-align:center}
 </style></head><body>
 <header>
   <h1>借你一场雨</h1>
   <div class="sub">互动小说 · 小说资料库与作品本体</div>
   <div class="entry">
-    <a href="./index.html"><b>进入离线完整版 →</b><span>单文件、不联网 · 9 条线 / 188 场 / 34 个结局</span></a>
+    <a href="./index.html"><b>进入离线完整版 →</b><span>单文件、不联网 · 全部线路都在里面</span></a>
     <a class="alt" href="./guide.html">第一次玩？看指南 →</a>
     <a class="alt" href="./app-v2.html"><b>AI 版（需填 key）→</b><span>她会读你的话 · 剧情由模型推进 · 有记忆</span></a>
   </div>
@@ -56,9 +62,9 @@ const esc = s => String(s==null?'':s).replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt
 
 function renderRoles(){
   const rows = D.used.map(r=>`<tr>
-    <td class="n"><b>${esc(r.name)}</b><br><span style="color:var(--faint);font-size:12px">${esc(r.meta)}</span></td>
-    <td>${esc(r.arch)}<br><span style="color:var(--dim);font-size:12px">台词：${esc(r.voice)}</span></td>
-    <td style="color:#c8a37a;font-size:12.5px">${esc(r.trap)}</td></tr>`).join('');
+    <td class="n" data-l="角色"><b>${esc(r.name)}</b><br><span style="color:var(--faint);font-size:12px">${esc(r.meta)}</span></td>
+    <td data-l="对应原型 / 台词风格">${esc(r.arch)}<br><span style="color:var(--dim);font-size:12px">台词：${esc(r.voice)}</span></td>
+    <td data-l="要避开的雷点" style="color:#c8a37a;font-size:12.5px">${esc(r.trap)}</td></tr>`).join('');
   return `<h2>角色 ↔ 原型</h2>
     <p class="lead">每个角色都挂在资料库的一个原型上；右侧是该原型「必须避开的雷点」，写台词时当校对清单用。</p>
     <table class="tbl"><thead><tr><th>角色</th><th>对应原型 / 台词风格</th><th>要避开的雷点</th></tr></thead>
