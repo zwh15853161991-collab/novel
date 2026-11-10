@@ -252,7 +252,7 @@ function renderHome(){
     });
   }
   if(TAB==='pick'){
-    const h=document.createElement('div'); h.className='sect'; h.textContent='八个人 · 选一个开始'; box.appendChild(h);
+    const h=document.createElement('div'); h.className='sect'; h.textContent=Object.keys(CHARS).length+' 个人 · 选一个开始'; box.appendChild(h);
     Object.keys(CHARS).forEach(id=>{
       const c=CHARS[id];
       const d=document.createElement('div'); d.className='card'; d.onclick=()=>openChat(id);
