@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>沈知微 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#6f6862;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:14px;margin:0}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">前情提要</div><p class="world" id="premise"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "沈知微", "meta": "18 · 替嫁进裴府的庶女 · 后来开了间布铺", "premise": "「我不怕守寡。我怕的是账对不上，到最后算在我头上。」", "world": "话少但清楚，记账比谁都细。不哭，也不求人。", "chapters": [{"title": "第一章 替嫁", "scenes": [{"lines": [["nar", "喜棚搭好那天下了雨，红绸被打湿，颜色深了一块。府里说，沈家的小姐明日进门。"], ["nar", "裴府的喜棚搭了三天，红绸被雨打得发黑。你坐在偏院的账房里，替这桩婚事记嫁妆的单子。"], ["nar", "花轿进门时，你从窗缝里看了一眼。新妇的盖头很低，看不见脸，只看见一双鞋——鞋底是湿的，走得很稳。"], ["say", "「账房先生。」"], ["nar", "你已经翻过三遍账。嫁妆单子上写着三十六抬，实际抬进来的，二十六抬。少的十抬，写的是「沈府补送」。"], ["nar", "她把袖子里的一本薄册放在你桌上，声音很轻："], ["say", "「少的十抬，不会补送了。这一本，是我自己记的。」"]], "choices": ["接过册子，先对账", "「你是替谁嫁过来的。」", "「这不是我该问的。」"], "n": 1}, {"lines": [["nar", "册子上的字很干净，一笔一划，不像仓促写的。她把每一项都记了：米、布、银，连两匹绢的颜色都注了。"], ["say", "「我叫沈知微。姐姐病了，家里让我来。」"], ["say", "「先生，我不怕守寡。我怕的是账对不上，到最后算在我头上。」"], ["nar", "她说完，把册子往你这边推了一寸。"]], "choices": ["「我替你补上。」", "「对不上就如实报。」", "把婚书折了一半，没问出口"], "n": 2}, {"lines": [["nar", "喜宴散得早。二公子身子弱，拜完堂就被扶回房里，咳嗽声隔着两道墙都听得见。"], ["nar", "她在廊下站着，红盖头还没揭。风把盖头掀起来一角，露出半张脸。"], ["say", "「先生，你不去喝喜酒？」"]], "choices": ["「这酒我喝不下去。」", "「我在这儿等账。」", "替她把盖头压好"], "n": 3}, {"lines": [["nar", "她愣了一下，手抬起来，又放下。"], ["say", "「府里的人，都不碰我。好像我一碰就会碎。」"], ["say", "「其实我扛得住。我娘病了三年，都是我伺候的。」"]], "choices": ["「我看出来了。」", "「那你不用在我面前撑着。」", "「你是替嫁的，他们自然防着你。」"], "n": 4}, {"lines": [["nar", "三更，府里忽然乱起来。二公子咳血，请了大夫，大夫摇头。"], ["nar", "你在账房守着灯，她从廊那头过来，脚步很急，停在门口却没进来。"], ["say", "「先生，我能不能在你这儿坐一会儿。」"], ["say", "「他屋里……我待不住。」"]], "choices": ["让开门，让她进来坐", "「不合规矩。」", "把灯递给她，让她提着回去"], "n": 5}]}, {"title": "第二章 守寡", "scenes": [{"lines": [["nar", "二公子死在第七天。府里换了白，红绸被扯下来，堆在院角，像一堆没人要的东西。"], ["nar", "族里的意思很清楚：新妇守寡，或者送回沈家。送回的那条路，等于说这桩婚事不算数。"], ["say", "「先生，账还没算完。」"], ["say", "「他们说要送我回去的时候，我就想着这句话。」"]], "choices": ["「账我帮你算完。」", "「回去也不见得是坏事。」", "「你想留下？」"], "n": 1}, {"lines": [["nar", "祠堂散了之后，府里换了白。她把袖子里的册子摊在桌上，摊得很平，用手指把折痕压实。"], ["nar", "桌上还有一本底册，是你从柜子最底下翻出来的，纸角被虫蛀了两个洞。"], ["say", "「先生，这两本对不上。你那本少三笔，我这本多三笔。」"], ["nar", "她把算盘挪到两人中间，珠子朝上推了一档，没拨。"], ["say", "「银锭我见过。有人拿它压我的册子，压出一个圆印。」"], ["nar", "圆印在第二页，正压着那处待补的墨字。"]], "choices": ["「圆印拓下来，留着。」", "「册子先别拿出去。」", "把两本合上，压回柜底"], "n": 2}, {"lines": [["nar", "你翻出账房底册，一笔一笔对。三十六抬嫁妆，二十六抬入户，十抬记在「待补」，却有三笔银子早在半年前就出了府。"], ["nar", "出账的经手人，是府里的二管事。"], ["say", "「这钱不是我的嫁妆。」"], ["say", "「是他们早就挪走的，等我进门来背。」"]], "choices": ["「我陪你去找族长。」", "「先把底册抄一份藏起来。」", "「这事你别出头。」"], "n": 3}, {"lines": [["nar", "二管事姓周，管着府里三十年的账。他见了你，笑得很和气。"], ["nar", "他袖口磨得发亮，手上戴着一枚玉扳指——府里发的，管事才有。"], ["say", "「账房先生，年轻。有些账，不是这么算的。」"], ["nar", "他把一锭银子推到桌上，压住底册的一角。"], ["nar", "推银子的时候，他的拇指在银锭上按了一下——像在试它会不会滑走。"]], "choices": ["把银子推回去", "收下银子，另抄一份", "「那我该怎么算。」"], "n": 4}, {"lines": [["nar", "那晚她来账房，看见你桌上的底册，什么也没问。"], ["nar", "她只把一卷纸摊开——是她自己抄的，抄得比你还全。"], ["say", "「先生，我娘教过我一句话：账要自己对，别指望别人替你算。」"], ["say", "「我知道你为难。你在这府里吃饭。」"]], "choices": ["「这碗饭我不吃了。」", "「饭要吃，账也要对。」", "「你别把我算进去。」"], "n": 5}, {"lines": [["nar", "族长在祠堂议事，说新妇守寡三年，若不安分，就送回沈家。周管事站在旁边，一句没辩。"], ["nar", "祠堂的梁上挂着三块匾，最旧那块的字已经看不太清。她在门口站着，手一直攥着袖口。"], ["nar", "你抱着底册站在门外。门里的人，还没看见你。"], ["say", "「……」"]], "choices": ["推门进去，把底册摊在案上", "等他们说完再进", "把底册交给族长身边的人"], "n": 6}, {"lines": [["nar", "祠堂里静了一瞬。族长的目光从底册移到你脸上，又移到门口。"], ["nar", "她站在门口，没有进来，也没有走。"], ["say", "「账是我托先生查的。」"], ["say", "「要送回沈家，我认。但这十抬嫁妆的窟窿，不能算在我头上。」"]], "choices": ["「我作证。」", "什么也不说，站在她身后", "「这是府里的事。」"], "n": 7}, {"lines": [["nar", "底册在库房最里头的柜子里。第二天她去取，被两个管事拦在门口——一个说钥匙在周管事手上，一个说府里查不到这张凭据。"], ["nar", "她站在台阶下，比那两个人都矮半头，声音却很平。"], ["say", "「凭据在族长那儿。你们要拦，就跟我一起去祠堂说。」"], ["nar", "两个人没动。她也没走，就那样站着，站了半个时辰。"]], "choices": ["搬张凳子来，让她坐着等", "去找族长，把人叫下来", "站在她旁边，一起等"], "n": 8}, {"lines": [["nar", "三天后她一个人去了库房，回来的时候袖口撕了一道口子，头发也有点乱。"], ["nar", "她没说自己摔的，也没说别人推的。她把一沓纸放在你桌上，纸角沾了灰。"], ["say", "「底册我拿到了。不是抄的，是原来的那本。」"], ["nar", "她手上有一道很细的新划痕，还在渗血。"]], "choices": ["先给她处理手上的伤", "「你怎么拿到的。」", "把底册收起来，先看内容"], "n": 9}]}, {"title": "第三章 出府", "scenes": [{"lines": [["nar", "族长没有当场发作。三日后，周管事被查，府里封了两间库房。"], ["nar", "她搬出了正院，住到后院一间小屋。屋子朝西，下午晒得很热。"], ["say", "「先生说，账要自己对。我这些天想明白一件事。」"], ["say", "「我不守这个寡了。」"]], "choices": ["「那你打算怎么办。」", "「要不要我帮你寻个去处。」", "「族里不会答应。」"], "n": 1}, {"lines": [["nar", "门板是新上的，漆味还没散。她一个人把三匹布摞上柜台，摞完退后两步，看了一看高度。"], ["nar", "柜台角上压着一张纸，边角起毛，被算盘压着。"], ["say", "「先生，柜上少个记账的。你要不要留下来。」"], ["nar", "她问得很直，问完就去扯平那匹蓝布的褶子，把脸背过去。"], ["say", "「工钱不多。管饭。」"], ["nar", "布尺从柜台那头滑下来，掉在地上，两个人都没去捡。"]], "choices": ["「管饭就够了。」", "「先把那张纸挪个地方。」", "「工钱讲清楚，我再答。」"], "n": 2}, {"lines": [["nar", "她从床底下拖出一个小箱子。里面有布样、账目、还有一张画得很粗的铺面图。"], ["nar", "图上用铅笔标了门宽、柜深，还画了个小人站在柜台后面。"], ["say", "「城南有间空铺子，租金不贵。我想做布匹生意——嫁妆里的那两匹绢，我认得是什么货。」"], ["say", "「先生，你算账算得好。要不要，一起算。」"], ["nar", "她说这话的时候看着铺面图，没有看你。"]], "choices": ["「一起算。」", "「我先帮你把铺子盘下来。」", "「你一个人也能行。」"], "n": 3}, {"lines": [["nar", "出府那天要签字画押：退了婚书，嫁妆归沈家，从此与裴府无涉。"], ["nar", "族长把笔推过来，看着她，也看着你。"], ["say", "「先生，签了这一笔，你就不是裴府的人了。」"], ["say", "「你的差事，也就没了。」"]], "choices": ["签", "「我先签，你后签。」", "把笔放下"], "n": 4}, {"lines": [["nar", "退婚书要去沈家拿。她一个人回去的，没让你跟，说这是她家的事。"], ["nar", "回来时天已经黑了。她手里捏着一张纸，边角被攥得起了毛。"], ["say", "「我娘把婚书给我了。她说，她这辈子就这一件事做得对。」"], ["nar", "她把婚书摊在柜台上，压平，压在算盘底下。"]], "choices": ["「要不要烧了它。」", "「留着吧。」", "什么也不说，给她倒一杯水"], "n": 5}, {"lines": [["nar", "铺子开在城南，门面不大，招牌是新的，字是她自己写的。"], ["nar", "第一笔生意是一个下雨天进来的老妇人，买了两尺蓝布。"], ["say", "「今天开张。先生，你算算，这一天赚了多少。」"], ["nar", "她把算盘推到你面前，自己站在旁边，手在围裙上擦了擦。"]], "choices": ["「赚了一文。」", "「赚了一个铺子。」", "不打，只看着她"], "n": 6}, {"lines": [["nar", "入夜，铺子关门。她把灯芯挑亮，坐下来，第一次没有急着说什么。"], ["say", "「先生，我从前想，我这辈子就是替别人活。替姐姐嫁，替沈家还账。」"], ["say", "「现在这间铺子是我的。你要是有话，现在说。」"]], "choices": ["「沈知微，我喜欢你。」", "「铺子是你的。我留下算账就行。」", "「我先回去了。」"], "n": 7}, {"lines": [["nar", "开张第十天，来了两个人，说是裴府旧人，来收「例钱」——铺子在城南，归这条街的规矩管。"], ["nar", "她把手上的布放下，走到门口，站得比那两个人直。"], ["say", "「这铺子是我退了婚书换来的。你们要收钱，先去问族长它算不算裴家的产业。」"], ["nar", "两个人对视了一眼，没走，也没进来。"]], "choices": ["站到她旁边，一起听", "「账我来算，规矩我来讲。」", "在里屋不出声"], "n": 8}, {"lines": [["nar", "那两个人走了。她关上门，把门闩插上，回头时眼圈是红的，但没哭。"], ["say", "「我从前以为，最难的是对账。」"], ["say", "「现在知道了，最难的是站在门口说话。」"], ["nar", "她把账本翻开，最后一页还是空着。她把笔递给你。"]], "choices": ["接过笔，在最后一页写下自己的名字", "把笔推回去，让她自己写", "合上账本，什么也没写"], "n": 9}]}, {"title": "第三章 · 最后", "scenes": [{"lines": [["nar", "雨停了。她站在书店门口，手里拿着那张后天的车票。"], ["say", "「……」"]], "choices": ["把话说出口", "拉住她，不让她走", "什么也没做，松开手"], "n": 1}]}], "endings": {"A": {"title": "一起算", "text": "铺子第三年换了大些的门面。招牌还是她写的，字比第一年稳。\n账房那间小屋没动，你每天算完最后一笔，就在门口等她落锁。\n有人问起你们是什么关系，她说：「合伙的。」说完看你一眼，补一句，「也是别的。」"}, "B": {"title": "各自记账", "text": "你留在了铺子里，算账、进货、记账，只是没说过那句话。\n第五年她嫁了人，嫁的是一个粮行的掌柜。出嫁前一天，她把铺子的账本交给你。\n「先生，这铺子有你一半。」她说，「账你自己记着。」\n布铺的账本最后一页空着，只落了一行日期。\n她自己开了间小铺子，只卖布头，不记账。"}, "C": {"title": "还了婚书", "text": "婚书退了，你离开了这座城。听说铺子开得不错，她雇了两个伙计。\n三年后你路过城南，隔着街看见她在门口算账。她抬头，正好看见你，抬手打了个招呼——很自然的一个招呼。\n你也抬手，然后走了。\n那副算盘搁在左首边，珠子停在原来那一档。\n她仍旧每天算一遍账，数目对得上才关门。"}, "D": {"title": "没签的那一笔", "text": "那天你没签。族里把这事记了下来，说你「与妇人有私」。\n铺子没开成。她被送回沈家，第二年冬天病了一场。\n你被赶出裴府，在别的城里继续替人算账。算到某一页，笔停了一下。\n那本账册后来流到了旧货摊上，最后一页是空的，一道横线都没有。"}}, "vigs": [], "route": "shen", "arch": ""};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+$('#world').textContent=D.world; $('#premise').textContent=D.premise;
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach(t=>{
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      if(/陪|等|不|别走|谢|留|帮|说|问|看|递|握/.test(t)) warm++;
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=warm/Math.max(1,total);
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; render(); };
+</script></body></html>

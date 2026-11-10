@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>萧明烛 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#6f6862;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:14px;margin:0}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">前情提要</div><p class="world" id="premise"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "萧明烛", "meta": "26 · 摄政长公主 · 掌兵符与内阁", "premise": "「我这辈子听过很多话。跪着的、站着的、隔着帘子的。没有一句是要我这个人。」", "world": "只说陈述句，很少发问。把所有人都当成可用的东西，包括自己。", "chapters": [{"title": "第一章 抄书", "scenes": [{"lines": [["nar", "调令是三天前送来的：着国史馆抄书吏一人，赴长公主府听候。调令上没写为什么，只盖了一个印。"], ["nar", "长公主府在皇城东侧，墙比翰林院高两丈。你抱着那部《河渠志》的残本进去时，雨正顺着瓦当往下淌。"], ["nar", "引路的内侍一路上没说话，只在过二门时低声道：长公主萧明烛，不喜虚礼，问什么答什么。"], ["nar", "引路的太监说，长公主只给三天。三天校完，错一个字，你回翰林院抄十年书。"], ["say", "「你就是那个抄书的？」"], ["nar", "帘子后面有人说话，声音不高，语速很稳，听不出年纪。"], ["say", "「进来。别抬头。」"]], "choices": ["低着头走进去，把书放在案上", "「殿下，臣先校哪一卷？」", "站着不动，先看清这屋里有几个人"], "n": 1}, {"lines": [["nar", "屋里只有三个人：她、一个老嬷嬷、一个捧着朱笔的小宫女。"], ["nar", "她坐在帘子后面，案上摆着半尺高的折子，朱笔插在笔山里，笔尖是干的。"], ["say", "「第三卷，第十七页。你自己找。」"], ["nar", "你翻到那一页。上面一句「河决于东，民徙三万户」，字迹与前后不同，是后来补的。"], ["say", "「错在哪儿。」"]], "choices": ["「不是错。是有人改了数。」", "低下头，没答", "「三万户，不止。至少五万。」"], "n": 2}, {"lines": [["nar", "帘子动了一下。她伸手把帘子掀开半尺，露出半张脸，眼睛很静，像在看一件器物值不值钱。"], ["say", "「你今年多大。」"], ["say", "「算了，别答。答了我也记不住。」"], ["nar", "她把手放回去，帘子落下。"], ["say", "「三天之内，把这份《河渠志》改回原样。用你自己的字。」"]], "choices": ["「臣改不了。这字迹是内阁的。」", "把笔放下，没动那处", "「殿下要臣改哪一处？」"], "n": 3}, {"lines": [["nar", "她笑了一声，很短，像咳嗽。"], ["say", "「你倒是先问价钱。」"], ["say", "「改一处。第七卷，粮价。改完这本，你就走。走得远远的。」"], ["nar", "老嬷嬷在你身后轻轻啧了一声，又立刻收住。"]], "choices": ["「臣不走。」", "「臣要一个理由。」", "低头应下，什么也不问"], "n": 4}, {"lines": [["nar", "三天的第二天夜里，你在偏房抄到三更。灯芯爆了一下，你才发现门外站着人。"], ["nar", "她没穿朝服，披着一件旧氅衣，头发只挽了一半，手里端着一盏凉掉的茶。"], ["say", "「你抄得比翰林院那些人像样。」"], ["say", "「他们抄字，你抄意思。」"]], "choices": ["「殿下深夜不睡？」", "「殿下在等什么。」", "把灯芯拨亮一点，让给她半个灯"], "n": 5}, {"lines": [["nar", "她在外间的椅子上坐下，离你有三步，隔着半张案。"], ["say", "「等一件事。等了很多年。」"], ["nar", "她说话时看着灯，不看人。灯影把她的下颌线照得很硬。"], ["say", "「你抄完这本书，就当我没找过你。明白吗。」"], ["nar", "她起身走了，茶盏留在案上，一口没动。"]], "choices": ["「臣明白。」", "「臣不明白。殿下到底要做什么。」", "追到门口，什么也说不出来"], "n": 6}]}, {"title": "第二章 把柄", "scenes": [{"lines": [["nar", "第三天，书校完了。你把改好的那一页铺在案上，字是你的，意思不是。"], ["nar", "她看完，把一张薄纸推到你面前。是一份弹劾的抄本，参的是户部一位侍郎。"], ["say", "「这一份，要送进宫。送的人会被查。」"], ["say", "「你去。」"]], "choices": ["「臣去。」", "「殿下为什么不自己去。」", "把纸推回去"], "n": 1}, {"lines": [["nar", "她没有生气，只是把纸又推回来，指尖在那行字上敲了一下。"], ["say", "「我去，就是党争。你去，就是个抄书的小吏走错了门。」"], ["say", "「你怕死吗。」"], ["nar", "她问得很平，像在问今天下不下雨。"]], "choices": ["「怕。但更怕一辈子抄别人的话。」", "「怕。殿下给多少银子。」", "「殿下怕过吗。」"], "n": 2}, {"lines": [["nar", "她沉默了一会儿。窗外有人打更，三更三点。"], ["say", "「怕过。」"], ["say", "「十岁那年宫里走水，我在偏殿，门被人从外面锁了。」"], ["nar", "她说到这里就停了，把袖子往下拉了拉，遮住手腕。"], ["say", "「后来我不怕火了。我怕人。」"]], "choices": ["「那殿下现在，怕臣吗。」", "什么也不问，替她把窗关小", "「臣不会锁门。」"], "n": 3}, {"lines": [["nar", "她没有回答，只把那份弹劾往前推了半寸。"], ["say", "「明早卯时，东华门的采买车。你把纸压在菜下面。」"], ["say", "「送完，你就出城。城外有匹马，有人接你。」"], ["nar", "她说得像在吩咐一件差事，只是说到「有人接你」时，停顿了半拍。"]], "choices": ["「殿下不留臣？」", "「臣送完就回来。」", "「好。」"], "n": 4}, {"lines": [["nar", "天没亮，东华门的采买车排了一长队。你把纸压在萝卜下面，手心全是汗。"], ["nar", "验车的军士翻了翻，问了句「哪个衙门的」，你说「长公主府的菜」，他挥挥手放行。"], ["nar", "出来时天刚亮。宫墙的影子斜在地上，一只猫蹲在墙头看你。"], ["say", "「别回头。」"], ["nar", "有人在背后说话。是她，站在阴影里，披着那件旧氅衣。"]], "choices": ["「殿下怎么在这儿？」", "「臣送完了。」", "站着不走"], "n": 5}, {"lines": [["nar", "御史台来人的时候，雨还没停。两个人站在偏房门口，靴底带进来一脚泥。"], ["say", "「《河渠志》第七卷，长公主府抄过。抄本在哪儿。」"], ["nar", "新抄的那一页就在你案上，墨还没干。你把一册旧账挪过去，只压住半边。"], ["nar", "你说府里没有抄本，动笔的是国史馆的人。声音比自己预想的稳。"], ["say", "「他说的，是我教的。」"], ["nar", "她隔着帘子开口。两个人回身行礼，帘后的灯影一动，没有动第二下。"]], "choices": ["「字是臣改的。与殿下无关。」", "把旧账压严，一个字不答", "「殿下府上，也会有人动笔。」"], "n": 6}, {"lines": [["nar", "她走近两步，在你面前停下。这是你第一次在白天、在宫墙外、离她这么近。"], ["say", "「你现在可以走。马在东门外。」"], ["nar", "她从袖子里拿出一样东西，摊开——是你的名籍，一张薄薄的纸。"], ["say", "「这个，我可以烧了。烧了，你就是个死人，谁也找不到你。」"], ["say", "「也可以留着。留着，你就还在册上。」"]], "choices": ["「烧了。」", "「留着。」", "「殿下想让臣怎么选。」"], "n": 7}]}, {"title": "第三章 宫门", "scenes": [{"lines": [["nar", "那一夜宫门闭得很早。街上巡防比平日多了一倍，家家户户关窗。"], ["nar", "她在书房里坐着，案上的折子摊开，一封也没批。朱笔还是干的。"], ["say", "「三天之内，有人要动兵。」"], ["say", "「我手里有兵符，也有圣旨。兵符是假的。」"], ["nar", "她把两样东西都推到你面前，让你看。"]], "choices": ["「殿下要臣做什么。」", "「真的圣旨在哪儿。」", "把假的兵符拿起来看"], "n": 1}, {"lines": [["say", "「真的在御史台。明天早朝，会有人拿出来。」"], ["say", "「我要是先动手，就是乱臣。我要是不动，明天晚上这府里一个人都活不了。」"], ["nar", "她第一次看着你的眼睛说完整句话。"], ["say", "「你告诉我。我该不该动。」"], ["nar", "她把这个问题交给你，像把刀递给一个不会用的人。"], ["nar", "说完她把手缩回袖子里，指节抵着桌沿——那是她在等一个她不想听见的答案。"]], "choices": ["「动。死在刀下，总比跪着等。」", "「不动。等他们先动手。」", "「臣不敢答。」"], "n": 2}, {"lines": [["nar", "她听完，没有立刻说话。灯芯烧短了，光很小。"], ["say", "「你知道我为什么选你抄书吗。」"], ["say", "「翰林院送来的名册上，只有你一个人的字，是给自己写的。」"], ["nar", "她伸手，把你手边那支笔拿过去，又放回来，笔尖朝你。"], ["say", "「你要是想走，现在还能走。」"]], "choices": ["「臣不走。」", "「殿下先回答臣一句话。」", "拿起笔，什么也不说"], "n": 3}, {"lines": [["nar", "四更天，宫里传来第一声更鼓。她站起来，走到窗边，把窗推开一条缝。"], ["nar", "外面的雨已经停了。宫墙上的灯一盏一盏灭下去。"], ["say", "「你说吧。再不说，天就亮了。」"]], "choices": ["「萧明烛，臣喜欢你。不是因为殿下。」", "「殿下保重。」", "「臣把命押在殿下这边。」"], "n": 4}, {"lines": [["nar", "天没亮，宫门还闭着。她在廊下等你，手里握着一枚铜符，符上的字被手汗磨得发亮。"], ["say", "「这个你拿着。出门往西走，有人问，就说是送药的。」"], ["nar", "符上还留着她的体温。她把你手指合上，力道不大，也没有立刻松开。"], ["say", "「我留在殿上。他们要拿人，先拿我。」"], ["nar", "廊下的灯一盏一盏灭下去。门里有人推门，木轴响了一声，很长。"]], "choices": ["「臣把符送到，回来站到殿下这边。」", "「殿下交符，是信臣，还是用人。」", "「臣不敢接。」"], "n": 5}, {"lines": [["nar", "她背对着你站了很久，肩膀有一次很轻的起伏。"], ["say", "「我这辈子听过很多话。」"], ["say", "「跪着的、站着的、隔着帘子的。没有一句是要我这个人。」"], ["nar", "她转过身，眼睛在暗处亮得过分。"], ["say", "「你再说一遍。这次别跪。」"]], "choices": ["站着，把话再说一遍", "上前一步，握住她的手", "什么也不说，只是看着她"], "n": 6}]}, {"title": "第三章 案结之前", "scenes": [{"lines": [["nar", "消息压在偏殿的案上，一整天没动。她坐在灯下，没有翻开任何一本折子。"], ["nar", "灯芯烧短了，她伸手把灯往前挪了半寸。挪完，还是那样坐着。"], ["say", "「他们今晚会来。」"], ["nar", "她说这话时没看你，像在跟自己确认。"]], "choices": ["「来了我挡在前面。」", "「你不是一个人在等。」", "「今晚我等你说完。」"], "n": 1}, {"lines": [["nar", "折子是次日早朝递的。你站在殿外第三排，按规矩该跪，你站着。"], ["nar", "殿上没人说话。她也没有回头，只是把手里的笏板往后压了半寸——那是让你站住的意思。"], ["say", "「你有本，上前来讲。」"], ["nar", "你走上去。走过她身边时，她低声说了一句：「说慢点，他们要记。」"]], "choices": ["按她说的，一句一句讲完", "直接把账目从头念到尾", "只说一句：「账在，人在。」"], "n": 2}]}, {"title": "第三章 · 最后", "scenes": [{"lines": [["nar", "殿门关了。她背对着你，官帽拿在手里。"], ["say", "「……」"]], "choices": ["把话说出口", "拉住她，不让她走", "什么也没做，松开手"], "n": 1}]}], "endings": {"A": {"title": "共谋", "text": "天亮的时候，兵符是真的了。她把假的投进炭盆，看着它烧完。\n早朝上，御史台的人没来得及开口。三天后，户部那位侍郎自尽，案子结了。\n你没有走。你成了长公主府里一个没有官职的抄书人，替她改所有不该出现在册子上的字。\n有人说长公主养了个面首。她听见了，只回一句：「那是我的人。」"}, "B": {"title": "放你走", "text": "名籍烧了。出东门时，守门的老兵看了你一眼，什么也没问。\n三年后，你在南边的一个县里教书。有人从京城来，带了一句话：「她摄政了，没立后。」\n你把那本抄好的《河渠志》从箱底取出来，翻到第七卷。那一页的字很丑，是你写的。\n后来那本书再没有翻过。\n偏殿那盏茶撤了，对面那把椅子搬回了墙边。\n她后来把封地的事交给了别人，自己在城郊住下。"}, "C": {"title": "君臣", "text": "你留在了京城，进了国史馆。她的折子，从这天起由你誊清。\n你们说的话越来越少。她批折子，你抄字，中间隔着一张案。\n有一年冬天她病了，你在殿外站了一夜，第二天照常进去抄书，一个字也没提。\n史书上写：长公主萧氏，终身未嫁。\n城防图上那道朱笔线后来被人描过一遍，颜色深了一层。\n她仍旧每天第一个到殿上，坐原来的位置。"}, "D": {"title": "灭口", "text": "那天晚上你走出了宫门。第二天，京城的河道里捞起一个人，穿着抄书吏的衣裳。\n有人说你卷进了党争，有人说你偷了东西跑了。\n长公主府里，那本《河渠志》被投入炭盆，烧了一夜。\n你最后记着的是她说的那句话：「有些字，改了就回不去了。」\n国史馆的名册上，那一页后来换了新的纸，字是新抄的，笔画一笔不缺。"}}, "vigs": [], "route": "xiao", "arch": ""};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+$('#world').textContent=D.world; $('#premise').textContent=D.premise;
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach(t=>{
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      if(/陪|等|不|别走|谢|留|帮|说|问|看|递|握/.test(t)) warm++;
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=warm/Math.max(1,total);
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; render(); };
+</script></body></html>

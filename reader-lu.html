@@ -1,0 +1,90 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>陆知白 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#6f6862;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:14px;margin:0}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">前情提要</div><p class="world" id="premise"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "陆知白", "meta": "22 · 刑部六品主事 · 寒门进士", "premise": "「我这三年，替自己挡的酒，比你喝过的都多。」", "world": "说话冲、做事狠，把每一份卷宗都摞得比书吏还齐。心里最怕的不是死，是被看穿。", "chapters": [{"title": "第一章 同僚", "scenes": [{"lines": [["nar", "你在刑部二门口被拦下，值守的老吏把你的官牌翻过来看了三遍，才让开半步。"], ["nar", "刑部新来了一位主事，姓陆，名知白。上任第一天就把前任留下的卷宗全翻了一遍。"], ["nar", "你进门的时候，她正跪坐在案后，把一叠供词按年份摞好，摞得比刑部的书吏还齐。"], ["say", "「你是隔壁的主事？这卷漕运案，三处笔迹对不上。」"], ["nar", "她抬头看你，眼睛很亮，说话很冲，冲得不像个刚上任的六品。"]], "choices": ["「你倒说说，哪三处。」", "「新来的，先学会叫人。」", "接过卷宗，自己看"], "n": 1}, {"lines": [["nar", "她指给你看：同一份供词，三处「画押」的字迹深浅不同，日期却是一天。"], ["say", "「有人在替死人签字。」"], ["nar", "她把朱笔搁下，这才想起自己还没请教你的名字。"], ["say", "「……你叫什么。」"]], "choices": ["报上名字", "「你先说你的。」", "「想知道我名字，先把案子查清楚。」"], "n": 2}, {"lines": [["nar", "案卷查到一起，天就黑了。她起身时扶了一下案角，袖子滑上去半寸。"], ["nar", "你看见她手腕内侧有一道很细的旧疤，像是被什么勒过；指节上又有常年握笔压出的茧。"], ["nar", "更要紧的是——她放下手时，先把袖子拉了下来，动作很快。"], ["say", "「你看什么。」"]], "choices": ["「你的袖子。」", "移开视线", "「陆主事，你的耳洞是谁给你打的？」"], "n": 3}, {"lines": [["nar", "她没有立刻答，手在案下攥了一下，攥得指节发白。"], ["say", "「……你要说出去吗。」"], ["nar", "她声音压得很低，低到不像方才那个咄咄逼人的主事。"], ["say", "「说了，我明日就不在刑部了。说了，我爹娘十年的苦就白吃了。」"]], "choices": ["「我不说。但你要告诉我为什么。」", "把灯吹灭，退回门外", "「欺君之罪，你担得起？」"], "n": 4}, {"lines": [["nar", "那晚她没走。两个人对着一盏灯坐到三更，她把话说得很慢。"], ["say", "「我爹是县里的算学先生，一辈子考不上。他死前说，你要是个儿子就好了。」"], ["say", "「我就把他的书读完了。考上了。进京那天，我娘哭了一路。」"], ["nar", "她说完，把灯芯拨亮一点，像怕自己反悔。"]], "choices": ["「你爹错在没生儿子，不在你。」", "「那现在呢，你后悔吗。」", "什么也不说，把灯往她那边挪"], "n": 5}, {"lines": [["nar", "第二天，漕运案的卷宗被调走了，说是上头要看。调走的人连回执都没留。"], ["nar", "她站在空了半格的架子前，站了很久。"], ["say", "「他们知道我在查。」"], ["say", "「我不怕。我怕的是还没查到，就先被自己人卖了。」"]], "choices": ["「我陪你查。」", "「小心点。别一个人去。」", "「你要查，先想想代价。」"], "n": 6}]}, {"title": "第二章 替她瞒", "scenes": [{"lines": [["nar", "为了查那桩旧案，你们换了便装去城南的茶楼。她穿男装比穿官服更自然，走路带风。"], ["nar", "上楼梯时她走在你前面，回头低声说了一句："], ["say", "「待会儿别叫我陆主事。叫知白。」"], ["nar", "说完自己先红了耳朵，赶紧转过头去。"]], "choices": ["「知白。」叫了一声", "「陆兄。」", "笑她耳朵红"], "n": 1}, {"lines": [["nar", "吏部来了文书，要刑部各员报一份年貌册：籍贯、年岁、面貌，另附一只手印。"], ["nar", "她把笔搁下，把纸推到你面前。籍贯那一栏空着，父亲那一栏也空着。"], ["say", "「我填县学。可县学的名册里没有我。」"], ["nar", "空着的那一格底下压着半张旧纸，是算稿，纸边磨得发白。"], ["say", "「你替我报个由头。病、调、随便什么。」"]], "choices": ["「籍贯先填我家乡。查得到人。」", "把年貌册压在案底，报缺一份", "「瞒不下去。这一栏早晚要填。」"], "n": 2}, {"lines": [["nar", "茶楼里坐着几个刑部的老吏。有人认出她，端了酒过来。"], ["say", "「陆主事，来，喝一杯。」"], ["nar", "她接过杯子，手很稳，但你知道她喝不了——上回半杯就呛了。"], ["nar", "她把杯子端到嘴边，只沾了沾唇，然后放下，说了句场面话，声音比平时低半分。"]], "choices": ["把酒接过来，替她喝了", "说她今日服药，不能饮酒", "什么也不做，看她怎么应对"], "n": 3}, {"lines": [["nar", "出了茶楼，她走了一段才开口，声音有点闷。"], ["say", "「这三年，我替自己挡的酒，比你喝过的都多。」"], ["say", "「可刚才你替我挡，我居然觉得委屈。」"], ["nar", "她说完自己愣了一下，像被这句话吓了一跳。"]], "choices": ["「委屈就委屈。在我这儿不用撑着。」", "「你只是累了。」", "不接话，把披风递给她"], "n": 4}, {"lines": [["nar", "夜里刑部的门要落三道锁。她值夜那次，第三道锁卡住了，钥匙插进去转不动。"], ["nar", "她蹲下去看锁眼，用手电照了很久，回头说：「有人灌了铅。」"], ["say", "「不让查，就说明查到东西了。」"], ["nar", "她从发簪里抽出半截细铁，三下两下把锁拨开，动作很熟。"], ["nar", "她站起来时看你一眼：「别问我在哪儿学的。」"]], "choices": ["「我不问。但你得让我一起进去。」", "「我在门口守着。」", "站在门边，没进去"], "n": 5}, {"lines": [["nar", "查到第七天，那个替死人签字的老吏死在了牢里，说是自尽。"], ["nar", "牢房里没有梁，墙也不高，死法说不通。"], ["say", "「他昨天还跟我说，他要活到看见那些人的名字被写进罪状里。」"], ["nar", "她蹲下去看地上的痕迹，看了很久，站起来时腿麻了一下，扶住了你。"]], "choices": ["扶住她，没松手", "「先出去。这儿不能久留。」", "「你不该来。」"], "n": 6}, {"lines": [["nar", "三天后，有人递了折子，参刑部主事陆知白「行止不端，恐非男子」。"], ["nar", "折子被压了下来，但压折子的人要人情——要她今夜去一趟。"], ["say", "「我去。」"], ["say", "「你别跟。跟了，就都完了。」"], ["nar", "她说完就低头整理袖子，把袖口一道旧疤盖住——那是她不想被看见的地方。"]], "choices": ["「我跟你去。」", "「不去。我替你想办法。」", "「你自己决定。」"], "n": 7}, {"lines": [["nar", "她一个人去的，回来时天快亮了。官服上沾了酒气，人倒是没事。"], ["nar", "她站在门外，不进来。"], ["say", "「我把话说明白了。我说我要上奏自陈，把十年前的漕运案翻出来。」"], ["say", "「欺君是死罪。可要是不说，我这辈子都得替别人签字。」"]], "choices": ["「我陪你一起上奏。」", "「你疯了。」", "「说之前，先想清楚要什么。」"], "n": 8}]}, {"title": "第三章 案结之前", "scenes": [{"lines": [["nar", "上奏前夜，她把官服叠得整整齐齐，摆在案上，像摆一件借来的东西。"], ["nar", "窗外在下雨，雨点打在瓦上，听着像有人在数数。"], ["say", "「我十三岁那年第一次穿男装，去县学听讲。先生在讲《孟子》，讲到『富贵不能淫』。」"], ["say", "「我当时想，我这辈子大概只能做到最后一句。」"]], "choices": ["「哪一句。」", "「你已经做到了。」", "把官服拿起来，替她穿上"], "n": 1}, {"lines": [["nar", "殿门关了三个时辰。檐下的更漏滴得很慢，里面一直没有声音传出来。"], ["say", "「刑部那个主事，留了。谁也不用等。」"], ["nar", "内侍说完就进去了，门在你面前合上，木闩落下去，隔着一层。"], ["nar", "你没有走。宫墙的影子从台阶底下挪过来，挪到脚边，又挪过去。"], ["nar", "入夜，她被带到偏殿誊供。门半开着，她抬头看见你，笔尖停了一下。"], ["say", "「他们的话我不认。你也别认。」"]], "choices": ["「我等你抄完。」", "托人递一支笔进去", "「你要我走，我现在就走。」"], "n": 2}, {"lines": [["nar", "她看着你，看了很久。"], ["say", "「明日上奏，我可能就出不来了。」"], ["say", "「你要是有话，现在说。过了明日，我说不定就听不见了。」"], ["nar", "说完她把桌上那盏灯拨亮了一点，好像这样就能把话留得久一些。"]], "choices": ["「我等你出来。」", "「别上奏。我们走。」", "什么也说不出来"], "n": 3}, {"lines": [["nar", "天亮之前，宫里来了人，比她的折子早了两个时辰。"], ["nar", "来的人不是拿她，是拿那桩旧案接着查的旨意——御史台先动了手。"], ["say", "「……我们赢了一半。」"], ["nar", "她笑了一下，笑得眼睛发红。"]], "choices": ["「陆知白，我喜欢你。不是同僚那种。」", "「先把案子结完。」", "「赢了之后，你想做什么。」"], "n": 4}, {"lines": [["nar", "案子结了，十年前的漕运账被翻出来，牵出三个人。陆知白在朝上把话说完，没有一个人敢接。"], ["nar", "她站在殿外，官帽摘下来拿在手里，头发压出的痕迹还在。"], ["say", "「我现在可以告诉你我是谁了。」"], ["say", "「陆知白，二十二岁，爹是算学先生，娘还在县里等我。」"]], "choices": ["报上自己的名字", "「我知道你是谁。一直知道。」", "什么也不说，替她把帽子戴上"], "n": 5}, {"lines": [["nar", "雨停了。宫里的人来请她，说陛下要见。"], ["nar", "她走之前回头看了你一眼，那一眼很轻，像在确认什么。"], ["say", "「等我。」"], ["nar", "她走到廊下，忽然停住，把袖口那道疤重新盖好，才抬脚往前殿去。"]], "choices": ["留在原地等", "跟上去", "转身离开"], "n": 6}]}, {"title": "第三章 同僚", "scenes": [{"lines": [["nar", "停尸房在西角，只有一盏油灯。仵作把验状摊在石台上，指尖点着最后一行。"], ["nar", "「这处伤，是死后压出来的。」他说，「照实写，做案的人不认。」"], ["say", "「照实写。他认不认，不归你管。」"], ["nar", "仵作看了她一眼，把笔递过来，让她自己在那行底下按了个手印。"]], "choices": ["站在她旁边，一起按手印", "「这手印会连累你。」", "什么也不说，把灯往前挪近些"], "n": 1}]}, {"title": "第三章 · 最后", "scenes": [{"lines": [["nar", "上奏前夜。她把官服叠好，摆在案上。"], ["say", "「……」"]], "choices": ["把话说出口", "拉住她，不让她走", "什么也没做，松开手"], "n": 1}]}], "endings": {"A": {"title": "并肩", "text": "她没有被杀。陛下看了那份账，沉默了很久，只说了一句：「朕的臣子里，倒有一个不是来混日子的。」\n革职，不追究。她换了女装出宫，第一件事是去买了一双合脚的鞋。\n后来你们一起在城南开了间学馆，教算学，也教《孟子》。学生里有一半是姑娘。\n有人问起你们的来历，她只说：「同僚。」"}, "B": {"title": "辞官", "text": "她辞了官。上奏那日说的最后一句是：「臣不为官了，但这笔账，请陛下记着。」\n你留在刑部，把那一案写进档册。陆知白的名字后面，是「因病去职」四个字。\n三年后你外放，路过她家乡，听人说县里有个女先生在教算学好几年了。\n你终究没有进去。\n刑部的案卷归档了，封皮上她的名字旁边多了一个「调」字。\n她调去了别的州府，仍旧查案，只是不再上奏。"}, "C": {"title": "同僚", "text": "案子结了，她的身份成了刑部里一个谁都不提的秘密。\n你们照旧同进同出，一个主事，一个主事。她照样叫你「同僚」，照旧不叫你名字。\n只有每年冬天她值夜，会把灯留一盏给你。你也装作不知道是谁留的。\n值房的铜镜收进柜底，镜面朝下，再没翻过来。\n她仍旧把卷宗摞得比谁都齐，落款写本名。"}, "D": {"title": "败露", "text": "折子还是递了上去，慢了一步。\n审讯那日，她穿着官服，站得笔直，一句辩解也没有。\n定罪那天下着雨，刑部的院子里没人敢说话。你站在廊下，看着囚车从门前过去。\n后来那桩漕运案再没人提过。\n刑部的值房里留着一份没归档的验状，最后一行底下，有一个被墨涂掉的手印。"}}, "vigs": [], "route": "lu", "arch": ""};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+$('#world').textContent=D.world; $('#premise').textContent=D.premise;
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach(t=>{
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      if(/陪|等|不|别走|谢|留|帮|说|问|看|递|握/.test(t)) warm++;
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=warm/Math.max(1,total);
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; render(); };
+</script></body></html>
