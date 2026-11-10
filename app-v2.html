@@ -871,7 +871,8 @@ function clientAdvance(){
   const chs=Object.keys(SCENES).filter(ch=>SCENES[ch].some(b=>b.route===CUR));
   if(!chs.length) return;
   const beatsOf=ch=>SCENES[ch].filter(b=>b.route===CUR);
-  let idx=Math.floor((S.uturns||0)*2/3), i=0;
+  const total=chs.reduce((n,ch)=>n+beatsOf(ch).length,0)||1;
+  let idx=Math.floor((S.uturns||0)*total/24), i=0;
   while(i+1<chs.length && idx>=beatsOf(chs[i]).length){ idx-=beatsOf(chs[i]).length; i++; }
   S.chapter=chs[i];
   const bs=beatsOf(chs[i]);
