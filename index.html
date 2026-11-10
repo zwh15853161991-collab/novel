@@ -4585,7 +4585,7 @@ function renderTutorial(){
   $('#tutSub').textContent = subs[tutStep] || '';
   if(tutStep === 0){
     body.innerHTML = `<p class="tutstep">这是一个可以<b>自己说话</b>的恋爱小说。开场选一个人，然后每一场都由你决定说什么、做什么。</p>
-      <p class="tutstep">五条路线，每条四个结局。进度会自动存，随时能停。</p>`;
+      <p class="tutstep">${Object.keys(window.ROUTES||{}).length} 条线，每条四个结局。进度会自动存，随时能停。</p>`;
   } else if(tutStep === 1){
     body.innerHTML = `<p class="tutstep">在下面的输入框里，括号里写<b>动作</b>，引号里写<b>台词</b>：</p>
       <div class="tutdemo">（走到她旁边）“你的画……能给我看看吗？”</div>
