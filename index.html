@@ -374,7 +374,7 @@
 
 <div class="ov" id="ovStart"><div class="panel">
   <h2 id="startTitle">借你一场雨</h2>
-  <div class="sub" id="startSub">互动恋爱小说 · 6 条线 · 22 个结局 · 离线单文件</div>
+  <div class="sub" id="startSub">互动恋爱小说 · 离线单文件</div>
   <p class="quote" style="margin-bottom:16px">南方小城，梅雨季。旧书店「浮光」里有个总在画撑伞的人的姑娘。<br>你说的每句话她都听得见——也可以（做点什么）。</p>
   <div class="sub" id="lblName" style="margin:12px 0 7px">你的名字</div>
   <input id="nameIn" class="opt" style="padding:11px 14px" maxlength="8" placeholder="阿远">
@@ -3141,7 +3141,7 @@ function dayDivider(label){
 }
 function herTurn(pairs){
   const row = el('div','row her');
-  const mini = el('div','mini','晞');
+  const mini = el('div','mini', (CARD && CARD.name ? CARD.name.slice(-1) : '她'));
   const bub = el('div','bubble');
   row.append(mini, bub);
   $('#log').appendChild(row);
@@ -4454,7 +4454,7 @@ function openImport(){
 const I18N = {
   zh:{
     stat:'状态', card:'人设', mem:'回忆', bg:'换背景', rain:'雨声', voice:'朗读', save:'存档', load:'读档', day:'她的一天',
-    startTitle:'借你一场雨', startSub:'互动恋爱小说 · 6 条线 · 22 个结局 · 离线单文件',
+    startTitle:'借你一场雨', startSub:'互动恋爱小说 · 离线单文件',
     lblName:'你的名字', lblRoute:'攻略谁', lblOpen:'从哪里开始', startGo:'开始', resumeGo:'继续上次', gallery:'结局图鉴',
     statTitle:'状态', cardTitle:'人物', saveTitle:'存档', loadTitle:'读档', memTitle:'回忆', dayTitle:'她的一天',
     galTitle:'结局图鉴', docTitle:'存档体检', close:'收起',
@@ -4496,6 +4496,12 @@ function applyLang(lang){
   set('btnStat','stat'); set('btnCard','card'); set('btnMem','mem'); set('btnBg','bg');
   set('btnRain','rain'); set('btnVoice','voice'); set('btnSave','save'); set('btnLoad','load'); set('btnDay','day');
   set('startTitle','startTitle'); set('startSub','startSub');
+  try{
+    const nR=Object.keys(window.ROUTES||{}).length;
+    const nE=Object.values(window.ROUTES||{}).reduce((n,r)=>n+Object.keys((r&&r.endings)||{}).length,0);
+    const elSub=document.getElementById('startSub');
+    if(elSub) elSub.textContent = (LANG==='zh' ? `互动恋爱小说 · ${nR} 条线 · ${nE} 个结局 · 离线单文件` : `Interactive romance · ${nR} routes · ${nE} endings · offline single file`);
+  }catch(e){}
   set('lblName','lblName'); set('lblRoute','lblRoute'); set('lblOpen','lblOpen');
   set('startGo','startGo'); set('resumeGo','resumeGo'); set('galleryBtn','gallery');
   set('statTitle','statTitle'); set('cardTitle','cardTitle'); set('saveTitle','saveTitle'); set('loadTitle','loadTitle');
@@ -5169,6 +5175,11 @@ function renderRouteOptions(){
       chosenStart = OPENINGS[id][0].id;
       $$('#routeOpts .opt').forEach(x=>x.classList.remove('sel'));
       b.classList.add('sel');
+      // 切人后必须清掉上一条线已经渲染的开场与进度，否则会沿用前一个角色的正文
+      try{ S.log = []; S.turns = []; S.aff = 0; S.trust = 0; S.scene = ''; S.hurt = 0; }catch(e){}
+      try{ const lg = $('#log'); if(lg) lg.innerHTML=''; }catch(e){}
+      try{ if(typeof clearChoices === 'function') clearChoices(); }catch(e){}
+      ngStart();
       $('#whoName').textContent = CARD.name;
       const av2 = $('#avaCh'); if(av2) av2.textContent = CARD.name.slice(-2,-1);
       renderStartOptions();
