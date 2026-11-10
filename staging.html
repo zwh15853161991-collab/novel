@@ -569,8 +569,14 @@ async function sendTurn(text){
   };
   try{ d=await callTurnStream(text, onSec); }
   catch(e){
-    narBox.style.display='none'; herBox.style.display=''; herBox.textContent='（'+e.message+'）';
-    actBox.style.display='none'; busy=false; $('send').disabled=false; return;
+    const raw=String(e && e.message || e);
+    const friendly = /Load failed|Failed to fetch|NetworkError|network/i.test(raw)
+      ? '网络没能连上模型接口。常见原因：① 开着代理/加速器但节点不通（最常见）② 断网 ③ 浏览器拦了跨域请求。\n先关掉代理再点发送；还不行就换 Wi-Fi / 用离线版 index.html。'
+      : ('请求失败：' + raw + '\n如果反复出现，检查「我的 → API key」和余额。');
+    narBox.style.display='none'; herBox.style.display='';
+    herBox.innerHTML='<span style="color:#d98b7a">'+friendly.replace(/\n/g,'<br>')+'</span>';
+    actBox.style.display='none'; busy=false; $('send').disabled=false;
+    return;
   }
   narBox.textContent=(d.nar||narTxt); if(narBox.textContent) narBox.style.display='';
   const _s=(d.say||sayTxt||'……');
