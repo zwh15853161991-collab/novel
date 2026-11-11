@@ -114,6 +114,8 @@ input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);borde
 .btn{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:13px;
   padding:12px;font-size:15px;font-weight:600;font-family:inherit;margin-top:10px}
 .btn.ghost{background:none;border:1px solid var(--line);color:var(--dim);font-weight:400}
+.persistnotice{position:fixed;left:12px;right:12px;bottom:14px;z-index:70;padding:12px 14px;border:1px solid var(--accent);border-radius:12px;background:var(--bg2);color:var(--ink);font-size:13px}
+.persistnotice[hidden]{display:none}.persistnotice button{border:0;background:none;color:var(--accent);font:inherit;text-decoration:underline;margin-left:8px}
 </style></head><body>
 
 <!-- 首页 -->
@@ -172,6 +174,7 @@ input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);borde
 
 <!-- 设置 -->
 <div class="sheet" id="sheet"><div class="sheetbox" id="sheetBox"></div></div>
+<div class="persistnotice" id="storageNotice" role="status" hidden><span id="storageNoticeText"></span><button onclick="exportSaves()">导出备份</button></div>
 
 <script>
 /* ⚠️ 注意：这个文件里有 15 个函数是重复定义的（sendTurn/endGame/openSettings 等各两份），
@@ -205,24 +208,200 @@ const PRESETS={
   glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
 };
-/* ---------- 本机记忆：localStorage 安全层 ----------
-   无痕模式/禁用存储时不抛异常，而是把状态暴露到设置面板里，避免「静默重置」 */
-let LS_OK=true;
-try{ localStorage.setItem('jieyu.ping','1'); localStorage.removeItem('jieyu.ping'); }catch(e){ LS_OK=false; }
-function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }
-function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ LS_OK=false; return false; } }
-function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+/* Browser-local persistence. This module never sends credentials or saves over the network. */
+const Persistence = (() => {
+  const K={sessions:'jieyu.sessions',settings:'jieyu.set',key:'jieyu.key',last:'jieyu.last',
+    recovery:'jieyu.recovery',deleted:'jieyu.deleted',sessionPrefix:'jieyu.session.'};
+  const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
+  const copy=v=>JSON.parse(JSON.stringify(v));
+  const safeId=id=>typeof id==='string'&&/^[a-z0-9_-]{1,64}$/i.test(id)&&!['__proto__','constructor','prototype'].includes(id);
+  const masked=value=>!!String(value||'').trim()&&/^[•●·*…\s]+$/.test(String(value).trim());
+  function normalizeKey(value){
+    let text=String(value||'').trim().replace(/^Bearer\s+/i,'');
+    if((text.startsWith('"')&&text.endsWith('"'))||(text.startsWith("'")&&text.endsWith("'"))) text=text.slice(1,-1).trim();
+    if(masked(text)||text==='sk-...') throw new Error('这是密钥遮罩，不是真正的 key；请重新粘贴原密钥。');
+    if(/\s|[\u0000-\u001f\u007f]/.test(text)) throw new Error('key 中含有空格或换行，请检查后重新粘贴。');
+    return text;
+  }
+  function normalizeSession(raw,route){
+    const s=object(raw)?copy(raw):{};
+    const strings=v=>Array.isArray(v)?v.map(x=>typeof x==='string'?x:object(x)&&typeof x.content==='string'?x.content:'').filter(Boolean):[];
+    const n=(v,d=0)=>Number.isFinite(Number(v))?Number(v):d;
+    return {...s,route,aff:n(s.aff),trust:n(s.trust),turns:strings(s.turns),facts:strings(s.facts),
+      summary:typeof s.summary==='string'?s.summary:'',log:strings(s.log),threads:strings(s.threads),
+      stage:typeof s.stage==='string'?s.stage:'陌生',chapter:typeof s.chapter==='string'?s.chapter:'',
+      outline:Array.isArray(s.outline)?s.outline:[],hits:object(s.hits)?s.hits:{},ended:!!s.ended,at:n(s.at)};
+  }
+  function settings(defaults,raw){
+    const result=copy(defaults), saved=object(raw)?raw:{};
+    Object.keys(defaults).forEach(k=>{
+      if(k==='api'||k==='me'){
+        const nested=object(saved[k])?saved[k]:{};
+        Object.keys(defaults[k]).forEach(name=>{if(typeof nested[name]==='string')result[k][name]=nested[name];});
+      }else if(saved[k]!==undefined&&typeof saved[k]===typeof defaults[k]) result[k]=saved[k];
+    });
+    result.mem=Number.isFinite(result.mem)?Math.min(128000,Math.max(2000,result.mem)):defaults.mem;
+    result.reply=Number.isFinite(result.reply)?Math.min(4000,Math.max(200,result.reply)):defaults.reply;
+    return result;
+  }
+  function createStore(options={}){
+    const volatile=new Map(), damaged=new Map(), routes=options.routes||[];
+    let error='',lastSaved=0,conflict=false;
+    function storage(){return typeof options.storage==='function'?options.storage():options.storage;}
+    function failed(e){error=e&&e.name==='QuotaExceededError'?'浏览器存储空间不足':'浏览器暂时无法保存数据';}
+    function get(key,fallback=null){
+      if(volatile.has(key)) return volatile.get(key);
+      try{const value=storage().getItem(key);return value===null?fallback:value;}catch(e){failed(e);return fallback;}
+    }
+    function set(key,value){
+      if(damaged.has(key)){volatile.set(key,String(value));error='原有数据暂时无法读取，已保留原文，未覆盖';return false;}
+      const text=String(value);
+      try{storage().setItem(key,text);if(storage().getItem(key)!==text)throw Error('Write not retained');
+        volatile.delete(key);error='';lastSaved=Date.now();return true;
+      }catch(e){volatile.set(key,text);failed(e);return false;}
+    }
+    function remove(key){
+      try{storage().removeItem(key);volatile.delete(key);damaged.delete(key);return true;}catch(e){volatile.set(key,null);failed(e);return false;}
+    }
+    function read(key,fallback={}){
+      const raw=get(key,null);if(raw===null)return copy(fallback);
+      try{const value=JSON.parse(raw);if(!object(value))throw Error('Expected object');return value;}
+      catch(e){damaged.set(key,raw);error='原有数据暂时无法读取，已保留原文，未覆盖';return copy(fallback);}
+    }
+    function getSettings(defaults){return settings(defaults,read(K.settings));}
+    function updateSettings(patch,defaults){
+      const latest=getSettings(defaults), next={...latest,...patch};
+      if(object(patch.api)) next.api={...latest.api,...patch.api};
+      if(object(patch.me)) next.me={...latest.me,...patch.me};
+      const clean=settings(defaults,next);set(K.settings,JSON.stringify(clean));return clean;
+    }
+    function sessions(){
+      const result={}, current=read(K.sessions), deleted=read(K.deleted), ids=new Set([...routes,...Object.keys(current)]);
+      Object.keys(current).filter(safeId).forEach(id=>{if(object(current[id]))result[id]=normalizeSession(current[id],id);});
+      try{const s=storage();for(let i=0;i<s.length;i++){const key=s.key(i);if(key&&key.startsWith(K.sessionPrefix))ids.add(key.slice(K.sessionPrefix.length));}}catch(e){/* Reads still work with the supplied known route list. */}
+      ids.forEach(id=>{
+        if(!safeId(id))return;const raw=get(K.sessionPrefix+id,null);if(raw===null)return;
+        try{const state=JSON.parse(raw);if(state===null){deleted[id]=true;delete result[id];}
+          else if(object(state)){result[id]=normalizeSession(state,id);delete deleted[id];}
+          else throw Error('Invalid session');
+        }catch(e){damaged.set(K.sessionPrefix+id,raw);error='有一条故事暂时无法读取，原文已保留';}
+      });
+      routes.forEach(id=>{
+        if(result[id]||deleted[id])return;
+        for(const prefix of ['ai.','aidemo.']){
+          const raw=get(prefix+id,null);if(!raw)continue;
+          try{
+            const old=JSON.parse(raw);if(!object(old))continue;
+            const s=normalizeSession(old,id);
+            if(prefix==='ai.'&&s.turns.some(t=>/^你[：:]/.test(t))){
+              const paired=[];
+              s.turns.forEach(t=>{if(/^你[：:]/.test(t))paired.push(t.replace(/^你[：:]\s*/,''));
+                else if(paired.length%2===1)paired.push(t);else if(paired.length)paired[paired.length-1]+='\n'+t;});
+              s.turns=paired;
+            }
+            result[id]=s;break;
+          }catch(e){/* Keep unreadable older records untouched. */}
+        }
+      });
+      return result;
+    }
+    const fingerprint=s=>JSON.stringify(s===null?null:normalizeSession(s,s.route));
+    function mark(s,token){Object.defineProperty(s,'__persistedSnapshot',{value:token,writable:true,configurable:true,enumerable:false});return s;}
+    function getSession(route){const s=sessions()[route];return s?mark(s,fingerprint(s)):null;}
+    function addRecovery(route,state){
+      const recovered=read(K.recovery),list=Array.isArray(recovered[route])?recovered[route]:[];
+      const token=fingerprint(state);
+      if(!list.some(x=>fingerprint(x.state)===token))list.unshift({at:Date.now(),state:normalizeSession(state,route)});
+      recovered[route]=list.slice(0,3);set(K.recovery,JSON.stringify(recovered));
+    }
+    function putSession(route,s,force=false){
+      if(!safeId(route))return false;
+      conflict=false;
+      const all=sessions(), latest=all[route]||null, token=fingerprint(latest);
+      const previous=s.__persistedSnapshot;
+      if(!force&&((previous!==undefined&&previous!==token)||(previous===undefined&&latest&&fingerprint(s)!==token))){
+        if(previous!==fingerprint(s))addRecovery(route,s);
+        conflict=true;return false;
+      }
+      const candidate=normalizeSession(s,route);
+      const ok=set(K.sessionPrefix+route,JSON.stringify(candidate));
+      mark(s,fingerprint(candidate));
+      return ok;
+    }
+    function current(route,s){return !s||s.__persistedSnapshot===undefined||s.__persistedSnapshot===fingerprint(sessions()[route]||null);}
+    function removeSession(route){
+      return set(K.sessionPrefix+route,'null');
+    }
+    function backup(defaults){
+      const raw={};damaged.forEach((value,key)=>{if(key===K.sessions||key===K.settings||key.startsWith(K.sessionPrefix))raw[key]=value;});
+      return {v:2,app:'jieyu',at:new Date().toISOString(),sessions:sessions(),set:getSettings(defaults),
+        last:get(K.last,''),recovery:read(K.recovery),...(Object.keys(raw).length?{unreadable:raw}:{})};
+    }
+    function importBackup(data,defaults){
+      if(!object(data))throw Error('不是有效的存档文件');
+      const incoming=object(data.sessions)?data.sessions:data;
+      const ids=Object.keys(incoming).filter(id=>safeId(id)&&object(incoming[id])&&Array.isArray(incoming[id].turns));
+      if(!ids.length&&!object(data.set))throw Error('没有找到可导入的故事记录或设置');
+      if(damaged.has(K.sessions)||damaged.has(K.settings))throw Error('请先导出原有数据备份，再处理无法读取的记录');
+      const all=sessions();
+      ids.forEach(id=>{if(all[id])addRecovery(id,all[id]);all[id]=normalizeSession(incoming[id],id);});
+      const ok=ids.map(id=>set(K.sessionPrefix+id,JSON.stringify(all[id]))).every(Boolean);
+      if(!ok)throw Error('导入内容已保留在本页，但浏览器未能保存；请先导出备份');
+      if(object(data.set))updateSettings(data.set,defaults);
+      if(object(data.recovery)){
+        Object.keys(data.recovery).filter(safeId).forEach(id=>{
+          if(Array.isArray(data.recovery[id]))data.recovery[id].forEach(item=>{if(object(item)&&object(item.state))addRecovery(id,item.state);});
+        });
+      }
+      if(typeof data.last==='string'&&all[data.last])set(K.last,data.last);
+      return ids;
+    }
+    function recoveries(){return read(K.recovery);}
+    function restore(route,index){
+      const list=recoveries()[route]||[], item=list[index];if(!item)return false;
+      const state=copy(item.state),latest=sessions()[route];if(latest)addRecovery(route,latest);
+      return putSession(route,state,true);
+    }
+    function clearSessions(){
+      return Object.keys(sessions()).map(id=>removeSession(id)).every(Boolean);
+    }
+    function status(){return {ok:!error&&volatile.size===0&&damaged.size===0,
+      error:error||(damaged.size?'原有数据暂时无法读取，已保留原文，未覆盖':volatile.size?'部分内容只保留在本页，尚未成功保存':''),
+      lastSaved,conflict,inMemoryOnly:volatile.size>0};}
+    return {keys:K,get,set,remove,read,getSettings,updateSettings,sessions,getSession,putSession,current,
+      removeSession,clearSessions,backup,importBackup,recoveries,restore,status};
+  }
+  return {createStore,masked,normalizeKey,normalizeSession,settings};
+})();
+
+/* ---------- 本机记忆：保留旧记录，按字段保存，拒绝旧标签页覆盖 ---------- */
 const SKEY='jieyu.sessions', LKEY='jieyu.last', SETKEY='jieyu.set', KEYKEY='jieyu.key';
-function allSessions(){ try{return JSON.parse(lsGet(SKEY,'{}')||'{}');}catch(e){return {};} }
-function getS(route){ const a=allSessions(); return a[route]||null; }
-function putS(route,s){ const a=allSessions(); a[route]=s; lsSet(SKEY,JSON.stringify(a)); }
-function delS(route){ const a=allSessions(); delete a[route]; lsSet(SKEY,JSON.stringify(a)); }
+const STORE=Persistence.createStore({storage:()=>localStorage,routes:Object.keys(CHARS)});
+let LS_OK=true;
+function refreshStorageNotice(){
+  const status=STORE.status();LS_OK=status.ok;
+  const box=$('storageNotice');if(!box)return;
+  box.hidden=status.ok;
+  $('storageNoticeText').textContent=status.ok?'':status.error+'。本页内容仍在，请先导出备份。';
+  const state=$('memState');if(state)state.textContent=status.ok?'本机存储可用':'尚未成功保存';
+}
+function lsGet(k,d){return STORE.get(k,d);}
+function lsSet(k,v){const ok=STORE.set(k,v);refreshStorageNotice();return ok;}
+function lsDel(k){const ok=STORE.remove(k);refreshStorageNotice();return ok;}
+function allSessions(){return STORE.sessions();}
+function getS(route){return STORE.getSession(route);}
+function putS(route,s,force=false){
+  const ok=STORE.putSession(route,s,force);refreshStorageNotice();
+  if(!ok&&STORE.status().conflict)toast('另一页已有新进度，未覆盖。本页改动已另存到「记录备份」。');
+  return ok;
+}
+function delS(route){const ok=STORE.removeSession(route);refreshStorageNotice();return ok;}
 function savedCount(){ const a=allSessions(); return Object.keys(a).filter(k=>a[k]&&((a[k].turns||[]).length||(a[k].log||[]).length)).length; }
 function lastRoute(){ const r=lsGet(LKEY,''); return (r && typeof CHARS!=='undefined' && CHARS[r]) ? r : null; }
 function setLast(r){ if(r) lsSet(LKEY,r); }
 function wipeAll(){
   if(!confirm('清空本机记忆：对话记录、设置、API key 会全部删掉，不能恢复。继续？')) return;
-  [SKEY,LKEY,SETKEY,KEYKEY,'jieyu.seeds'].forEach(lsDel);
+  [...Object.values(STORE.keys),...Object.keys(allSessions()).map(id=>STORE.keys.sessionPrefix+id),'jieyu.seeds',...Object.keys(CHARS).flatMap(id=>['ai.'+id,'aidemo.'+id])].forEach(lsDel);
   location.reload();
 }
 
@@ -230,9 +409,8 @@ const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,read:fal
   mem:8000, reply:1200, persona:'full',
   pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
   api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'}};
-let SET=Object.assign({},DEF,JSON.parse(lsGet(SETKEY,'{}')||'{}'));
-function saveSet(){ lsSet(SETKEY,JSON.stringify(SET)); }
-if(SET.api && SET.api.model==='deepseek-chat'){ SET.api.model='deepseek-flash'; saveSet(); }
+let SET=STORE.getSettings(DEF);
+function saveSet(patch={}){SET=STORE.updateSettings(patch,DEF);refreshStorageNotice();return STORE.status().ok;}
 function applySet(){
   const t=THEMES[SET.theme]||THEMES.warm, a=ACCENTS[SET.accent]||ACCENTS.sand;
   const r=document.documentElement.style;
@@ -261,7 +439,24 @@ async function detect(){
   catch(e){ MODE='direct'; }
 }
 let SERVER_KEY=false;
-let KEY=lsGet('jieyu.key','');
+let KEY=lsGet(KEYKEY,'');
+function keyPresent(){const key=lsGet(KEYKEY,'');return !!key&&!Persistence.masked(key);}
+function currentKey(){
+  KEY=lsGet(KEYKEY,KEY)||'';
+  if(Persistence.masked(KEY))throw Error('上次保存的是密钥遮罩，不是真正的 key。请到设置里重新粘贴原密钥。');
+  if(!KEY)throw Error('当前浏览器还没有保存 key。若之前在 Safari 使用，请在那里继续，或在本页设置中填写 key。');
+  return Persistence.normalizeKey(KEY);
+}
+function apiFailure(status,base){
+  let host='当前服务商';try{host=new URL(base).hostname;}catch(e){}
+  const messages={401:host+' 返回 401，认证未通过。请核对当前接口与该服务商对应的 key，或在设置中重新填写。',
+    402:'服务商提示余额不足（402）。',403:'服务商拒绝访问（403），请核对接口权限。',
+    404:'接口地址没有找到（404），请核对设置中的完整接口网址。',
+    400:'请求参数或模型名被服务商拒绝（400），请核对模型设置。',429:'请求过于频繁（429），请稍后重试。'};
+  return new Error(messages[status]||'服务商返回 HTTP '+status+'，请稍后重试或检查接口设置。');
+}
+let connectionDraft=null,connectionTimer=null;
+refreshStorageNotice();
 
 /* ---------- 首页渲染 ---------- */
 let TAB='stories';
@@ -269,7 +464,7 @@ function renderHome(){
   const box=$('homeBody'); box.innerHTML='';
   document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on', b.dataset.tab===TAB));
   if(TAB==='stories'){
-    const a=allSessions(); const ids=Object.keys(a).filter(id=>a[id].turns.length||a[id].log.length||a[id].outline.length);
+    const a=allSessions(); const ids=Object.keys(a).filter(id=>CHARS[id]&&(a[id].turns.length||a[id].log.length||a[id].outline.length));
     if(!ids.length){ box.innerHTML='<div class="empty">还没有开始的故事<br><span style="font-size:12.5px">去「选择故事」挑一个人</span></div>'; return; }
     ids.sort((x,y)=>(a[y].at||0)-(a[x].at||0));
     const h=document.createElement('div'); h.className='sect'; h.textContent='进行中 · '+ids.length; box.appendChild(h);
@@ -301,7 +496,7 @@ function renderHome(){
     const host=(SET.api&&SET.api.base||'').replace(/^https?:\/\//,'').split('/')[0];
     d.innerHTML='<div class="nm">文字模型 · '+(SET.api.model||'未设')+'</div><div class="sub">'+host+' · '+
       (MODE==='server' ? (SERVER_KEY?'服务端已配置 key（本地服务在跑）':'服务端没配 key，将使用模板') :
-       (KEY?'已填 key（只存在这台设备）':'未填 key，暂时用模板演示'))+'</div>';
+       (keyPresent()?'已保存 key（当前浏览器）':'当前浏览器尚未保存可用 key'))+'</div>';
     d.onclick=openSettings; box.appendChild(d);
     const h2=document.createElement('div'); h2.className='sect'; h2.textContent='偏好'; box.appendChild(h2);
     const d2=document.createElement('div'); d2.className='card';
@@ -311,7 +506,7 @@ function renderHome(){
     const h3=document.createElement('div'); h3.className='sect'; h3.textContent='其他'; box.appendChild(h3);
     const d3=document.createElement('div'); d3.className='card';
     d3.innerHTML='<div class="nm">清除本机所有进度</div><div class="sub">'+Object.keys(allSessions()).length+' 个故事</div>';
-    d3.onclick=()=>{ if(confirm('清掉所有故事的进度？')){ localStorage.removeItem(SKEY); renderHome(); } };
+    d3.onclick=()=>{ if(confirm('清掉所有故事的进度？')){ STORE.clearSessions(); refreshStorageNotice();renderHome(); } };
     box.appendChild(d3);
   }
 }
@@ -415,14 +610,20 @@ async function openChat(route){
 }
 function replayLog(){
   const log=$('log'); log.innerHTML='';
+  if(Array.isArray(S.transcript)&&S.transcript.length===Math.floor(S.turns.length/2)&&S.transcript.every(t=>t&&typeof t.user==='string'&&typeof t.say==='string')){
+    S.transcript.forEach(t=>{
+      bubble('me',t.user);if(t.nar)nar(t.nar);if(t.say)bubble('her',t.say);if(t.act)nar(t.act);
+      if(t.advance){const line=document.createElement('div');line.className='adv';line.textContent='剧情：'+t.advance;log.appendChild(line);}
+    });return;
+  }
   for(let i=0;i<S.turns.length;i+=2){
     const me=S.turns[i], her=S.turns[i+1]||'';
     bubble('me', me);
     if(her) bubble('her', her);
   }
 }
-function bubble(cls,html){if(SET.read && cls==='her' && html) speakLine(String(html).replace(/<[^>]+>/g,''));
-const d=document.createElement('div');d.className='b '+cls;d.innerHTML=html;$('log').appendChild(d);$('log').scrollTop=1e9;return d;}
+function bubble(cls,text){if(SET.read && cls==='her' && text) speakLine(String(text));
+const d=document.createElement('div');d.className='b '+cls;d.textContent=text;$('log').appendChild(d);$('log').scrollTop=1e9;return d;}
 function nar(txt){ if(SET.read && txt && !/^\s*$/.test(txt)) speakLine(String(txt));
   String(txt).split('\n').filter(x=>x.trim()).forEach(line=>{
     const d=document.createElement('div'); d.className='nar'; d.textContent=line.trim(); $('log').appendChild(d);});
@@ -449,10 +650,10 @@ $('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.prev
 
 function makeOutline(){
   const SEEDS=['雨','台风','月考','家长会','停电','夜自习','剪头发','体检','生日','搬家','感冒','旧同学'];
-  const used=JSON.parse(localStorage.getItem('jieyu.seeds')||'[]');
+  let used=[];try{const saved=JSON.parse(lsGet('jieyu.seeds','[]'));if(Array.isArray(saved))used=saved;}catch(e){}
   const pool=SEEDS.filter(x=>!used.includes(x));
   const seed=pool.length?pool[Math.floor(Math.random()*pool.length)]:SEEDS[0];
-  localStorage.setItem('jieyu.seeds',JSON.stringify(used.concat([seed]).slice(-8)));
+  lsSet('jieyu.seeds',JSON.stringify(used.concat([seed]).slice(-8)));
   const out=[{t:seed+'（本局的引子）',done:false}];
   const beats=[]; Object.keys(SCENES).forEach(ch=>SCENES[ch].forEach(b=>{ if(b.route===CUR) beats.push(b); }));
   for(let i=beats.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[beats[i],beats[j]]=[beats[j],beats[i]];}
@@ -589,13 +790,12 @@ async function callTurn(text){
 }
 async function callTurnStream(text, onSections){
   if(MODE==='server'){ return await callTurn(text); }
-  if(!KEY) throw new Error('还没填 key（我的 → API key）');
-  const body={model:SET.api.model,temperature:0.95,max_tokens:SET.reply,stream:true,
+  const apiKey=currentKey(),api={...SET.api};
+  const body={model:api.model,temperature:0.95,max_tokens:SET.reply,stream:true,
     messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
-  const r=await fetch(SET.api.base,{method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},body:JSON.stringify(body)});
-  if(!r.ok){ const map={401:'key 无效或已失效',402:'余额不足',429:'请求太频繁'};
-    throw new Error(map[r.status]||('接口 '+r.status)); }
+  const r=await fetch(api.base,{method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify(body)});
+  if(!r.ok)throw apiFailure(r.status,api.base);
   const reader=r.body.getReader(); const dec=new TextDecoder();
   let buf='', all='';
   while(true){
@@ -628,9 +828,9 @@ async function callTurnStream(text, onSections){
       if(badSay||badNar){
         try{
           const target=tgt;
-          const r3=await fetch(SET.api.base,{method:'POST',
-            headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
-            body:JSON.stringify({model:SET.api.model,temperature:0.9,max_tokens:SET.reply,
+          const r3=await fetch(api.base,{method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+            body:JSON.stringify({model:api.model,temperature:0.9,max_tokens:SET.reply,
               messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},
                         {role:'user',content:'读者说／做：'+text},
                         {role:'assistant',content:'<nar>'+(sec.nar||'')+'</nar><say>'+(sec.say||'')+'</say>'},
@@ -650,9 +850,9 @@ async function callTurnStream(text, onSections){
   if(!sec.nar){   // 叙述缺失就补一次（只补叙述，很便宜）
     try{
       const t2=targetLen(text);
-      const r2=await fetch(SET.api.base,{method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+KEY},
-        body:JSON.stringify({model:SET.api.model,temperature:0.9,max_tokens:400,
+      const r2=await fetch(api.base,{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+        body:JSON.stringify({model:api.model,temperature:0.9,max_tokens:400,
           messages:[{role:'system',content:'写一段小说叙述（'+t2.nar+'字，2 段）：先写环境，再写这个人的动作。不要对白，不要解释。只输出 <nar>…</nar>'},
                     {role:'user',content:'场景：'+(S.chapter||'')+'；刚才发生：'+(sec.say||'')}]})});
       const j2=await r2.json();
@@ -664,6 +864,11 @@ async function callTurnStream(text, onSections){
 }
 async function sendTurn(text){
   if(busy||!text.trim()||!CUR||S.ended||$('intro').classList.contains('on')) return;
+  if(!STORE.current(CUR,S)){
+    const fresh=getS(CUR);
+    if(fresh)await openChat(CUR);else{$('chat').classList.remove('on');$('home').classList.add('on');renderHome();}
+    INP.value=text;toast('另一页的记录已更新，已保留你的输入，请确认后再发送。');return;
+  }
   busy=true; $('send').disabled=true;
   bubble('me', text.replace(/[<>]/g,''));
   INP.value=''; $('choices').innerHTML='';
@@ -683,20 +888,25 @@ async function sendTurn(text){
     const raw=String(e && e.message || e);
     const friendly = /Load failed|Failed to fetch|NetworkError|network/i.test(raw)
       ? '网络没能连上模型接口。常见原因：① 开着代理/加速器但节点不通（最常见）② 断网 ③ 浏览器拦了跨域请求。\n先关掉代理再点发送；还不行就换 Wi-Fi / 用离线版 index.html。'
-      : ('请求失败：' + raw + '\n如果反复出现，检查「我的 → API key」和余额。');
+      : ('请求失败：' + raw);
     narBox.style.display='none'; herBox.style.display='';
-    herBox.innerHTML='<span style="color:#d98b7a">'+friendly.replace(/\n/g,'<br>')+'</span>';
+    herBox.textContent=friendly;herBox.style.color='#d98b7a';
     actBox.style.display='none'; busy=false; $('send').disabled=false;
+    if(!INP.value)INP.value=text;
     return;
   }
-  narBox.textContent=(d.nar||narTxt); if(narBox.textContent) narBox.style.display='';
-  const _s=(d.say||sayTxt||'……');
+  narBox.textContent=(d.nar||''); if(narBox.textContent) narBox.style.display='';
+  const _s=(d.say||'……');
   herBox.textContent=(/^[“"「]/.test(_s)?_s:'“'+_s+'”');
   if(d.act){ actBox.textContent=d.act; actBox.style.display=''; } else actBox.style.display='none';
   if(d.advance){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+d.advance; $('log').appendChild(ad); }
 
   S.aff=Math.max(-20,Math.min(40,S.aff+Number(d.aff||0)));
   S.trust=Math.max(-20,Math.min(40,S.trust+Number(d.trust||0)));
+  if(!Array.isArray(S.transcript)||S.transcript.length!==Math.floor(S.turns.length/2)){
+    S.transcript=[];for(let i=0;i<S.turns.length;i+=2)S.transcript.push({user:S.turns[i],say:S.turns[i+1]||'',nar:'',act:'',advance:''});
+  }
+  S.transcript.push({user:text,nar:d.nar||'',say:herBox.textContent,act:d.act||'',advance:d.advance||''});
   S.turns.push(text); S.turns.push((CHARS[CUR].name)+'：'+(d.say||''));
   if(d.memory) S.facts.push(d.memory);
   if(d.advance) S.log=S.log.concat([d.advance]).slice(-12);
@@ -707,22 +917,23 @@ async function sendTurn(text){
   countHits((d.nar||'')+' '+(d.say||'')+' '+(d.act||''));
   S.stage = S.aff>=25||S.turns.length/2>=20 ? '不可替代' : S.aff>=15||S.turns.length/2>=14 ? '交心' : S.aff>=5||S.turns.length/2>=8 ? '熟人':'陌生';
   S.at=Date.now();
-  putS(CUR,S);
+  const saved=putS(CUR,S);
   (d.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.textContent=c; b.onclick=()=>sendTurn(c); $('choices').appendChild(b); });
   busy=false; $('send').disabled=false; $('log').scrollTop=1e9;
+  if(!saved&&STORE.status().conflict)return;
   if((S.turns.length/2)>=24||S.aff>=25||S.aff<=-6) await endGame();
 }
 function exportSaves(){
   try{
-    const data={v:1, at:new Date().toISOString(), sessions:JSON.parse(localStorage.getItem('jieyu.sessions')||'{}'),
-                set:JSON.parse(localStorage.getItem('jieyu.set')||'{}')};
+    flushConnectionDraft();
+    const data=STORE.backup(DEF);
     const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
     a.download='借你一场雨-存档-'+new Date().toISOString().slice(0,10)+'.json';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
-    toast('已导出 '+(Object.keys(data.sessions).length)+' 条存档');
+    toast('已导出 '+Object.keys(data.sessions).length+' 个故事与设置（不含 key）');
   }catch(e){ toast('导出失败：'+e.message); }
 }
 function importSaves(){
@@ -733,22 +944,36 @@ function importSaves(){
     r.onload=()=>{
       try{
         const d=JSON.parse(r.result);
-        if(!d || typeof d!=='object' || !d.sessions) throw new Error('不是存档文件');
-        const cur=JSON.parse(localStorage.getItem('jieyu.sessions')||'{}');
-        let n=0;
-        Object.keys(d.sessions).forEach(k=>{ if(CHARS[k]||k==='secret'){ cur[k]=d.sessions[k]; n++; } });
-        localStorage.setItem('jieyu.sessions', JSON.stringify(cur));
-        if(d.set){ localStorage.setItem('jieyu.set', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('jieyu.set')||'{}'), d.set))); SET=JSON.parse(localStorage.getItem('jieyu.set')); applySet(); }
-        toast('已导入 '+n+' 条存档'); closeSheet(); renderHome();
+        const ids=STORE.importBackup(d,DEF);
+        clearTimeout(connectionTimer);connectionDraft=null;
+        SET=STORE.getSettings(DEF);KEY=lsGet(KEYKEY,'');applySet();
+        closeSheet();if(CUR&&ids.includes(CUR))openChat(CUR);renderHome();refreshStorageNotice();
+        toast(STORE.status().ok?'已导入 '+ids.length+' 个故事与设置；原记录已保留备份。':STORE.status().error);
       }catch(e){ toast('导入失败：'+e.message); }
     };
     r.readAsText(f);
   };
   inp.click();
 }
+function openRecovery(){
+  if(!flushConnectionDraft())return;connectionDraft=null;
+  const box=$('sheetBox');box.innerHTML='<div class="sheettitle"><b>记录备份</b><button class="close" onclick="closeSheet()">×</button></div><p class="hint">导入或发生标签页冲突时，原记录保留在这里。恢复前会备份当前版本。</p>';
+  const recovered=STORE.recoveries();let count=0;
+  Object.keys(recovered).forEach(route=>{
+    if(!CHARS[route]||!Array.isArray(recovered[route]))return;
+    recovered[route].forEach((item,index)=>{
+      const button=document.createElement('button');button.className='btn ghost';
+      button.textContent=CHARS[route].name+' · '+new Date(item.at).toLocaleString()+' · '+Math.floor((item.state.turns||[]).length/2)+' 轮 · 恢复';
+      button.onclick=()=>{if(STORE.restore(route,index)){closeSheet();openChat(route);toast('已恢复记录，原版本仍在备份中。');}refreshStorageNotice();};
+      box.appendChild(button);count++;
+    });
+  });
+  if(!count){const hint=document.createElement('p');hint.className='hint';hint.textContent='当前没有额外备份。换浏览器前可先导出故事与设置。';box.appendChild(hint);}
+  $('sheet').classList.add('on');
+}
 
 function toggleRead(){
-  SET.read = !SET.read; saveSet();
+  saveSet({read:!SET.read});
   const t=document.getElementById('readTag'); if(t) t.textContent = SET.read?'开':'关';
   if(SET.read){ speakLine('已开启朗读'); } else if(window.speechSynthesis){ speechSynthesis.cancel(); }
   toast(SET.read?'已开启朗读（系统语音）':'已关闭朗读');
@@ -837,6 +1062,7 @@ async function endGame(){
 
 /* ---------- 设置面板 ---------- */
 function openSettings(){
+  if(connectionDraft&&!flushConnectionDraft())return;
   const box=$('sheetBox');
   box.innerHTML=`
    <div class="sheettitle"><b>设置</b><button class="close" onclick="closeSheet()">×</button></div>
@@ -868,116 +1094,158 @@ function openSettings(){
    <div class="opt"><div><div class="lbl">每轮预估消耗</div><div class="hint">按上面三项估算，仅输入+输出</div></div><span class="val" id="costVal">—</span></div>
    <div class="sgroup">连接</div>
    <div class="opt" style="display:block">
-     <div class="lbl">DeepSeek API key</div>
-     <div class="hint" style="margin:4px 0 8px">${MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):'存在这台设备，不上传'}</div>
-     <input class="txt" id="keyInput" type="password" placeholder="sk-..." value="${KEY?'••••••••':''}">
+     <div class="lbl">API key</div>
+     <div class="hint" style="margin:4px 0 8px" id="keySavedHint"></div>
+     <input class="txt" id="keyInput" type="password" autocomplete="off" placeholder="粘贴你的 API key" value="">
      <div class="hint" style="margin:10px 0 6px">服务商预设</div>
      <div class="segs" id="presetRow">
        <button data-p="deepseek">DeepSeek</button><button data-p="moonshot">Moonshot</button>
        <button data-p="glm">智谱</button><button data-p="qwen">通义</button></div>
      <div class="hint" style="margin:10px 0 4px">接口地址（OpenAI 兼容即可）</div>
-     <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="${SET.api.base}">
+     <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="">
      <div class="hint" style="margin:10px 0 4px">模型名</div>
-     <input class="txt" id="modelInput" placeholder="deepseek-flash" value="${SET.api.model}">
-     <button class="btn" onclick="saveKey()">保存</button>
+     <input class="txt" id="modelInput" placeholder="deepseek-flash" value="">
+     <button class="btn" onclick="saveKey()">保存并关闭</button>
      <button class="btn ghost" onclick="testKey()">测试连接</button>
      <div class="hint" id="keyMsg" style="margin-top:8px"></div>
      <button class="btn ghost" onclick="clearKey()">清除 key</button>
    </div>
    <div class="sgroup">其他（占位，后续补）</div>
    <div class="opt" onclick="toggleRead()"><div class="lbl">朗读她的台词</div><span class="tag" id="readTag">关</span></div>
-   <div class="opt" onclick="exportSaves()"><div class="lbl">导出存档（下载一份 json）</div><span class="tag">全部线路</span></div>
-   <div class="opt" onclick="importSaves()"><div class="lbl">导入存档（选一份 json）</div><span class="tag">覆盖同名</span></div>
+   <div class="opt" onclick="exportSaves()"><div class="lbl">导出故事与设置</div><span class="tag">不含 key</span></div>
+   <div class="opt" onclick="importSaves()"><div class="lbl">导入故事与设置</div><span class="tag">保留原记录备份</span></div>
+   <div class="hint" style="margin-top:10px">记录保存在当前浏览器。Safari、手机主屏幕应用与内置浏览器之间可能不互通；换入口时先在原浏览器导出，再在新浏览器导入。key 请在新浏览器单独填写，不会写入普通存档。</div>
+   <div class="opt" onclick="openRecovery()"><div class="lbl">记录备份</div><span class="tag" id="recoveryCount">—</span></div>
    <div class="sgroup">本机记忆 · 存档</div>
    <div class="opt"><div><div class="lbl">已经记住的内容</div><div class="hint" id="memInfo">—</div></div><span class="tag" id="memState">—</span></div>
    <div class="opt" onclick="wipeAll()"><div class="lbl">清空本机记忆</div><span class="tag">不可恢复</span></div>
    <div class="opt"><div class="lbl">关于</div><span class="tag" id="buildTag">加载中</span></div>`;
   $('sheet').classList.add('on');
+  $('baseInput').value=SET.api.base;$('modelInput').value=SET.api.model;
+  connectionDraft={key:$('keyInput'),base:$('baseInput'),model:$('modelInput'),keyDirty:false,baseDirty:false,modelDirty:false,baseShown:SET.api.base,modelShown:SET.api.model};
+  [['key','keyDirty'],['base','baseDirty'],['model','modelDirty']].forEach(([field,flag])=>{
+    const input=connectionDraft[field];
+    input.oninput=()=>{
+      connectionDraft[flag]=true;clearTimeout(connectionTimer);
+      connectionMessage(field==='key'?'填写完整后，离开输入框或点「保存并关闭」即可保存。':'正在保存…');
+      if(field!=='key')connectionTimer=setTimeout(()=>flushConnectionDraft(),350);
+    };
+    input.onchange=()=>{connectionDraft[flag]=true;flushConnectionDraft();};
+    input.onblur=()=>flushConnectionDraft();
+  });
   try{
     const inf=$('memInfo'), st=$('memState'), lr=lastRoute();
-    if(inf) inf.textContent='对话 '+savedCount()+' 条 · 设置与 API key 自动保存 · '+(lr?('上次：'+((CHARS[lr]||{}).name||lr)):'还没有上次的故事')+' · 存储位置 '+location.origin;
+    if(inf) inf.textContent='故事 '+savedCount()+' 个 · 仅当前浏览器 · '+(lr?('上次：'+((CHARS[lr]||{}).name||lr)):'还没有上次的故事')+' · 当前网址 '+location.origin;
     if(st) st.textContent=LS_OK?'本机存储可用':'存储被禁用';
   }catch(e){}
   const tR=$('themeRow');
   Object.keys(THEMES).forEach(k=>{
     const b=document.createElement('button'); b.className='sw'+(SET.theme===k?' on':'');
     b.style.background=THEMES[k].bg; b.style.borderColor=SET.theme===k?'var(--ink)':'var(--line)';
-    b.title=THEMES[k].name; b.onclick=()=>{ SET.theme=k; saveSet(); applySet(); openSettings(); };
+    b.title=THEMES[k].name; b.onclick=()=>{ saveSet({theme:k}); applySet(); openSettings(); };
     tR.appendChild(b);
   });
   const aR=$('accentRow');
   Object.keys(ACCENTS).forEach(k=>{
     const b=document.createElement('button'); b.className='sw'+(SET.accent===k?' on':'');
-    b.style.background=ACCENTS[k].c; b.onclick=()=>{ SET.accent=k; saveSet(); applySet(); openSettings(); };
+    b.style.background=ACCENTS[k].c; b.onclick=()=>{ saveSet({accent:k}); applySet(); openSettings(); };
     aR.appendChild(b);
   });
   const memR=$('memRange'), repR=$('repRange');
   memR.value=SET.mem; repR.value=SET.reply;
-  const showCost=()=>{
-    $('memVal').textContent=SET.mem;
-    $('repVal').textContent=SET.reply;
-    $('perVal').textContent=SET.persona==='lite'?'精简':'完整';
-    const inp=Math.round(SET.mem*0.55)+(SET.persona==='full'?900:450);
-    const out=Math.round(SET.reply*0.75);
-    $('costVal').textContent='≈'+(inp+out).toLocaleString()+' tokens';
-  };
-  memR.oninput=()=>{ SET.mem=Number(memR.value); saveSet(); showCost(); };
-  repR.oninput=()=>{ SET.reply=Number(repR.value); saveSet(); showCost(); };
+  memR.oninput=()=>{saveSet({mem:Number(memR.value)});refreshSettingsFields();};
+  repR.oninput=()=>{saveSet({reply:Number(repR.value)});refreshSettingsFields();};
+  memR.onchange=memR.oninput;repR.onchange=repR.oninput;
   $('perRow').querySelectorAll('button').forEach(b=>{
     b.classList.toggle('on', SET.persona===b.dataset.p);
-    b.onclick=()=>{ SET.persona=b.dataset.p; saveSet(); openSettings(); };
+    b.onclick=()=>{ saveSet({persona:b.dataset.p}); openSettings(); };
   });
-  showCost();
   const pr=$('presetRow');
   if(pr) pr.querySelectorAll('button').forEach(b=>{
     const P=PRESETS[b.dataset.p];
     b.classList.toggle('on', SET.api && SET.api.base===P.base);
-    b.onclick=()=>{ SET.api={base:P.base, model:P.model}; saveSet();
+    b.onclick=()=>{ if(!flushConnectionDraft())return;saveSet({api:{base:P.base,model:P.model}});
       const bi=$('baseInput'), mi=$('modelInput'); if(bi) bi.value=P.base; if(mi) mi.value=P.model;
       pr.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.p===b.dataset.p)); };
   });
   $('fontRow').querySelectorAll('button').forEach(b=>{
     b.classList.toggle('on', Number(b.dataset.f)===SET.font);
-    b.onclick=()=>{ SET.font=Number(b.dataset.f); saveSet(); applySet(); openSettings(); };
+    b.onclick=()=>{ saveSet({font:Number(b.dataset.f)}); applySet(); openSettings(); };
   });
+  refreshSettingsFields();refreshStorageNotice();
 }
-function closeSheet(){ $('sheet').classList.remove('on'); }
+function connectionMessage(text,bad=false){const box=$('keyMsg');if(box){box.textContent=text;box.style.color=bad?'#d98b7a':'var(--dim)';}}
+function refreshSettingsFields(){
+  if(!connectionDraft||!$('memRange')||!$('keySavedHint'))return;
+  const status=STORE.status(), key=lsGet(KEYKEY,'');
+  $('memRange').value=SET.mem;$('repRange').value=SET.reply;
+  $('memVal').textContent=SET.mem;$('repVal').textContent=SET.reply;
+  $('perVal').textContent=SET.persona==='lite'?'精简':'完整';
+  $('costVal').textContent='≈'+(Math.round(SET.mem*0.55)+(SET.persona==='full'?900:450)+Math.round(SET.reply*0.75)).toLocaleString()+' tokens';
+  if(!connectionDraft.baseDirty){connectionDraft.base.value=SET.api.base;connectionDraft.baseShown=SET.api.base;}
+  if(!connectionDraft.modelDirty){connectionDraft.model.value=SET.api.model;connectionDraft.modelShown=SET.api.model;}
+  connectionDraft.key.placeholder=key&&!Persistence.masked(key)?'已保存 key；留空保留，填写可替换':'粘贴你的 API key';
+  $('keySavedHint').textContent=MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):
+    Persistence.masked(key)?'之前保存成了遮罩，请重新粘贴原密钥。':key?'当前浏览器已保存 key；不会在输入框中回填。':'当前浏览器尚未保存 key。';
+  const recoveries=STORE.recoveries();$('recoveryCount').textContent=Object.values(recoveries).reduce((n,list)=>n+(Array.isArray(list)?list.length:0),0)+' 份';
+  if(!status.ok)connectionMessage(status.error,true);
+}
+function flushConnectionDraft(){
+  clearTimeout(connectionTimer);if(!connectionDraft)return true;
+  const draft=connectionDraft,api={};
+  if(draft.base.value!==draft.baseShown)draft.baseDirty=true;
+  if(draft.model.value!==draft.modelShown)draft.modelDirty=true;
+  if(draft.baseDirty){
+    const base=draft.base.value.trim();
+    try{if(base&&!/^https?:$/.test(new URL(base).protocol))throw Error('url');}catch(e){connectionMessage('请输入完整的接口网址。',true);return false;}
+    if(base)api.base=base;draft.baseDirty=false;
+  }
+  if(draft.modelDirty){const model=draft.model.value.trim();if(model)api.model=model;draft.modelDirty=false;}
+  if(Object.keys(api).length)saveSet({api});
+  if(draft.keyDirty||draft.key.value.trim()){
+    const text=draft.key.value.trim();
+    if(text){
+      let key;try{key=Persistence.normalizeKey(text);}catch(e){connectionMessage(e.message,true);return false;}
+      lsSet(KEYKEY,key);KEY=key;draft.key.value='';
+    }
+    draft.keyDirty=false;
+  }
+  refreshSettingsFields();
+  const status=STORE.status();connectionMessage(status.ok?'已自动保存到当前浏览器。':status.error,status.ok===false);
+  return status.ok;
+}
+function closeSheet(){if(!flushConnectionDraft())return;connectionDraft=null;$('sheet').classList.remove('on');}
 $('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
 $('setBtn2').onclick=openSettings;
 function saveKey(){
-  const v=($('keyInput').value||'').trim();
-  const base=($('baseInput').value||'').trim() || 'https://api.deepseek.com/chat/completions';
-  const model=($('modelInput').value||'').trim() || 'deepseek-chat';
-  SET.api={base, model}; saveSet();
-  if(v && v.startsWith('sk-')){ KEY=v; localStorage.setItem('jieyu.key',v); }
-  else if(v && !v.startsWith('sk-')){ alert('key 一般是 sk- 开头；如果这个服务商不用 sk- 前缀，也可以直接保存'); KEY=v; localStorage.setItem('jieyu.key',v); }
+  if(!flushConnectionDraft())return;
   closeSheet(); renderHome();
 }
 async function testKey(){
+  if(!flushConnectionDraft())return;
   const box=$('keyMsg');
-  const v=($('keyInput').value||'').trim();
-  const k=(v&&v.startsWith('sk-'))?v:KEY;
   box.style.color='var(--dim)'; box.textContent='测试中…';
   if(MODE==='server'){
-    try{ const r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({session:'__probe__',route:'wan',text:'（测试）',max_tokens:60})});
+    try{ const r=await fetch('/api/key',{cache:'no-store'});const state=await r.json();
       box.style.color = r.ok?'var(--accent)':'#d98b7a';
-      box.textContent = r.ok?'服务端可用 ✅':('服务端返回 '+r.status);
+      box.textContent = r.ok?(state.configured?'本地服务已配置 key，聊天时校验服务商认证。':'本地服务没有配置 key。'):('服务端返回 '+r.status);
     }catch(e){ box.style.color='#d98b7a'; box.textContent='连不上本地服务'; }
     return;
   }
-  if(!k){ box.style.color='#d98b7a'; box.textContent='还没填 key'; return; }
+  let k;try{k=currentKey();}catch(e){connectionMessage(e.message,true);return;}
   try{
     const r=await fetch(SET.api.base,{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
       body:JSON.stringify({model:SET.api.model,messages:[{role:'user',content:'ping'}],max_tokens:5})});
     if(r.ok){ box.style.color='var(--accent)'; box.textContent='key 可用 ✅'; }
-    else if(r.status===401){ box.style.color='#d98b7a'; box.textContent='key 无效或已过期 ❌'; }
-    else if(r.status===402){ box.style.color='#d98b7a'; box.textContent='余额不足 ❌'; }
-    else { box.style.color='#d98b7a'; box.textContent='返回 '+r.status+' ❌'; }
+    else { box.style.color='#d98b7a'; box.textContent=apiFailure(r.status,SET.api.base).message; }
   }catch(e){ box.style.color='#d98b7a'; box.textContent='网络不通：'+e.message; }
 }
-function clearKey(){ KEY=''; localStorage.removeItem('jieyu.key'); closeSheet(); renderHome(); }
+function clearKey(){
+  clearTimeout(connectionTimer);
+  if(connectionDraft){connectionDraft.keyDirty=false;connectionDraft.key.value='';}
+  KEY='';lsDel(KEYKEY);refreshSettingsFields();connectionMessage('已清除当前浏览器保存的 key。');renderHome();
+}
 
 /* ---------- 对话菜单 ---------- */
 $('moreBtn').onclick=()=>{
@@ -996,12 +1264,12 @@ $('moreBtn').onclick=()=>{
 };
 function undoTurn(){
   if(!S||!S.turns.length) return closeSheet();
-  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S); closeSheet(); openChat(CUR);
+  S.turns.splice(-2);if(Array.isArray(S.transcript))S.transcript.pop();S.log=S.log.slice(0,-1); putS(CUR,S); closeSheet(); openChat(CUR);
 }
 function regen(){
   if(!S||!S.turns.length) return closeSheet();
   const last=S.turns.length>=2?S.turns[S.turns.length-2]:S.turns[0];
-  S.turns.splice(-2); S.log=S.log.slice(0,-1); putS(CUR,S);
+  S.turns.splice(-2);if(Array.isArray(S.transcript))S.transcript.pop();S.log=S.log.slice(0,-1); putS(CUR,S);
   closeSheet(); openChat(CUR);
   setTimeout(()=>sendTurn(last),120);
 }
@@ -1017,9 +1285,9 @@ function editStory(){
      <button data-v="sweet">偏甜</button><button data-v="balanced">均衡</button><button data-v="bitter">偏苦</button></div>`;
   $('sheet').classList.add('on');
   $('paceRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.pace===b.dataset.v);
-    b.onclick=()=>{SET.pace=b.dataset.v; saveSet(); editStory();}; });
+    b.onclick=()=>{saveSet({pace:b.dataset.v}); editStory();}; });
   $('toneRow').querySelectorAll('button').forEach(b=>{ b.classList.toggle('on',SET.tone===b.dataset.v);
-    b.onclick=()=>{SET.tone=b.dataset.v; saveSet(); editStory();}; });
+    b.onclick=()=>{saveSet({tone:b.dataset.v}); editStory();}; });
 }
 function openVigs(){
   const list=(VIGS||{})[CUR]||[]; const turns=(S.turns||[]).length/2;
@@ -1047,7 +1315,7 @@ function editMe(){
   $('sheet').classList.add('on');
 }
 function saveMe(){ SET.me={name:($('meName').value||'').trim(), call:($('meCall').value||'').trim(), traits:($('meTraits').value||'').trim()};
-  saveSet(); closeSheet(); }
+  saveSet({me:SET.me}); closeSheet(); }
 
 /* ---------- 记忆面板 ---------- */
 $('memBtn').onclick=()=>{
@@ -1075,10 +1343,16 @@ $('memBtn').onclick=()=>{
     setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
   }
   renderHome();
-  const flush=()=>{ try{ if(CUR&&S) putS(CUR,S); }catch(e){} };
+  const flush=()=>{try{flushConnectionDraft();}catch(e){} };
   addEventListener('pagehide', flush);
   addEventListener('beforeunload', flush);
   document.addEventListener('visibilitychange', ()=>{ if(document.hidden) flush(); });
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=8').catch(()=>{}); }
+  addEventListener('storage',e=>{
+    if(e.key===SETKEY){SET=STORE.getSettings(DEF);applySet();refreshSettingsFields();}
+    if(e.key===KEYKEY){KEY=lsGet(KEYKEY,'');refreshSettingsFields();}
+    if(e.key===SKEY||String(e.key||'').startsWith(STORE.keys.sessionPrefix)||String(e.key||'').startsWith('ai.')||String(e.key||'').startsWith('aidemo.'))renderHome();
+    refreshStorageNotice();
+  });
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=9').catch(()=>{}); }
 })();
 </script></body></html>
