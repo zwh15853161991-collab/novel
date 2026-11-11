@@ -581,6 +581,7 @@ $('intro').addEventListener('keydown',e=>{
   }
 });
 async function openChat(route){
+  cancelPending();
   CUR=route; S=getS(route)||blank(route); setLast(route);
   $('home').classList.remove('on'); $('chat').classList.add('on');
   $('cav').style.display=''; $('cav').style.display='flex';
@@ -676,6 +677,15 @@ function pickTier(text){
   if(S.stage==='交心'||S.stage==='不可替代'){ if(tier==='short') tier='mid'; }
   return tier;
 }
+function lengthBandCheck(cls, say, nar, tgt){
+  const NBAND={short:[30,120],mid:[80,260],long:[160,460]};
+  if(!cls || !NBAND[cls]) return {bad:false, cls:cls||'', chars:0, nchars:0, target:tgt};
+  const chars=String(say||'').replace(/[“”「」\s]/g,'').length;
+  const nchars=String(nar||'').length;
+  const lo=Math.round(tgt*0.6), hi=Math.round(tgt*1.6), nb=NBAND[cls];
+  return {bad:(chars<lo||chars>hi)||(nchars<nb[0]*0.75||nchars>nb[1]*1.4),
+          cls:cls, lo:lo, hi:hi, nb:nb, chars:chars, nchars:nchars, target:tgt};
+}
 function targetLen(text){
   const tier=pickTier(text);
   const base=TIERS[tier];
@@ -768,8 +778,13 @@ function parseSections(all){
 }
 /* 服务端模式：一次请求拿这一轮（key 在本地服务里，页面不碰 key） */
 async function callTurn(text){
-  const r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({session:CUR, route:CUR, text, max_tokens:SET.reply, mem:SET.mem, persona:SET.persona})});
+  const ctrl=new AbortController(), timer=setTimeout(()=>ctrl.abort(), 90000);
+  let r;
+  try{
+    r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
+      body:JSON.stringify({session:CUR, route:CUR, text, max_tokens:SET.reply, mem:SET.mem, persona:SET.persona})});
+  }catch(e){ throw new Error(/abort/i.test(String(e&&e.name||e)) ? '请求超时（90 秒）' : e); }
+  finally{ clearTimeout(timer); }
   let j={};
   try{ j=await r.json(); }catch(e){ throw new Error('本地服务返回的不是 JSON（接口 '+r.status+'）'); }
   if(!r.ok || j.error) throw new Error(j.error || ('本地服务 '+r.status));
@@ -793,8 +808,13 @@ async function callTurnStream(text, onSections){
   const apiKey=currentKey(),api={...SET.api};
   const body={model:api.model,temperature:0.95,max_tokens:SET.reply,stream:true,
     messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
-  const r=await fetch(api.base,{method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify(body)});
+  const ctrl=new AbortController(), _timer=setTimeout(()=>ctrl.abort(), 90000);
+  let r;
+  try{
+    r=await fetch(api.base,{method:'POST',signal:ctrl.signal,
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify(body)});
+  }catch(e){ throw new Error(/abort/i.test(String(e&&e.name||e)) ? '请求超时（90 秒）' : e); }
+  finally{ clearTimeout(_timer); }
   if(!r.ok)throw apiFailure(r.status,api.base);
   const reader=r.body.getReader(); const dec=new TextDecoder();
   let buf='', all='';
@@ -818,14 +838,12 @@ async function callTurnStream(text, onSections){
   const NBAND={short:[30,120],mid:[80,260],long:[160,460]};   // 叙述字数区间
   {
     const cls=(sec.meta&&sec.meta.len)||'';
-    const chars=(sec.say||'').replace(/[“”「」\s]/g,'').length;   // 只数台词
-    const nchars=(sec.nar||'').length;
-    if(BAND[cls]){
+    const band=lengthBandCheck(cls, sec.say, sec.nar, BAND._t);
+    const chars=band.chars, nchars=band.nchars;
+    if(cls && NBAND[cls]){
       const tgt=BAND._t; const lo=Math.round(tgt*0.6), hi=Math.round(tgt*1.6);
       const nb=NBAND[cls]||[0,9999];
-      const badSay=(chars<lo || chars>hi);
-      const badNar=(nchars<nb[0]*0.75 || nchars>nb[1]*1.4);
-      if(badSay||badNar){
+      if(band.bad){
         try{
           const target=tgt;
           const r3=await fetch(api.base,{method:'POST',
@@ -862,6 +880,22 @@ async function callTurnStream(text, onSections){
   }
   return {nar:sec.nar, say:sec.say, act:sec.act, ...sec.meta};
 }
+/* ---------- 一轮请求：归属校验 / 结果校验 / 统一收尾（审查报告 B01、B06） ---------- */
+function num(v,lo,hi){ const n=Number(v); return Number.isFinite(n)?Math.max(lo,Math.min(hi,n)):0; }
+function validTurn(d){
+  if(!d||typeof d!=='object') return false;
+  const say=typeof d.say==='string'?d.say.trim():'';
+  const nar=typeof d.nar==='string'?d.nar.trim():'';
+  return !!(say||nar);
+}
+function friendlyError(e){
+  const raw=String((e&&e.message)||e||'');
+  if(/abort|AbortError|timeout|超时/i.test(raw)) return '这次请求超过 90 秒没有结果，已经放弃，这一轮不记入。可以直接重发。';
+  if(/Load failed|Failed to fetch|NetworkError|network/i.test(raw))
+    return '网络没能连上模型接口。常见原因：① 开着代理/加速器但节点不通（最常见）② 断网 ③ 浏览器拦了跨域请求。\n先关掉代理再点发送；还不行就换 Wi-Fi / 用离线版 index.html。';
+  return '请求失败：'+raw+'\n可以直接重发，不会重复记一轮。';
+}
+function cancelPending(){ busy=false; const b=$('send'); if(b) b.disabled=false; }
 async function sendTurn(text){
   if(busy||!text.trim()||!CUR||S.ended||$('intro').classList.contains('on')) return;
   if(!STORE.current(CUR,S)){
@@ -869,60 +903,66 @@ async function sendTurn(text){
     if(fresh)await openChat(CUR);else{$('chat').classList.remove('on');$('home').classList.add('on');renderHome();}
     INP.value=text;toast('另一页的记录已更新，已保留你的输入，请确认后再发送。');return;
   }
+  const myRoute=CUR, myS=S, myRev=(S.rev||0);        /* 固定归属：晚到的结果只能回到这个会话 */
+  const stale=()=> CUR!==myRoute || S!==myS || ((myS.rev||0)!==myRev);
   busy=true; $('send').disabled=true;
   bubble('me', text.replace(/[<>]/g,''));
   INP.value=''; $('choices').innerHTML='';
-  let d;
   const narBox=document.createElement('div'); narBox.className='nar'; narBox.style.display='none';
   const herBox=document.createElement('div'); herBox.className='b her'; herBox.style.display='none';
   const actBox=document.createElement('div'); actBox.className='nar'; actBox.style.display='none';
   $('log').appendChild(narBox); $('log').appendChild(herBox); $('log').appendChild(actBox);
+  const drop=()=>{ [narBox,herBox,actBox].forEach(el=>{ if(el.parentNode) el.parentNode.removeChild(el); }); };
   const onSec=sec=>{
+    if(stale()||!sec) return;
     if(sec.nar){ narBox.style.display=''; narBox.textContent=sec.nar; }
     if(sec.say){ herBox.style.display=''; herBox.textContent=sec.say; }
     if(sec.act){ actBox.style.display=''; actBox.textContent=sec.act; }
     $('log').scrollTop=1e9;
   };
-  try{ d=await callTurnStream(text, onSec); }
-  catch(e){
-    const raw=String(e && e.message || e);
-    const friendly = /Load failed|Failed to fetch|NetworkError|network/i.test(raw)
-      ? '网络没能连上模型接口。常见原因：① 开着代理/加速器但节点不通（最常见）② 断网 ③ 浏览器拦了跨域请求。\n先关掉代理再点发送；还不行就换 Wi-Fi / 用离线版 index.html。'
-      : ('请求失败：' + raw);
-    narBox.style.display='none'; herBox.style.display='';
-    herBox.textContent=friendly;herBox.style.color='#d98b7a';
-    actBox.style.display='none'; busy=false; $('send').disabled=false;
-    if(!INP.value)INP.value=text;
-    return;
+  let d=null, err=null;
+  try{ d=await callTurnStream(text, onSec); }catch(e){ err=e; }
+  busy=false; $('send').disabled=false;              /* 所有结束路径都解除发送状态，绝不卡死 */
+  if(stale()){ drop(); return; }                    /* 切人／重开后才回来的结果：丢弃，不写入任何会话 */
+  if(err || !validTurn(d)){
+    narBox.style.display='none'; actBox.style.display='none'; herBox.style.display='';
+    herBox.style.color='#d98b7a';
+    herBox.textContent = err ? friendlyError(err)
+      : '这次没有拿到正文（模型只回了思考内容、被截断，或字段异常）。这一轮不记入，可以直接重发。';
+    if(!INP.value) INP.value=text;
+    return;                                          /* 不提交任何游戏状态 */
   }
-  narBox.textContent=(d.nar||''); if(narBox.textContent) narBox.style.display='';
-  const _s=(d.say||'……');
-  herBox.textContent=(/^[“"「]/.test(_s)?_s:'“'+_s+'”');
-  herBox.style.display='';
-  if(d.act){ actBox.textContent=d.act; actBox.style.display=''; } else actBox.style.display='none';
-  if(d.advance){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+d.advance; $('log').appendChild(ad); }
-
-  S.aff=Math.max(-20,Math.min(40,S.aff+Number(d.aff||0)));
-  S.trust=Math.max(-20,Math.min(40,S.trust+Number(d.trust||0)));
-  if(!Array.isArray(S.transcript)||S.transcript.length!==Math.floor(S.turns.length/2)){
-    S.transcript=[];for(let i=0;i<S.turns.length;i+=2)S.transcript.push({user:S.turns[i],say:S.turns[i+1]||'',nar:'',act:'',advance:''});
+  const say=String(d.say||'').trim(), nar=String(d.nar||'').trim(), act=String(d.act||'').trim();
+  const adv=typeof d.advance==='string'?d.advance.trim():'';
+  narBox.textContent=nar; if(nar) narBox.style.display='';
+  herBox.style.color=''; herBox.style.display='';
+  herBox.textContent=(/^[“"「]/.test(say)?say:'“'+say+'”');
+  if(act){ actBox.textContent=act; actBox.style.display=''; } else actBox.style.display='none';
+  if(adv){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+adv; $('log').appendChild(ad); }
+  myS.aff=Math.max(-20,Math.min(40,myS.aff+num(d.aff,-5,5)));
+  myS.trust=Math.max(-20,Math.min(40,myS.trust+num(d.trust,-5,5)));
+  if(!Array.isArray(myS.transcript)||myS.transcript.length!==Math.floor(myS.turns.length/2)){
+    myS.transcript=[];for(let i=0;i<myS.turns.length;i+=2)myS.transcript.push({user:myS.turns[i],say:myS.turns[i+1]||'',nar:'',act:'',advance:''});
   }
-  S.transcript.push({user:text,nar:d.nar||'',say:herBox.textContent,act:d.act||'',advance:d.advance||''});
-  S.turns.push(text); S.turns.push((CHARS[CUR].name)+'：'+(d.say||''));
-  if(d.memory) S.facts.push(d.memory);
-  if(d.advance) S.log=S.log.concat([d.advance]).slice(-12);
-  S.uturns=(S.uturns||0)+1; if(!(d.state&&d.state.chapter)) clientAdvance();
-  if(d.open_thread) S.threads=S.threads.concat([d.open_thread]).slice(-4);
-  if(d.close_thread) S.threads=S.threads.filter(x=>!String(x).includes(d.close_thread));
-  if(d.outline_hit && S.outline[d.outline_hit-1]) S.outline[d.outline_hit-1].done=true;
-  countHits((d.nar||'')+' '+(d.say||'')+' '+(d.act||''));
-  S.stage = S.aff>=25||S.turns.length/2>=20 ? '不可替代' : S.aff>=15||S.turns.length/2>=14 ? '交心' : S.aff>=5||S.turns.length/2>=8 ? '熟人':'陌生';
-  S.at=Date.now();
-  const saved=putS(CUR,S);
-  (d.choices||[]).forEach(c=>{ const b=document.createElement('button'); b.textContent=c; b.onclick=()=>sendTurn(c); $('choices').appendChild(b); });
-  busy=false; $('send').disabled=false; $('log').scrollTop=1e9;
+  myS.transcript.push({user:text,nar:nar,say:herBox.textContent,act:act,advance:adv});
+  myS.turns.push(text); myS.turns.push(((CHARS[myRoute]||{}).name||myRoute)+'：'+say);
+  if(typeof d.memory==='string'&&d.memory.trim()) myS.facts.push(d.memory.trim());
+  if(adv) myS.log=myS.log.concat([adv]).slice(-12);
+  myS.uturns=(myS.uturns||0)+1;
+  if(!(d.state&&d.state.chapter) && !stale()) clientAdvance();
+  if(typeof d.open_thread==='string'&&d.open_thread.trim()) myS.threads=myS.threads.concat([d.open_thread.trim()]).slice(-4);
+  if(typeof d.close_thread==='string'&&d.close_thread.trim()) myS.threads=myS.threads.filter(x=>!String(x).includes(d.close_thread.trim()));
+  const hit=Number.isInteger(d.outline_hit)?d.outline_hit:0;
+  if(hit && myS.outline && myS.outline[hit-1]) myS.outline[hit-1].done=true;
+  countHits(nar+' '+say+' '+act);
+  myS.stage = myS.aff>=25||myS.turns.length/2>=20 ? '不可替代' : myS.aff>=15||myS.turns.length/2>=14 ? '交心' : myS.aff>=5||myS.turns.length/2>=8 ? '熟人':'陌生';
+  myS.rev=myRev+1; myS.at=Date.now();
+  const saved=putS(myRoute,myS);
+  (Array.isArray(d.choices)?d.choices:[]).filter(c=>typeof c==='string'&&c.trim()).slice(0,4)
+    .forEach(c=>{ const b=document.createElement('button'); b.textContent=c; b.onclick=()=>sendTurn(c); $('choices').appendChild(b); });
+  $('log').scrollTop=1e9;
   if(!saved&&STORE.status().conflict)return;
-  if((S.turns.length/2)>=24||S.aff>=25||S.aff<=-6) await endGame();
+  if(!stale() && ((myS.turns.length/2)>=24||myS.aff>=25||myS.aff<=-6)) await endGame();
 }
 function exportSaves(){
   try{
@@ -1139,6 +1179,14 @@ function openSettings(){
     if(inf) inf.textContent='故事 '+savedCount()+' 个 · 仅当前浏览器 · '+(lr?('上次：'+((CHARS[lr]||{}).name||lr)):'还没有上次的故事')+' · 当前网址 '+location.origin;
     if(st) st.textContent=LS_OK?'本机存储可用':'存储被禁用';
   }catch(e){}
+  if(MODE==='server'){
+    const bi=$('baseInput'), mi=$('modelInput'), pr=$('presetRow');
+    [bi,mi].forEach(el=>{ if(el){ el.disabled=true; el.title='本地服务模式：接口地址与模型由服务端配置决定'; } });
+    if(pr) pr.querySelectorAll('button').forEach(b=>{ b.disabled=true; b.style.opacity=.45; });
+    const note=document.createElement('div'); note.className='hint'; note.style.marginTop='6px';
+    note.textContent='本地服务模式：接口地址与模型由服务端固定（DeepSeek），这里的选项只在直连模式生效。';
+    if(pr && pr.parentNode) pr.parentNode.insertBefore(note, pr.nextSibling);
+  }
   const tR=$('themeRow');
   Object.keys(THEMES).forEach(k=>{
     const b=document.createElement('button'); b.className='sw'+(SET.theme===k?' on':'');
