@@ -1,5 +1,5 @@
 // 缓存策略：HTML 永远走网络优先（避免装到主屏后拿到旧版），静态资源缓存优先
-const CACHE = 'jieyu-v5';
+const CACHE = 'jieyu-v6';
 const STATIC = ['./icon.svg', './manifest-app.json', './manifest-staging.json'];
 
 self.addEventListener('install', e => {

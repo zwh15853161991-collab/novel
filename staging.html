@@ -188,12 +188,33 @@ const PRESETS={
   glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
 };
+/* ---------- 本机记忆：localStorage 安全层 ----------
+   无痕模式/禁用存储时不抛异常，而是把状态暴露到设置面板里，避免「静默重置」 */
+let LS_OK=true;
+try{ localStorage.setItem('jieyu.ping','1'); localStorage.removeItem('jieyu.ping'); }catch(e){ LS_OK=false; }
+function lsGet(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ LS_OK=false; return false; } }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+const SKEY='jieyu.sessions', LKEY='jieyu.last', SETKEY='jieyu.set', KEYKEY='jieyu.key';
+function allSessions(){ try{return JSON.parse(lsGet(SKEY,'{}')||'{}');}catch(e){return {};} }
+function getS(route){ const a=allSessions(); return a[route]||null; }
+function putS(route,s){ const a=allSessions(); a[route]=s; lsSet(SKEY,JSON.stringify(a)); }
+function delS(route){ const a=allSessions(); delete a[route]; lsSet(SKEY,JSON.stringify(a)); }
+function savedCount(){ const a=allSessions(); return Object.keys(a).filter(k=>a[k]&&((a[k].turns||[]).length||(a[k].log||[]).length)).length; }
+function lastRoute(){ const r=lsGet(LKEY,''); return (r && typeof CHARS!=='undefined' && CHARS[r]) ? r : null; }
+function setLast(r){ if(r) lsSet(LKEY,r); }
+function wipeAll(){
+  if(!confirm('清空本机记忆：对话记录、设置、API key 会全部删掉，不能恢复。继续？')) return;
+  [SKEY,LKEY,SETKEY,KEYKEY,'jieyu.seeds'].forEach(lsDel);
+  location.reload();
+}
+
 const DEF={theme:'warm',accent:'sand',font:17,typing:true,autosave:true,read:false,
   mem:8000, reply:1200, persona:'full',
   pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
   api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'}};
-let SET=Object.assign({},DEF,JSON.parse(localStorage.getItem('jieyu.set')||'{}'));
-function saveSet(){localStorage.setItem('jieyu.set',JSON.stringify(SET));}
+let SET=Object.assign({},DEF,JSON.parse(lsGet(SETKEY,'{}')||'{}'));
+function saveSet(){ lsSet(SETKEY,JSON.stringify(SET)); }
 if(SET.api && SET.api.model==='deepseek-chat'){ SET.api.model='deepseek-flash'; saveSet(); }
 function applySet(){
   const t=THEMES[SET.theme]||THEMES.warm, a=ACCENTS[SET.accent]||ACCENTS.sand;
@@ -209,12 +230,7 @@ function applySet(){
 }
 applySet();
 
-/* ---------- 会话存储 ---------- */
-const SKEY='jieyu.sessions';
-function allSessions(){ try{return JSON.parse(localStorage.getItem(SKEY)||'{}');}catch(e){return {};} }
-function getS(route){ const a=allSessions(); return a[route]||null; }
-function putS(route,s){ const a=allSessions(); a[route]=s; localStorage.setItem(SKEY,JSON.stringify(a)); }
-function delS(route){ const a=allSessions(); delete a[route]; localStorage.setItem(SKEY,JSON.stringify(a)); }
+/* ---------- 会话存储：函数已在上方「本机记忆」层定义，不再重复 ---------- */
 
 function blank(route){
   return {route, aff:0, trust:0, turns:[], facts:[], summary:'', log:[], threads:[], stage:'陌生',
@@ -228,7 +244,7 @@ async function detect(){
   catch(e){ MODE='direct'; }
 }
 let SERVER_KEY=false;
-let KEY=localStorage.getItem('jieyu.key')||'';
+let KEY=lsGet('jieyu.key','');
 
 /* ---------- 首页渲染 ---------- */
 let TAB='stories';
@@ -292,7 +308,7 @@ const OPEN={wan:'「雨还没停。」她把梯子挪了挪，让你好走过去
  shen:'「坐。账还没算完。」她拨了一下算盘。',jian:'「看什么看。这位置有人了。」她头都没抬。',qing:'「你迟到了三分钟。」她把图纸摊开。'};
 
 async function openChat(route){
-  CUR=route; S=getS(route)||blank(route);
+  CUR=route; S=getS(route)||blank(route); setLast(route);
   $('home').classList.remove('on'); $('chat').classList.add('on');
   $('cav').style.display=''; $('cav').style.display='flex';
   $('cnm').textContent=(CHARS[route]||{}).name||route;
@@ -475,6 +491,28 @@ function parseSections(all){
   const src=mt?mt[1]:(all.match(/\{[\s\S]*\}/)||[''])[0];
   try{ const i=src.indexOf('{'), j=src.lastIndexOf('}'); meta=JSON.parse(src.slice(i,j+1)); }catch(e){ meta={}; }
   return {nar,say,act,meta};
+}
+/* 服务端模式：一次请求拿这一轮（key 在本地服务里，页面不碰 key） */
+async function callTurn(text){
+  const r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({session:CUR, route:CUR, text, max_tokens:SET.reply, mem:SET.mem, persona:SET.persona})});
+  let j={};
+  try{ j=await r.json(); }catch(e){ throw new Error('本地服务返回的不是 JSON（接口 '+r.status+'）'); }
+  if(!r.ok || j.error) throw new Error(j.error || ('本地服务 '+r.status));
+  const st=j.state||{};
+  /* 服务端是进度的唯一真相：绝对量整体回写，避免本地和服务端各算一遍 */
+  if(typeof st.aff==='number') S.aff=st.aff;
+  if(typeof st.trust==='number') S.trust=st.trust;
+  if(st.chapter) S.chapter=st.chapter;
+  if(st.stage) S.stage=st.stage;
+  if(Array.isArray(st.threads)) S.threads=st.threads;
+  if(Array.isArray(st.log) && st.log.length) S.log=st.log;
+  return {nar:j.nar||'', say:j.say||'', act:j.act||'', advance:j.advance||'',
+          aff:0, trust:0, memory:j.memory||'',
+          open_thread:j.open_thread||'', close_thread:j.close_thread||'',
+          outline_hit:j.outline_hit||0,
+          choices:(Array.isArray(j.choices)&&j.choices.length ? j.choices : (j.cands||[])),
+          state:st};
 }
 async function callTurnStream(text, onSections){
   if(MODE==='server'){ return await callTurn(text); }
@@ -777,8 +815,16 @@ function openSettings(){
    <div class="opt" onclick="toggleRead()"><div class="lbl">朗读她的台词</div><span class="tag" id="readTag">关</span></div>
    <div class="opt" onclick="exportSaves()"><div class="lbl">导出存档（下载一份 json）</div><span class="tag">全部线路</span></div>
    <div class="opt" onclick="importSaves()"><div class="lbl">导入存档（选一份 json）</div><span class="tag">覆盖同名</span></div>
+   <div class="sgroup">本机记忆 · 存档</div>
+   <div class="opt"><div><div class="lbl">已经记住的内容</div><div class="hint" id="memInfo">—</div></div><span class="tag" id="memState">—</span></div>
+   <div class="opt" onclick="wipeAll()"><div class="lbl">清空本机记忆</div><span class="tag">不可恢复</span></div>
    <div class="opt"><div class="lbl">关于</div><span class="tag" id="buildTag">加载中</span></div>`;
   $('sheet').classList.add('on');
+  try{
+    const inf=$('memInfo'), st=$('memState'), lr=lastRoute();
+    if(inf) inf.textContent='对话 '+savedCount()+' 条 · 设置与 API key 自动保存 · '+(lr?('上次：'+((CHARS[lr]||{}).name||lr)):'还没有上次的故事')+' · 存储位置 '+location.origin;
+    if(st) st.textContent=LS_OK?'本机存储可用':'存储被禁用';
+  }catch(e){}
   const tR=$('themeRow');
   Object.keys(THEMES).forEach(k=>{
     const b=document.createElement('button'); b.className='sw'+(SET.theme===k?' on':'');
@@ -951,10 +997,15 @@ $('memBtn').onclick=()=>{
   await detect();
   const want=new URLSearchParams(location.search).get('r');
   if(want && CHARS[want]){ setTimeout(()=>openChat(want), 60); }
+  else { const r=lastRoute(); if(r && getS(r)){ setTimeout(()=>openChat(r), 60); } }
   if(location.protocol==='file:' && MODE!=='server'){
     setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
   }
   renderHome();
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=5').catch(()=>{}); }
+  const flush=()=>{ try{ if(CUR&&S) putS(CUR,S); }catch(e){} };
+  addEventListener('pagehide', flush);
+  addEventListener('beforeunload', flush);
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) flush(); });
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=6').catch(()=>{}); }
 })();
 </script></body></html>
