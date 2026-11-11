@@ -1,5 +1,7 @@
 // 缓存策略：HTML 永远走网络优先（避免装到主屏后拿到旧版），静态资源缓存优先
-const CACHE = 'jieyu-v9';
+const CACHE = 'jieyu-v10';
+const PREFIX = 'jieyu-';                 // 只清理本应用的缓存（B15）
+const SCOPE = self.registration && self.registration.scope ? new URL(self.registration.scope).pathname : '/';
 const STATIC = ['./icon.svg', './manifest-app.json', './manifest-staging.json'];
 
 self.addEventListener('install', e => {
@@ -10,7 +12,8 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    // 只删「本应用前缀 + 非同源其他应用不动」（B15）
+    await Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -19,13 +22,19 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // 只处理本应用范围内的 GET；API / 凭据 / 跨源一律直接走网络（B15）
+  if (url.origin !== self.location.origin) return;
+  if (!url.pathname.startsWith(SCOPE)) return;
+  if (url.pathname.startsWith('/api/')) return;
   const isHTML = req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/');
   if (isHTML) {
     e.respondWith((async () => {
       try {
         const fresh = await fetch(req, { cache: 'no-store' });
-        const c = await caches.open(CACHE);
-        c.put(req, fresh.clone());
+        // 只缓存成功响应，避免把错误页固化成导航结果（B15）
+        if (fresh && fresh.ok) {
+          try { const c = await caches.open(CACHE); c.put(req, fresh.clone()); } catch (e) {}
+        }
         return fresh;
       } catch (err) {
         const hit = await caches.match(req);
@@ -45,7 +54,9 @@ self.addEventListener('fetch', e => {
     const hit = await caches.match(req);
     if (hit) return hit;
     const fresh = await fetch(req);
-    try { const c = await caches.open(CACHE); c.put(req, fresh.clone()); } catch (e) {}
+    if (fresh && fresh.ok) {
+      try { const c = await caches.open(CACHE); c.put(req, fresh.clone()); } catch (e) {}
+    }
     return fresh;
   })());
 });
