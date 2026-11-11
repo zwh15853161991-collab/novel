@@ -429,7 +429,8 @@ applySet();
 
 function blank(route){
   return {route, aff:0, trust:0, turns:[], facts:[], summary:'', log:[], threads:[], stage:'陌生',
-          chapter:(CHARS[route]||{}).start_chapter||'', outline:[], hits:{}, ended:false, at:Date.now()};
+          chapter:(CHARS[route]||{}).start_chapter||'', outline:[], hits:{}, ended:false,
+          rev:0, history:[], at:Date.now()};
 }
 
 /* ---------- 后端探测：本地服务 or 直连 ---------- */
@@ -777,25 +778,23 @@ function parseSections(all){
   return {nar,say,act,meta};
 }
 /* 服务端模式：一次请求拿这一轮（key 在本地服务里，页面不碰 key） */
-async function callTurn(text){
+async function callTurn(text, sess, route){
+  const s0=sess||S, rt=route||CUR;
+  const snap={route:rt, aff:s0.aff, trust:s0.trust, chapter:s0.chapter, stage:s0.stage,
+    threads:(s0.threads||[]).slice(-6), turns:(s0.turns||[]).slice(-24), facts:(s0.facts||[]).slice(-12),
+    log:(s0.log||[]).slice(-12), outline:s0.outline||[], hits:s0.hits||{}, flags:s0.flags||{},
+    uturns:s0.uturns||0, summary:s0.summary||''};
   const ctrl=new AbortController(), timer=setTimeout(()=>ctrl.abort(), 90000);
   let r;
   try{
     r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
-      body:JSON.stringify({session:CUR, route:CUR, text, max_tokens:SET.reply, mem:SET.mem, persona:SET.persona})});
+      body:JSON.stringify({session:rt, route:rt, text, max_tokens:SET.reply, mem:SET.mem, persona:SET.persona, state:snap})});
   }catch(e){ throw new Error(/abort/i.test(String(e&&e.name||e)) ? '请求超时（90 秒）' : e); }
   finally{ clearTimeout(timer); }
   let j={};
   try{ j=await r.json(); }catch(e){ throw new Error('本地服务返回的不是 JSON（接口 '+r.status+'）'); }
   if(!r.ok || j.error) throw new Error(j.error || ('本地服务 '+r.status));
   const st=j.state||{};
-  /* 服务端是进度的唯一真相：绝对量整体回写，避免本地和服务端各算一遍 */
-  if(typeof st.aff==='number') S.aff=st.aff;
-  if(typeof st.trust==='number') S.trust=st.trust;
-  if(st.chapter) S.chapter=st.chapter;
-  if(st.stage) S.stage=st.stage;
-  if(Array.isArray(st.threads)) S.threads=st.threads;
-  if(Array.isArray(st.log) && st.log.length) S.log=st.log;
   return {nar:j.nar||'', say:j.say||'', act:j.act||'', advance:j.advance||'',
           aff:0, trust:0, memory:j.memory||'',
           open_thread:j.open_thread||'', close_thread:j.close_thread||'',
@@ -803,8 +802,8 @@ async function callTurn(text){
           choices:(Array.isArray(j.choices)&&j.choices.length ? j.choices : (j.cands||[])),
           state:st};
 }
-async function callTurnStream(text, onSections){
-  if(MODE==='server'){ return await callTurn(text); }
+async function callTurnStream(text, onSections, sess, route){
+  if(MODE==='server'){ return await callTurn(text, sess, route); }
   const apiKey=currentKey(),api={...SET.api};
   const body={model:api.model,temperature:0.95,max_tokens:SET.reply,stream:true,
     messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
@@ -921,7 +920,7 @@ async function sendTurn(text){
     $('log').scrollTop=1e9;
   };
   let d=null, err=null;
-  try{ d=await callTurnStream(text, onSec); }catch(e){ err=e; }
+  try{ d=await callTurnStream(text, onSec, myS, myRoute); }catch(e){ err=e; }
   busy=false; $('send').disabled=false;              /* 所有结束路径都解除发送状态，绝不卡死 */
   if(stale()){ drop(); return; }                    /* 切人／重开后才回来的结果：丢弃，不写入任何会话 */
   if(err || !validTurn(d)){
@@ -932,6 +931,8 @@ async function sendTurn(text){
     if(!INP.value) INP.value=text;
     return;                                          /* 不提交任何游戏状态 */
   }
+  const preSnap=JSON.parse(JSON.stringify(myS));   // 整份快照：连 backgroundRead/transcript 一起回滚
+  delete preSnap.history;
   const say=String(d.say||'').trim(), nar=String(d.nar||'').trim(), act=String(d.act||'').trim();
   const adv=typeof d.advance==='string'?d.advance.trim():'';
   narBox.textContent=nar; if(nar) narBox.style.display='';
@@ -939,15 +940,22 @@ async function sendTurn(text){
   herBox.textContent=(/^[“"「]/.test(say)?say:'“'+say+'”');
   if(act){ actBox.textContent=act; actBox.style.display=''; } else actBox.style.display='none';
   if(adv){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+adv; $('log').appendChild(ad); }
+  const st2=(d.state&&typeof d.state==='object')?d.state:{};
   myS.aff=Math.max(-20,Math.min(40,myS.aff+num(d.aff,-5,5)));
   myS.trust=Math.max(-20,Math.min(40,myS.trust+num(d.trust,-5,5)));
+  if(typeof st2.aff==='number') myS.aff=Math.max(-20,Math.min(40,st2.aff));
+  if(typeof st2.trust==='number') myS.trust=Math.max(-20,Math.min(40,st2.trust));
+  if(typeof st2.chapter==='string'&&st2.chapter) myS.chapter=st2.chapter;
+  if(typeof st2.stage==='string'&&st2.stage) myS.stage=st2.stage;
   if(!Array.isArray(myS.transcript)||myS.transcript.length!==Math.floor(myS.turns.length/2)){
     myS.transcript=[];for(let i=0;i<myS.turns.length;i+=2)myS.transcript.push({user:myS.turns[i],say:myS.turns[i+1]||'',nar:'',act:'',advance:''});
   }
   myS.transcript.push({user:text,nar:nar,say:herBox.textContent,act:act,advance:adv});
   myS.turns.push(text); myS.turns.push(((CHARS[myRoute]||{}).name||myRoute)+'：'+say);
   if(typeof d.memory==='string'&&d.memory.trim()) myS.facts.push(d.memory.trim());
-  if(adv) myS.log=myS.log.concat([adv]).slice(-12);
+  if(Array.isArray(st2.log)&&st2.log.length) myS.log=st2.log.slice(-12);
+  else if(adv) myS.log=myS.log.concat([adv]).slice(-12);
+  if(Array.isArray(st2.threads)) myS.threads=st2.threads.slice(-6);
   myS.uturns=(myS.uturns||0)+1;
   if(!(d.state&&d.state.chapter) && !stale()) clientAdvance();
   if(typeof d.open_thread==='string'&&d.open_thread.trim()) myS.threads=myS.threads.concat([d.open_thread.trim()]).slice(-4);
@@ -957,6 +965,7 @@ async function sendTurn(text){
   countHits(nar+' '+say+' '+act);
   myS.stage = myS.aff>=25||myS.turns.length/2>=20 ? '不可替代' : myS.aff>=15||myS.turns.length/2>=14 ? '交心' : myS.aff>=5||myS.turns.length/2>=8 ? '熟人':'陌生';
   myS.rev=myRev+1; myS.at=Date.now();
+  myS.history=(Array.isArray(myS.history)?myS.history:[]).concat([{rev:myRev, at:myS.at, pre:preSnap}]).slice(-20);
   const saved=putS(myRoute,myS);
   (Array.isArray(d.choices)?d.choices:[]).filter(c=>typeof c==='string'&&c.trim()).slice(0,4)
     .forEach(c=>{ const b=document.createElement('button'); b.textContent=c; b.onclick=()=>sendTurn(c); $('choices').appendChild(b); });
@@ -1311,18 +1320,40 @@ $('moreBtn').onclick=()=>{
    <div class="opt" onclick="openSettings()"><div class="lbl">文字模型设置</div></div>`;
   $('sheet').classList.add('on');
 };
+/* 撤回：恢复整轮提交前的完整快照（好感/信任/记忆/线索/大纲/章节一并回滚） */
+function undoLastTurn(route, state){
+  const r=route||CUR, s=state||S;
+  const hist=Array.isArray(s.history)?s.history:[];
+  if(!hist.length) return false;
+  const last=hist[hist.length-1], pre=last.pre||{};
+  const keepHistory=hist.slice(0,-1);
+  Object.keys(s).forEach(k=>{ if(k!=='history' && !(k in pre)) delete s[k]; });
+  Object.assign(s, JSON.parse(JSON.stringify(pre)));
+  s.history=keepHistory;
+  if(Array.isArray(s.transcript) && s.transcript.length>Math.floor((s.turns||[]).length/2)) s.transcript.pop();
+  putS(r,s);
+  return true;
+}
 function undoTurn(){
   if(!S||!S.turns.length) return closeSheet();
-  S.turns.splice(-2);if(Array.isArray(S.transcript))S.transcript.pop();S.log=S.log.slice(0,-1); putS(CUR,S); closeSheet(); openChat(CUR);
+  if(!undoLastTurn(CUR,S)) return closeSheet();
+  closeSheet(); openChat(CUR); try{ setIntroVisible(false); }catch(e){}
+  toast('已撤回上一轮');
 }
 function regen(){
   if(!S||!S.turns.length) return closeSheet();
   const last=S.turns.length>=2?S.turns[S.turns.length-2]:S.turns[0];
-  S.turns.splice(-2);if(Array.isArray(S.transcript))S.transcript.pop();S.log=S.log.slice(0,-1); putS(CUR,S);
-  closeSheet(); openChat(CUR);
+  if(!undoLastTurn(CUR,S)) return closeSheet();
+  closeSheet(); openChat(CUR); try{ setIntroVisible(false); }catch(e){}
   setTimeout(()=>sendTurn(last),120);
 }
-function newChat(){ delS(CUR); const r=CUR; S=blank(r); closeSheet(); openChat(r); $('send').disabled=false; $('inp').disabled=false; }
+async function newChat(){
+  const r=CUR; if(!r) return;
+  if(MODE==='server'){ try{ await fetch('/api/reset?session='+encodeURIComponent(r)+'&route='+encodeURIComponent(r),{cache:'no-store'}); }catch(e){} }
+  delS(r); S=blank(r); closeSheet(); openChat(r);
+  $('send').disabled=false; $('inp').disabled=false;
+  toast('已重开这一局（本地与服务端一起归零）');
+}
 function editStory(){
   const box=$('sheetBox');
   box.innerHTML=`<div class="sheettitle"><b>剧情选项</b><button class="close" onclick="closeSheet()">×</button></div>

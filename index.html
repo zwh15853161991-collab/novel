@@ -2936,6 +2936,14 @@ const S = {
 };
 let seq = 0, advancing = false;
 
+/* 本局状态的干净模板：新局 / 重开 / 读档都从这里起步，避免上一局残留（审查报告 B10） */
+const S0 = JSON.parse(JSON.stringify(S));
+function resetState(extra){
+  const keep = { theme: S.theme, voiceURI: S.voiceURI, ngPlus: S.ngPlus, ngCount: S.ngCount };
+  Object.keys(S).forEach(k => { delete S[k]; });
+  Object.assign(S, JSON.parse(JSON.stringify(S0)), keep, extra || {});
+}
+
 /* ---------------- 存档 ---------------- */
 function markMilestone(chap){
   try{
@@ -3025,7 +3033,7 @@ function restore(o){
   o = migrateSnapshot(o);
   seq++;
   if(o && o.S) setRoute(o.S.route || 'wan');
-  Object.assign(S, JSON.parse(JSON.stringify(o.S)));
+  resetState(JSON.parse(JSON.stringify(o.S || {})));
   if(!S.good) S.good = {};
   SKIP=false; typing=false; advancing=false;
   $('#log').innerHTML = o.log;
@@ -5036,8 +5044,7 @@ function copyShare(){
 }
 function backToStart(){
   seq++;
-  Object.assign(S,{aff:0, trust:0, flags:{}, scene:'', visited:{}, mem:[], good:{}, quotes:{}, asides:{},
-                   ending:null, lastChap:'', lines:0});
+  resetState({route:S.route, aff:0, trust:0, scene:'', ending:null, lastChap:'', lines:0});
   $('#log').innerHTML = '';
   clearChoices(); updateLove(); scrollBottom();
   setRoute(S.route || 'wan');
@@ -5268,7 +5275,7 @@ function begin(){
   S.side2Shown = false;
   S.side0 = pickSide0();
   S.side0Shown = false;
-  Object.assign(S,{name:nm, aff:0, trust:0, flags:{}, scene:chosenStart, visited:{}, mem:[], good:{}, ending:null, lastChap:'', theme:S.theme||1, lines:0});
+  resetState({name:nm, aff:0, trust:0, scene:chosenStart, ending:null, lastChap:'', theme:S.theme||1, lines:0});
   seq++; SKIP=false; typing=false; advancing=false;
   $('#log').innerHTML='';
   $('#ovStart').classList.remove('show');
@@ -5465,7 +5472,7 @@ startRain();
 updateLove();
 $('#ovStart').classList.add('show');
 
-window.__JIEYU__ = {S, STORY, CARD, CHAPTER_META, SCENE_META, playScene, doAction, parseInput, pickEnding, save, restore,
+window.__JIEYU__ = {S, resetState, STORY, CARD, CHAPTER_META, SCENE_META, playScene, doAction, parseInput, pickEnding, save, restore,
   curMeta, intimacyOf, VIGNETTES, exportData, importData, crossLine, checkSaveBlob, runDoctor, INTENTS, detect, fallbackReply, toneOf, paceTick, installFinalScene, FINAL_COPY, VOICE_PROFILE, OPENINGS, ENDING_DEVICE, SIDE_ECHO, sideEcho, WEATHER_ECHO, weatherEcho, PIVOT_ECHO, pivotEcho, sideOf2, pickSide2, sideOf0, pickSide0, buildTimelineText, copyTimeline, toneSummary, speakModeLine, SPEAK_MODE, classifySpeech, openTimbre, listVoices, openAbout, CAMEO, cameoLine, clearLog, clearStats, logClear, progressMeta, registerSecret, NG_LINE, ngStart, EPILOGUE, epilogueText, markEvent, EVENT_TEXT, askQuestion, askTick, ASK_Q, ASK_ACK, SIDE, sideOf, pickSide, tire, tiredLabel, sarcasticNow, SARCASM, proactiveTick, proactiveLine, PROACTIVE, echoLine, recordEcho, CALLBACK, hitSore, hurtLevel, SORE, REPAIR, sparkline, trendLabel, pushTrail, WEATHER, weatherNow, pickWeather, buildShareText, copyShare, applyLang, autoLang, t, openTutorial, finishTutorial, tutPreview, migrateStore, migrateSnapshot, autoStack, readSlot, toggleVoice, speakText, openDay, renderRouteOptions, renderStartOptions, refreshAllClear, galProgress, vigCount, setRoute, applyHashRoute, showEnding, chapterCoverage, vigReady, choiceTried, markChoiceTried, checkVigGate, GATES, readProgress, backToStart, openGallery, begin, bootWatchdog, markMilestone, readMarks, openAll};
 })();
 </script>
