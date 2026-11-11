@@ -694,6 +694,11 @@ function lengthBandCheck(cls, say, nar, tgt){
   return {bad:(chars<lo||chars>hi)||(nchars<nb[0]*0.75||nchars>nb[1]*1.4),
           cls:cls, lo:lo, hi:hi, nb:nb, chars:chars, nchars:nchars, target:tgt};
 }
+function pronounOf(route){
+  const c=CHARS[route]||{}, a=(c.archetype||{});
+  const blob=[c.meta,c.desc,c.voice,c.name,a.name,a.voice].join(' ');
+  return /男主|男性|学长|哥哥|先生|少年|父亲|叔叔|男孩/.test(blob) ? '他' : '她';
+}
 function targetLen(text){
   const tier=pickTier(text);
   const base=TIERS[tier];
@@ -703,7 +708,7 @@ function targetLen(text){
 }
 function sysPrompt(userText){
   const c=CHARS[CUR]||{}, L=[];
-  L.push('你在一部中文互动小说里扮演'+c.name+'（'+(c.meta||'')+'）。');
+  L.push('你在一部中文互动小说里扮演'+c.name+'（'+publicMeta(CUR)+'）。');
   if(SET.persona==='full'){ L.push(c.desc||''); L.push('口吻：'+(c.voice||'')); }
   if(c.archetype){ L.push('原型参考（'+c.archetype.name+'）：台词风格 '+c.archetype.voice+'；弧线 '+c.archetype.arc+'。'); 
     L.push('必须避开的雷点：'+(c.archetype.trap||'')+'。'); }
@@ -719,7 +724,7 @@ function sysPrompt(userText){
   L.push('   · 叙述约 '+TL.nar+' 字，最多 '+TL.seg+' 段；动作与神态写进叙述，不计入台词字数');
   L.push('   · 超了算不合格；宁可少说一句，不要凑字数');
   L.push('2 不解释动机、不总结主题、不描写读者内心、不替读者做决定');
-  L.push('2b act 用第三人称写她，不出现「我」');
+  L.push('2b act 用第三人称写角色（代词：'+pronounOf(CUR)+'），不出现「我」');
   L.push('3 剧情由你推进：玩家行为要真的改变事情走向');
   L.push('3b 不要重复最近两轮写过的物件/话题；同一线索最多连写两轮');
   L.push('4 未设定的信息不要编造；玩家问已公开的身份、关系或过去时，按开场前情直接说明');
@@ -728,6 +733,7 @@ function sysPrompt(userText){
   const paceTxt={slow:'节奏放慢，多写环境与动作，推进克制',normal:'节奏正常，每轮推进一小步',fast:'节奏快些，尽快把关键冲突摆出来'}[SET.pace]||'';
   const toneTxt={sweet:'整体基调偏暖，允许软化',balanced:'基调中性',bitter:'基调偏冷，别急着给甜头'}[SET.tone]||'';
   L.push('【叙事偏好】'+paceTxt+'；'+toneTxt);
+  if(S && S.summary) L.push('【长期摘要】'+String(S.summary).slice(0,400));
   if(SET.me && (SET.me.name||SET.me.call||SET.me.traits)){
     L.push('【读者】'+(SET.me.name?('名字：'+SET.me.name+'；'):'')+(SET.me.call?('身份：'+SET.me.call+'；'):'')+(SET.me.traits?('性格：'+SET.me.traits):''));
   }
