@@ -898,6 +898,7 @@ async function sendTurn(text){
   narBox.textContent=(d.nar||''); if(narBox.textContent) narBox.style.display='';
   const _s=(d.say||'……');
   herBox.textContent=(/^[“"「]/.test(_s)?_s:'“'+_s+'”');
+  herBox.style.display='';
   if(d.act){ actBox.textContent=d.act; actBox.style.display=''; } else actBox.style.display='none';
   if(d.advance){ const ad=document.createElement('div'); ad.className='adv'; ad.textContent='剧情：'+d.advance; $('log').appendChild(ad); }
 
