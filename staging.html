@@ -430,7 +430,7 @@ applySet();
 function blank(route){
   return {route, aff:0, trust:0, turns:[], facts:[], summary:'', log:[], threads:[], stage:'陌生',
           chapter:(CHARS[route]||{}).start_chapter||'', outline:[], hits:{}, ended:false,
-          rev:0, history:[], at:Date.now()};
+          rev:0, history:[], gameId:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,8), at:Date.now()};
 }
 
 /* ---------- 后端探测：本地服务 or 直连 ---------- */
@@ -441,11 +441,15 @@ async function detect(){
 }
 let SERVER_KEY=false;
 let KEY=lsGet(KEYKEY,'');
+let KEY_HOST=lsGet('jieyu.key.host','');
+function apiHost(base){ try{ return new URL(base).host; }catch(e){ return ''; } }
 function keyPresent(){const key=lsGet(KEYKEY,'');return !!key&&!Persistence.masked(key);}
 function currentKey(){
   KEY=lsGet(KEYKEY,KEY)||'';
   if(Persistence.masked(KEY))throw Error('上次保存的是密钥遮罩，不是真正的 key。请到设置里重新粘贴原密钥。');
   if(!KEY)throw Error('当前浏览器还没有保存 key。若之前在 Safari 使用，请在那里继续，或在本页设置中填写 key。');
+  if(KEY_HOST && apiHost(SET.api.base)!==KEY_HOST)
+    throw Error('当前接口（'+apiHost(SET.api.base)+'）与保存 key 时绑定的接口（'+KEY_HOST+'）不一致。请在这个接口下重新填写 key。');
   return Persistence.normalizeKey(KEY);
 }
 function apiFailure(status,base){
@@ -473,9 +477,9 @@ function renderHome(){
       const s=a[id], c=CHARS[id]||{name:id};
       const d=document.createElement('div'); d.className='card'; d.onclick=()=>openChat(id);
       const last=[...(s.turns||[])].reverse().find(x=>x.startsWith(c.name))||'';
-      d.innerHTML='<div class="row"><div class="av">'+c.name.slice(-1)+'</div><div class="grow">'+
-        '<div class="nm">'+c.name+'</div><div class="sub">'+(s.chapter||'')+' · '+(s.stage||'陌生')+' · 好感 '+s.aff+'</div>'+
-        '<div class="sub">'+(last?s_(last).slice(0,26):'刚打开')+'</div></div>'+
+      d.innerHTML='<div class="row"><div class="av">'+esc(c.name.slice(-1))+'</div><div class="grow">'+
+        '<div class="nm">'+esc(c.name)+'</div><div class="sub">'+esc(s.chapter||'')+' · '+esc(s.stage||'陌生')+' · 好感 '+esc(s.aff)+'</div>'+
+        '<div class="sub">'+esc(last?s_(last).slice(0,26):'刚打开')+'</div></div>'+
         '<span class="tag">'+(s.ended?'已结局':'继续')+'</span></div>';
       box.appendChild(d);
     });
@@ -485,9 +489,9 @@ function renderHome(){
     Object.keys(CHARS).forEach(id=>{
       const c=CHARS[id];
       const d=document.createElement('div'); d.className='card'; d.onclick=()=>openChat(id);
-      d.innerHTML='<div class="row"><div class="av">'+c.name.slice(-1)+'</div><div class="grow">'+
-        '<div class="nm">'+c.name+'</div><div class="sub">'+publicMeta(id)+'</div>'+
-        '<div class="sub">'+(c.desc||'')+'</div></div></div>';
+      d.innerHTML='<div class="row"><div class="av">'+esc(c.name.slice(-1))+'</div><div class="grow">'+
+        '<div class="nm">'+esc(c.name)+'</div><div class="sub">'+esc(publicMeta(id))+'</div>'+
+        '<div class="sub">'+esc(c.desc||'')+'</div></div></div>';
       box.appendChild(d);
     });
   }
@@ -512,6 +516,9 @@ function renderHome(){
   }
 }
 function s_(x){ return String(x).replace(/^[^：]+：/,''); }
+function esc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 document.querySelectorAll('#tabbar button').forEach(b=>b.onclick=()=>{TAB=b.dataset.tab; renderHome();});
 
 /* ---------- 对话 ---------- */
@@ -598,7 +605,7 @@ async function openChat(route){
   if(S.turns.length||S.log.length){ replayLog(); }
   if(S.ended){
     const card=document.createElement('div'); card.className='endcard';
-    card.innerHTML='<div class="eth">这一局已经结束</div><div class="eb">'+(S.endText||'（结局已记录）')+'</div>';
+    card.innerHTML='<div class="eth">这一局已经结束</div><div class="eb">'+esc(S.endText||'（结局已记录）')+'</div>';
     log.appendChild(card);
     $('send').disabled=true; $('inp').disabled=true; $('inp').placeholder='这一局结束了';
     const again=document.createElement('button'); again.className='btn'; again.style.maxWidth='320px';
@@ -778,7 +785,7 @@ function parseSections(all){
   return {nar,say,act,meta};
 }
 /* 服务端模式：一次请求拿这一轮（key 在本地服务里，页面不碰 key） */
-async function callTurn(text, sess, route){
+async function callTurn(text, sess, route, reqId){
   const s0=sess||S, rt=route||CUR;
   const snap={route:rt, aff:s0.aff, trust:s0.trust, chapter:s0.chapter, stage:s0.stage,
     threads:(s0.threads||[]).slice(-6), turns:(s0.turns||[]).slice(-24), facts:(s0.facts||[]).slice(-12),
@@ -788,7 +795,8 @@ async function callTurn(text, sess, route){
   let r;
   try{
     r=await fetch('/api/turn',{method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
-      body:JSON.stringify({session:rt, route:rt, text, max_tokens:SET.reply, mem:SET.mem, persona:SET.persona, state:snap})});
+      body:JSON.stringify({session:(s0.gameId||rt), route:rt, text, requestId:reqId||'',
+        max_tokens:SET.reply, mem:SET.mem, persona:SET.persona, state:snap})});
   }catch(e){ throw new Error(/abort/i.test(String(e&&e.name||e)) ? '请求超时（90 秒）' : e); }
   finally{ clearTimeout(timer); }
   let j={};
@@ -802,8 +810,8 @@ async function callTurn(text, sess, route){
           choices:(Array.isArray(j.choices)&&j.choices.length ? j.choices : (j.cands||[])),
           state:st};
 }
-async function callTurnStream(text, onSections, sess, route){
-  if(MODE==='server'){ return await callTurn(text, sess, route); }
+async function callTurnStream(text, onSections, sess, route, reqId){
+  if(MODE==='server'){ return await callTurn(text, sess, route, reqId); }
   const apiKey=currentKey(),api={...SET.api};
   const body={model:api.model,temperature:0.95,max_tokens:SET.reply,stream:true,
     messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
@@ -920,7 +928,8 @@ async function sendTurn(text){
     $('log').scrollTop=1e9;
   };
   let d=null, err=null;
-  try{ d=await callTurnStream(text, onSec, myS, myRoute); }catch(e){ err=e; }
+  const reqId='q'+myRev+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  try{ d=await callTurnStream(text, onSec, myS, myRoute, reqId); }catch(e){ err=e; }
   busy=false; $('send').disabled=false;              /* 所有结束路径都解除发送状态，绝不卡死 */
   if(stale()){ drop(); return; }                    /* 切人／重开后才回来的结果：丢弃，不写入任何会话 */
   if(err || !validTurn(d)){
@@ -1074,7 +1083,7 @@ async function endGame(){
   if(fixed && fixed.text){
     S.endText=fixed.text; S.endTitle=fixed.title||title; S.endTier=tier; putS(CUR,S);
     const cc=document.createElement('div'); cc.className='endcard';
-    cc.innerHTML='<div class="eth">'+(fixed.title||title)+' · '+tier+'</div><div class="eb">'+fixed.text+'</div>';
+    cc.innerHTML='<div class="eth">'+esc(fixed.title||title)+' · '+esc(tier)+'</div><div class="eb">'+esc(fixed.text)+'</div>';
     $('log').appendChild(cc); $('log').scrollTop=1e9;
     $('send').disabled=true; $('inp').disabled=true; $('inp').placeholder='这一局结束了，返回首页开始新的';
     const ag=document.createElement('button'); ag.className='btn'; ag.textContent='用这个人再开一局';
@@ -1102,7 +1111,7 @@ async function endGame(){
   }catch(e){ body='（结局没能生成：'+e.message+'）'; }
   S.endText=body; S.endTitle=title; S.endTier=tier; putS(CUR,S);
   const card=document.createElement('div'); card.className='endcard';
-  card.innerHTML='<div class="eth">'+title+' · '+tier+'</div><div class="eb">'+body+'</div>';
+  card.innerHTML='<div class="eth">'+esc(title)+' · '+esc(tier)+'</div><div class="eb">'+esc(body)+'</div>';
   $('log').appendChild(card); $('log').scrollTop=1e9;
   $('send').disabled=true; $('inp').disabled=true; $('inp').placeholder='这一局结束了，返回首页开始新的';
   const again=document.createElement('button'); again.className='btn'; again.textContent='用这个人再开一局';
@@ -1264,7 +1273,7 @@ function flushConnectionDraft(){
     const text=draft.key.value.trim();
     if(text){
       let key;try{key=Persistence.normalizeKey(text);}catch(e){connectionMessage(e.message,true);return false;}
-      lsSet(KEYKEY,key);KEY=key;draft.key.value='';
+      lsSet(KEYKEY,key);KEY=key;KEY_HOST=apiHost(SET.api.base);lsSet('jieyu.key.host',KEY_HOST);draft.key.value='';
     }
     draft.keyDirty=false;
   }
@@ -1302,7 +1311,7 @@ async function testKey(){
 function clearKey(){
   clearTimeout(connectionTimer);
   if(connectionDraft){connectionDraft.keyDirty=false;connectionDraft.key.value='';}
-  KEY='';lsDel(KEYKEY);refreshSettingsFields();connectionMessage('已清除当前浏览器保存的 key。');renderHome();
+  KEY='';KEY_HOST='';lsDel(KEYKEY);lsDel('jieyu.key.host');refreshSettingsFields();connectionMessage('已清除当前浏览器保存的 key。');renderHome();
 }
 
 /* ---------- 对话菜单 ---------- */
@@ -1316,7 +1325,7 @@ $('moreBtn').onclick=()=>{
    <div class="sgroup">设置</div>
    <div class="opt" onclick="editStory()"><div class="lbl">剧情选项设置</div><span class="tag">${SET.pace==='fast'?'快':SET.pace==='slow'?'慢':'正常'} · ${SET.tone==='sweet'?'偏甜':SET.tone==='bitter'?'偏苦':'均衡'}</span></div>
    <div class="opt" onclick="openVigs()"><div class="lbl">她的这段日子（番外）</div><span class="tag">${((VIGS||{})[CUR]||[]).filter(v=>(S.turns||[]).length/2>=v.need).length}/${((VIGS||{})[CUR]||[]).length}</span></div>
-   <div class="opt" onclick="editMe()"><div class="lbl">我的人设</div><span class="tag">${SET.me.name||'未填'}</span></div>
+   <div class="opt" onclick="editMe()"><div class="lbl">我的人设</div><span class="tag">${esc(SET.me.name||'未填')}</span></div>
    <div class="opt" onclick="openSettings()"><div class="lbl">文字模型设置</div></div>`;
   $('sheet').classList.add('on');
 };
@@ -1349,7 +1358,8 @@ function regen(){
 }
 async function newChat(){
   const r=CUR; if(!r) return;
-  if(MODE==='server'){ try{ await fetch('/api/reset?session='+encodeURIComponent(r)+'&route='+encodeURIComponent(r),{cache:'no-store'}); }catch(e){} }
+  if(MODE==='server'){ try{ await fetch('/api/reset',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({session:S.gameId||r, route:r})}); }catch(e){} }
   delS(r); S=blank(r); closeSheet(); openChat(r);
   $('send').disabled=false; $('inp').disabled=false;
   toast('已重开这一局（本地与服务端一起归零）');
@@ -1386,7 +1396,7 @@ function editMe(){
   const box=$('sheetBox');
   box.innerHTML=`<div class="sheettitle"><b>我的人设</b><button class="close" onclick="closeSheet()">×</button></div>
    <div class="sgroup">她怎么叫你</div>
-   <input class="txt" id="meName" placeholder="你的名字（可不填）" value="${SET.me.name||''}">
+   <input class="txt" id="meName" placeholder="你的名字（可不填）" value="${esc(SET.me.name||'')}">
    <div class="sgroup">称呼 / 身份</div>
    <input class="txt" id="meCall" placeholder="例如：同班同学、店里常客" value="${SET.me.call||''}">
    <div class="sgroup">性格（可留空）</div>
@@ -1405,10 +1415,10 @@ $('memBtn').onclick=()=>{
    +'<div class="sgroup">状态</div><div class="card" style="margin-top:0">好感 '+S.aff+' · 信任 '+S.trust+' · 阶段 '+S.stage
    +'<div class="sub">'+(S.chapter||'')+'</div></div>'
    +'<div class="sgroup">本局大纲</div><div class="card" style="margin-top:0">'
-   +((S.outline||[]).map((o,i)=>(o.done?'√ ':'· ')+(i+1)+'. '+o.t).join('<br>')||'还没定')+'</div>'
-   +'<div class="sgroup">未解的线索</div><div class="card" style="margin-top:0">'+((S.threads||[]).join('<br>')||'暂无')+'</div>'
-   +'<div class="sgroup">剧情年表</div><div class="card" style="margin-top:0">'+((S.log||[]).slice(-6).join('<br>')||'还没有')+'</div>'
-   +'<div class="sgroup">她记住的事</div><div class="card" style="margin-top:0">'+((S.facts||[]).slice(-8).join('<br>')||'还没有')+'</div>';
+   +((S.outline||[]).map((o,i)=>(o.done?'√ ':'· ')+(i+1)+'. '+esc(o.t)).join('<br>')||'还没定')+'</div>'
+   +'<div class="sgroup">未解的线索</div><div class="card" style="margin-top:0">'+((S.threads||[]).map(esc).join('<br>')||'暂无')+'</div>'
+   +'<div class="sgroup">剧情年表</div><div class="card" style="margin-top:0">'+((S.log||[]).slice(-6).map(esc).join('<br>')||'还没有')+'</div>'
+   +'<div class="sgroup">她记住的事</div><div class="card" style="margin-top:0">'+((S.facts||[]).slice(-8).map(esc).join('<br>')||'还没有')+'</div>';
   $('sheet').classList.add('on');
 };
 

@@ -3005,7 +3005,12 @@ function save(){
       arr[0] = cur;                 // 同一节点只刷新，不重复占位
     }
     store.setItem(LS+'.auto', JSON.stringify(arr));
-  }catch(e){}
+    S.saveFailed = false;
+  }catch(e){
+    S.saveFailed = true;
+    S.lastSaveError = String((e && e.message) || e || '');
+    try{ toast('自动存档失败（可能是浏览器存储空间满了）。可到「存档」里立即导出当前进度。'); }catch(_){}
+  }
 }
 function migrateSnapshot(o){
   if(!o || !o.S) return o;
@@ -4457,14 +4462,23 @@ function openGallery(){
 
 /* ---------------- 存档导出 / 导入 ---------------- */
 function exportData(){
+  const longTerm = {};
+  try{
+    for(let i = 0; i < store.length; i++){
+      const k = store.key(i);
+      if(k && k.indexOf(LS + '.') === 0) longTerm[k] = store.getItem(k);
+    }
+  }catch(e){}
   const payload = {
-    app: 'jieyu', v: 1, at: Date.now(),
+    app: 'jieyu', v: 2, at: Date.now(),
     progress: readProgress(),
     slots: { 1: readSlot(1), 2: readSlot(2), 3: readSlot(3) },
     autos: autoStack(),
     marks: readMarks(),
     theme: S.theme,
-    route: S.route
+    route: S.route,
+    longTerm: longTerm,
+    current: snap()          // 当前这一局，含尚未落盘的部分
   };
   try{ return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))); }
   catch(e){ return JSON.stringify(payload); }
@@ -4481,8 +4495,22 @@ function importData(text){
   const hasPayload = (obj.progress && Object.keys(obj.progress||{}).length) ||
                      (obj.slots && [1,2,3].some(i => obj.slots[i])) ||
                      (Array.isArray(obj.autos) && obj.autos.length);
-  if(!hasPayload) return { ok:false, msg:'这份存档里没有可导入的内容' };
+  const hasLongTerm = obj.longTerm && typeof obj.longTerm === 'object' && Object.keys(obj.longTerm).length;
+  if(!hasPayload && !hasLongTerm && !obj.current) return { ok:false, msg:'这份存档里没有可导入的内容' };
+  // 覆盖前先备份现有长期数据（失败可回滚）
   try{
+    const before = {};
+    for(let i = 0; i < store.length; i++){
+      const k = store.key(i);
+      if(k && k.indexOf(LS + '.') === 0) before[k] = store.getItem(k);
+    }
+    store.setItem(LS + '.import-backup', JSON.stringify({ at: Date.now(), data: before }));
+  }catch(e){ return { ok:false, msg:'备份现有存档失败，已中止导入（原有进度未改动）' }; }
+  try{
+    if(hasLongTerm) Object.keys(obj.longTerm).forEach(k => {
+      if(k.indexOf(LS + '.') === 0 && k.indexOf('.import-backup') < 0) store.setItem(k, obj.longTerm[k]);
+    });
+    if(obj.current && obj.current.S) store.setItem(LS + '.auto', JSON.stringify([obj.current].concat(autoStack()).slice(0,3)));
     if(obj.progress) store.setItem(LS+'.progress', JSON.stringify(obj.progress));
     if(obj.slots) [1,2,3].forEach(i => {
       const v = obj.slots[i];
