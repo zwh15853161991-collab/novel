@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>周停云 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "周停云", "meta": "28 · 老街修伞铺老板", "premise": "傍晚暴雨砸下来，你的折叠伞刚出巷口就被风掀翻了两根伞骨。你抱着滴水的伞冲进他亮着黄灯的铺子，他正低头给一把黑布长伞穿铜丝，抬头看了你一眼，指了指门边干毛巾。", "world": "南方老城一条快要拆迁的老街，青石板路两边只剩几家老店还亮着灯。雨季一来，檐水连成线。", "desc": "在老街口开了六年修伞铺，专收别人坏掉或丢下的旧伞。性格沉静，不爱打听客人来历，却记得每一把伞的主人是怎么淋着雨进门的。", "arch": "独立修复师 / 守艺人", "vigs": [{"need": 3, "title": "铜丝盒", "lines": ["工作台最左边摆着一只掉漆的月饼铁盒，里面分格装着粗细不同的铜丝。", "他说现在工厂都用机器压铆钉，嫌铜丝穿起来费工夫。", "「机器压的铆钉一崩就断，铜丝还能再绕两圈。」", "他低头用尖嘴钳绞紧最后一圈，接口平得摸不出毛刺。"]}, {"need": 6, "title": "不卖的竹伞", "lines": ["门框旁边挂着一把油纸早已发黄的竹骨伞，客人问过三次价，他都摆手。", "老吴说那是他师父当年留下的手艺，现在整条街没人会劈这种竹骨了。", "雨大时伞面偶尔会滴水，他就在下面垫一只缺了口的粗瓷碗。", "水滴进碗里叮咚一声，成了铺子里最准的报时器。"]}, {"need": 9, "title": "热茶杯", "lines": ["铺子里一共只有三只陶瓷杯，两只有盖，一只裂了条茶渍纹。", "前两次你来避雨，他都把有盖的那只擦干净递给你。", "你自己留心过一回，发现他自己喝的那只其实烫手得很。", "那天他顺手把旧报纸折成杯垫，垫在了你的杯底下面。"]}, {"need": 12, "title": "停电夜", "lines": ["夏末台风擦过老城，半条街跳闸停电。", "挂满墙的旧伞在蜡烛光里投下巨大的影子，像一排收拢翅膀的大鸟。", "他找出一把备用手电筒照着窗户缝，手稳稳地按住胶带边缘。", "「风从西边来，把这半扇封死，夜里就不会灌水。」"]}, {"need": 18, "title": "钢骨编号", "lines": ["实心钢骨比原来的铝骨沉了半两，撑开时咔嗒一声格外脆。", "他在伞柄内侧刻编号的时候没有用尺子，全凭手感。", "刻完后他拿砂纸把边缘磨圆，免得刮手。", "「这把能用十年。」他说完把伞合上，递到你手里。"]}], "endings": {"A": {"title": "新门牌号", "text": "老街拆迁那天雨下得不大，他把铺子里最后两箱钳子和铜丝搬上三轮车。你撑着那把换过实心钢骨的伞站在车旁，他接过伞放进车斗，顺手把门口那把不卖的竹骨旧伞也收了下来。他说新铺子在两条街外，巷口有棵老槐树，房租比这里便宜两百。\n第二年梅雨季再来时，新铺子门口挂着一块新刷的木牌。你进门收伞的时候，看见门后伞架最里格插着你那把伞，旁边多了一把同款黑色长伞。"}, "B": {"title": "留一把备用", "text": "他把新铺子的地址抄在一张牛皮纸硬卡上，折好放进你的伞套里。搬家那天你正好出差在外，回来时老街已经拉起了蓝色的施工围挡。你隔着围挡缝隙看了一眼，原本亮着黄灯的铺面黑着，卷帘门落到底，只有门缝底下还干干净净的。\n后来你在手机里存下了那个新地址，始终没有过去找他。只是每次出门遇上阴天，你都会习惯性摸一摸伞柄内侧那个刻得很浅的编号。"}, "C": {"title": "没取走的红伞", "text": "最后那晚你把伞留在了他柜台上，只拿走了自己的画夹。他送你到巷口路灯下，手里拿着那把一直没外借过的黑伞，却没有递过来，只是站着看你走远。雨丝落在他肩上，他站了很久才转身回铺子去关灯。\n年底老街彻底清场以后，听说他去了邻省一个更南边的小城。原本锁在木盒里的那把断骨红伞，最后被他拆掉布面，只留了一截竹柄带走。"}, "D": {"title": "檐下各自走", "text": "修好那把折叠伞后，你们再没遇上同时躲雨的傍晚。拆迁贴出通知的那周，他提前把铺子转给了收旧货的老板，连一句道别都没留。你路过空铺子的时候，里面的木架已经拆光了，墙上留着一排钉过铁钩的小洞。\n后来你在城西一家百货商场门口躲雨，听见旁边有人低头修伞骨的声音。你回头看了一眼，那人穿着深灰夹克，手里捏着一小段细铜丝，侧脸却不是他。"}}, "chapters": [{"title": "第一章 雨棚下的旧骨", "scenes": [{"lines": [["nar", "傍晚暴雨砸在铁皮雨棚上噼啪作响，你抱着两根外翻的折叠伞冲进铺子。"], ["nar", "铺子里的老木桌被台灯光照得发亮，空气里混着桐油和潮湿青石板的味道。"], ["nar", "周停云正低头给一把黑布长伞穿铜丝，抬头看了你一眼，抬手把门边一条干毛巾推过来。"], ["say", "先把水擦擦，伞搁木凳上晾着。"], ["act", "他重新低下头，钳尖夹住细铜丝，稳稳地绕过伞骨关节。"]], "choices": ["递过坏伞坐下来看他修", "道谢后站在门边等雨小", "问他这么晚怎么还没打烊"], "n": 1, "fx": [0, 0, 0]}, {"lines": [["nar", "他拿起你的伞对着台灯照了照，指腹顺着弯曲的铝骨摸到关节处。"], ["nar", "台钳咬合的声音很闷，他低头拧紧螺丝时，指节上沾了一点细碎的铝屑。"], ["say", "这把以前被人硬撑过顶风，才留下暗伤。铜丝能给你固定住，就是重半两。"], ["act", "他把变形的那一节夹进台钳里，手腕用力时小臂线条绷得很直。"]], "choices": ["「那就麻烦你帮我换结实点的。」", "「只要还能挡雨就行。」", "「修不好就算了，我再去买把新的。」"], "n": 2, "fx": [0, 0, 0]}, {"lines": [["nar", "隔壁竹编匠老吴冒雨跑进来借油漆，顺口提了一句年底拆迁补偿款还没谈拢。"], ["nar", "屋檐上的雨水顺着铁皮槽哗哗往下灌，把门前那块旧木牌打得湿透。"], ["nar", "周停云从桌底下摸出半桶清漆递过去，面上没什么波动。"], ["say", "先拿去用，账年底再算。"], ["act", "老吴啧了一声叹口气，拎着漆桶又一头扎进雨幕里。"]], "choices": ["等老吴走后问他铺子打算怎么办", "装作没听见，低头擦干画夹", "「老街拆了以后，修伞还能找到铺面吗？」"], "n": 3, "fx": [0, 0, 0]}, {"lines": [["nar", "穿最后一根铜丝的时候缺人扶着伞柄，他抬头看了看你。"], ["nar", "工作台一角摆着一只掉漆的铁皮盒，里面按粗细分格装着黄铜丝和备用铆钉。"], ["say", "帮我按住这一头，别让它弹回去。"], ["nar", "你伸手扶住伞柄，指尖不小心碰到他微凉的手背，他手稳得连铜丝都没晃一下。"], ["act", "铜丝拧紧的瞬间发出一声轻响，伞骨重新合拢成一条直线。"]], "choices": ["不着痕迹地收回手夸他手稳", "立刻松开手往后退半步", "问他是不是学过金工"], "n": 4, "fx": [0, 0, 0]}, {"lines": [["nar", "雨没有停的意思，檐水顺着瓦片连成线。他起身去柜台后面拎来一只保温壶，倒了两杯热铁观音。"], ["nar", "铁观音的热气顺着杯口往上冒，在微凉的铺子里散开一点浅浅的茶香。"], ["say", "外头风大，喝完这杯再走。"], ["act", "他把那只边缘有点缺口的粗瓷杯留在了自己手边。"]], "choices": ["捧起杯子说谢谢", "看了看表说不打扰太久", "问他平时一个人守店闷不闷"], "n": 5, "fx": [0, 0, 0]}]}, {"title": "第二章 檐下借光", "scenes": [{"lines": [["nar", "连着几天阴雨，工作室潮得画纸发软，你干脆拎着画夹来他铺子角落避雨。"], ["nar", "墙上挂着十几把还没人来取的旧伞，布面颜色深浅不一，收拢着垂在阴影里。"], ["nar", "他在灯下补伞面，你在旁边铺开速写本，整个下午两人都没说超过五句话。"], ["say", "桌角那块橡皮用完了可以拿抽屉里的，新的。"], ["act", "他头也没抬，顺手把台灯往你这边偏了两寸。"]], "choices": ["道谢后继续画他的工作台", "起身帮他把修好的伞挂上墙", "问他嫌不嫌自己占地方"], "n": 6, "fx": [0, 0, 0]}, {"lines": [["nar", "快递员小陆抱着一只长纸箱冲进铺子，顺嘴打听他新铺面找好没有。"], ["nar", "实心钢骨刚拆开包装就泛着冷光，比原本的铝骨沉实得多，捏在手里很有分量。"], ["nar", "周停云签完字把单据压在镇纸下，拆开箱子检查里面一捆实心钢骨。"], ["say", "不急，等街尾那几家都搬了再说。"], ["act", "小陆摇摇头跨上电动车，雨衣下摆甩出一串水珠。"]], "choices": ["帮他把拆下来的纸箱叠好", "「其实两条街外有家空铺子在招租。」", "沉默着收拾自己的画笔"], "n": 7, "fx": [0, 0, 0]}, {"lines": [["nar", "你弯腰捡滚落的铅笔时，看见货架最底格锁着一只扁平的木盒，玻璃面下是一把崭新却伞骨全断的红伞。"], ["nar", "木盒玻璃面上映出头顶昏黄的灯泡，那抹红色在旧木架最底格显得格外安静。"], ["nar", "那把红伞跟铺子里所有待修的旧伞都不一样，上面一粒灰也没有。"], ["say", "别碰那个盒子，锁扣有点松。"], ["act", "他走过来蹲下身，把木盒往架子里面推了半寸。"]], "choices": ["「这把伞怎么不修？」", "点头退开，不再多问", "「是你以前很重要的人留下的？」"], "n": 8, "fx": [0, 0, 0]}, {"lines": [["nar", "他站起身拍了拍膝盖上的灰，没有遮掩的意思，声音依旧平缓。"], ["nar", "茶壶盖子轻轻碰了一下壶沿，发出一声极细的瓷器轻响。"], ["say", "六年前一个没等到雨停的人留下的。那时候刚开店，手艺还不稳，没能替她补好。"], ["act", "他把柜台上的茶壶盖重新盖严实，水汽从壶嘴细细冒出来。"]], "choices": ["「现在你的手艺已经很稳了。」", "「那你还一直留着它？」", "安静地听着，把热茶推过去一点"], "n": 9, "fx": [0, 0, 0]}, {"lines": [["nar", "傍晚老街突然跳闸停电，整条巷子一下子暗下来，只剩雨声格外清楚。"], ["nar", "蜡烛火苗被门缝钻进来的风吹得晃了晃，墙上的伞影也跟着轻轻摇动。"], ["nar", "他摸黑从抽屉里找出一支白蜡烛点上，插在旧铁皮罐里。"], ["say", "老线路受潮就这样，过半小时就好。"], ["act", "跳动的烛火把两个人的影子拉长，投在挂满旧伞的木墙上。"]], "choices": ["顺手在速写本上勾下墙上的伞影", "问他以前有没有想过离开这条老街", "坐着等来电，不怎么说话"], "n": 10, "fx": [0, 0, 0]}, {"lines": [["nar", "停电刚过十分钟，后窗忽然被狂风掀开一道缝，雨水顺着窗台往下淌。"], ["nar", "宽胶带撕开时发出刺啦一声响，他手稳稳地按住塑料布边缘压实。"], ["nar", "你踩上矮凳帮他按住塑料布，他伸手用宽胶带一圈圈封死窗框，肩膀全淋湿了也没吭声。"], ["say", "抓稳了，凳子腿有点晃。"], ["act", "他从背后伸手扶了一下你的手肘，掌心透着潮湿的热度。"]], "choices": ["递过自己的干手帕给他擦脸", "跳下矮凳让他自己去擦擦头发", "催他赶紧换件干衣服"], "n": 11, "fx": [0, 0, 0]}]}, {"title": "第三章 伞骨合拢", "scenes": [{"lines": [["nar", "拆迁正式通知贴在了巷口电线杆上，红色的纸被雨水打得发暗。"], ["nar", "巷口传来三轮车压过积水的声音，隔壁几家老店的招牌已经摘了一半。"], ["nar", "隔壁几家老店已经开始往三轮车上搬货架，巷子里整天响着胶带撕扯声。"], ["say", "下周五之前要清场，你的画夹要是放这儿不安全，这两天先带回去。"], ["act", "他把门口那几块挡雨的帆布卸下来，叠得整整齐齐。"]], "choices": ["「我周末过来帮你一起收拾。」", "「你找到新地方了吗？」", "「好，我今天就把画夹带走。」"], "n": 12, "fx": [0, 0, 0]}, {"lines": [["nar", "他在灯下一件件清点铺子里的工具和没人认领的旧伞，把修好的都擦干净挂到门口，贴了张免费自取的纸条。"], ["nar", "他把擦干净的旧伞按长短挂在门口竹竿上，伞尖滴下的水珠在台阶上敲出小坑。"], ["say", "能送走的都送走，带着走太沉了。"], ["act", "只有那只装着细铜丝的月饼铁盒，他用旧报纸包了两层放进箱底。"]], "choices": ["帮他把门口的伞按颜色排好", "挑了一把不起眼的黑伞留作纪念", "站在一旁看他打包，心情有些闷"], "n": 13, "fx": [0, 0, 0]}, {"lines": [["nar", "你问他接下来打算去哪条街，他转身从柜台后面拿出一把伞递给你。"], ["nar", "新换的钢骨撑开时咔嗒一声格外清脆，伞面绷得平平整整。"], ["nar", "那是你第一次抱进来的那把折叠伞，只是里面的铝骨全换成了亮闪闪的实心钢骨。"], ["say", "换好了，风再大也掀不翻。"], ["act", "他松开手，伞柄还带着他掌心的一点温度。"]], "choices": ["「多少钱？我转给你。」", "「这把伞骨这么好，你以后搬走了我找谁修？」", "接过伞撑开试了试，收口很脆"], "n": 14, "fx": [0, 0, 0]}, {"lines": [["nar", "他接过伞翻过来，在木质伞柄内侧用小刻刀刻了一串极细的编号，却没有写价钱。"], ["nar", "木柄上的细小刻痕摸上去有些微的凹凸感，像是一枚不张扬的记号。"], ["say", "两条街外老槐树旁边有个小门面，下个月开张。坏了还能拿过来。"], ["act", "他拿砂纸把刻痕边缘磨圆，吹掉木屑，再放回你手里。"]], "choices": ["「下个月开张我一定去。」", "把编号记在手机备忘录里", "轻轻点点头没说话"], "n": 15, "fx": [0, 0, 0]}, {"lines": [["nar", "最后一夜老街下着细雨，大部分铺面都已经黑了灯，只有他门口还亮着那盏昏黄的灯泡。"], ["nar", "街灯亮起来的时候，青石板上的水洼映着两点昏黄的光，一直延伸到巷子尽头。"], ["nar", "门框边那把挂了六年从不外借的竹骨旧伞，被人轻轻取了下来。"], ["say", "走吧，雨小了点，送你到巷口。"], ["act", "他撑开伞往你这边偏了半寸，踩着积水的青石板往亮处走去。"]], "choices": ["并肩走进伞下，说新店开张见", "告诉他不用送太远，巷口有车", "把伞留给他，自己撑着新修的折叠伞走"], "n": 16, "fx": [0, 0, 0]}]}], "route": "umbrella", "context": {"player": "刚搬来老街不久的住户，平时在附近工作室画插画或接散活。", "relation": "半熟的邻里。这半个月连着下雨，你已经去他铺子里修过两次东西，每次付完钱就走，还没坐下来好好说过十句话。", "world": "南方老城一条快要拆迁的老街，青石板路两边只剩几家老店还亮着灯。雨季一来，檐水连成线。", "premise": "傍晚暴雨砸下来，你的折叠伞刚出巷口就被风掀翻了两根伞骨。你抱着滴水的伞冲进他亮着黄灯的铺子，他正低头给一把黑布长伞穿铜丝，抬头看了你一眼，指了指门边干毛巾。", "known": ["他的铺子开了六年，门口挂着一把永远不卖的竹骨旧伞。", "前两次你来修伞，他收的都是十块八块的零钱，从不主动留客人电话。", "这条老街年底可能要旧改，隔壁几家店已经陆续贴了转租。"], "unknown": "为什么他抽屉里锁着一把伞骨全断、伞面却崭新的红伞，以及他六年前为什么会留在这条老街。", "goal": "把掀翻的伞骨修好，在雨停之前决定是拿着伞直接走，还是坐下来等这杯热茶凉透。", "public_meta": "28 · 老街修伞铺老板", "opening": "雨点砸在铁皮雨棚上噼啪作响，他把台灯往你这边拨了一寸，指尖还捏着一小段细铜丝。"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>
