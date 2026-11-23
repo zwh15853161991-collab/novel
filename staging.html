@@ -391,8 +391,8 @@ const ACCENTS={
 };
 const PRESETS={
   deepseek:{name:'DeepSeek V4.1 Flash', base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'},
-  openai:{name:'OpenAI GPT', base:'https://api.openai.com/v1/chat/completions', model:'gpt-5-mini'},
-  gemini:{name:'Google Gemini', base:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model:'gemini-3.1-flash-lite'},
+  openai:{name:'OpenAI GPT', base:'https://api.openai.com/v1/chat/completions', model:'gpt-6-luna'},
+  gemini:{name:'Google Gemini', base:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model:'gemini-4-hydrogen'},
   moonshot:{name:'Moonshot', base:'https://api.moonshot.cn/v1/chat/completions', model:'moonshot-v1-8k'},
   glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
@@ -750,13 +750,14 @@ function completionBody(api,url,messages,limit,temperature,stream){
   const officialGemini=url.hostname==='generativelanguage.googleapis.com';
   const body={model,messages,stream};
   body[officialOpenAI||reasoningGPT?'max_completion_tokens':'max_tokens']=limit;
-  if(!reasoningGPT&&!(officialGemini&&/^gemini-[3-9]\./.test(name)))body.temperature=temperature;
+  if(!reasoningGPT&&!(officialGemini&&/^gemini-[3-9][.-]/.test(name)))body.temperature=temperature;
   if(officialOpenAI&&reasoningGPT){
     body.messages=messages.map(m=>m.role==='system'?{...m,role:'developer'}:m);
     if(family==='gpt-5-mini')body.reasoning_effort='minimal';
-    if(/^gpt-6\.2(?:$|[.-])/.test(name))body.reasoning_effort='low';
+    if(family==='gpt-6-luna'||/^gpt-6\.2(?:$|[.-])/.test(name))body.reasoning_effort='low';
   }
   if(officialGemini&&family==='gemini-3.1-flash-lite')body.reasoning_effort='minimal';
+  if(officialGemini&&family==='gemini-4-hydrogen')body.reasoning_effort='low';
   return body;
 }
 function completionContent(value){
@@ -1913,6 +1914,6 @@ $('memBtn').onclick=()=>{
     if(e.key===SKEY||String(e.key||'').startsWith(STORE.keys.sessionPrefix)||String(e.key||'').startsWith('ai.')||String(e.key||'').startsWith('aidemo.'))renderHome();
     refreshStorageNotice();
   });
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=18').catch(()=>{}); }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=19').catch(()=>{}); }
 })();
 </script></body></html>
