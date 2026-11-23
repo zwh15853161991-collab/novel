@@ -117,6 +117,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Songti SC","Not
 .val{color:var(--accent);font-size:13px;border:1px solid var(--line);border-radius:8px;padding:2px 8px}
 input.txt{width:100%;background:var(--bubble);border:1px solid var(--line);border-radius:12px;
   padding:11px 13px;color:var(--ink);font-size:14px;font-family:inherit;outline:none}
+#modelInput,#reasoningInput{width:100%;min-height:44px;font-family:inherit;font-size:16px}
+#reasoningInput{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;color:var(--ink)}
 .btn{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:13px;
   padding:12px;font-size:15px;font-weight:600;font-family:inherit;margin-top:10px}
 .btn.ghost{background:none;border:1px solid var(--line);color:var(--dim);font-weight:400}
@@ -397,6 +399,22 @@ const PRESETS={
   glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
 };
+const EFFORT_LABELS={none:'关闭',minimal:'极低',low:'低',medium:'中',high:'高',xhigh:'很高',max:'最高'};
+const STANDARD_EFFORTS=['low','medium','high'];
+const MINI_EFFORTS={defaultLevel:'minimal',levels:['minimal',...STANDARD_EFFORTS]};
+const DEFAULT_EFFORTS={defaultLevel:'low',levels:STANDARD_EFFORTS};
+const EFFORT_PROFILES={
+  'api.openai.com':{
+    'gpt-5-mini':MINI_EFFORTS,
+    'gpt-6-luna':{defaultLevel:'low',levels:['none',...STANDARD_EFFORTS,'xhigh','max']},
+    'gpt-6.2-astra':DEFAULT_EFFORTS,
+    'gpt-6.2-sol':DEFAULT_EFFORTS,
+  },
+  'generativelanguage.googleapis.com':{
+    'gemini-3.1-flash-lite':MINI_EFFORTS,
+    'gemini-4-hydrogen':{defaultLevel:'low',levels:[...STANDARD_EFFORTS,'xhigh']},
+  },
+};
 /* Browser-local persistence. This module never sends credentials or saves over the network. */
 const Persistence = (() => {
   const K={sessions:'jieyu.sessions',settings:'jieyu.set',key:'jieyu.key',last:'jieyu.last',
@@ -611,7 +629,7 @@ function galleryStats(){
 const DEF={skin:'cinema',fontFam:'serif',rain:true,theme:'warm',accent:'sand',font:17,typing:true,autosave:true,read:false,rate:0.95,
   mem:8000, reply:1200, persona:'full',
   pace:'normal', tone:'balanced', me:{name:'', call:'', traits:''},
-  api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'}};
+  api:{base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash', reasoningEffort:'auto', reasoningFor:''}};
 let SET=STORE.getSettings(DEF);
 function saveSet(patch={}){SET=STORE.updateSettings(patch,DEF);refreshStorageNotice();return STORE.status().ok;}
 function applySet(){
@@ -740,11 +758,18 @@ function completionURL(address){
   else if(path.endsWith('/chat/completions'))url.pathname=path;
   return url;
 }
+function reasoningSettings(api){
+  const host=apiHost(api.base),model=api.model.trim();
+  const family=model.toLowerCase().split('/').pop().replace(/-\d{4}-\d{2}-\d{2}$/,'');
+  const profile=EFFORT_PROFILES[host]?.[family];
+  const target=host+'/'+model;
+  const selection=api.reasoningFor===target&&profile?.levels?.includes(api.reasoningEffort)?api.reasoningEffort:'auto';
+  return {profile:profile?.levels?profile:null,target,selection};
+}
 function completionBody(api,url,messages,limit,temperature,stream){
   const model=api.model.trim();
   if(!model)throw Error('请填写服务商提供的模型名。');
   const name=model.toLowerCase().split('/').pop();
-  const family=name.replace(/-\d{4}-\d{2}-\d{2}$/,'');
   const reasoningGPT=/^(?:gpt-(?:[5-9]|\d{2,})(?:[.-]|$)|o\d+(?:[.-]|$))/.test(name);
   const officialOpenAI=url.hostname==='api.openai.com';
   const officialGemini=url.hostname==='generativelanguage.googleapis.com';
@@ -753,11 +778,9 @@ function completionBody(api,url,messages,limit,temperature,stream){
   if(!reasoningGPT&&!(officialGemini&&/^gemini-[3-9][.-]/.test(name)))body.temperature=temperature;
   if(officialOpenAI&&reasoningGPT){
     body.messages=messages.map(m=>m.role==='system'?{...m,role:'developer'}:m);
-    if(family==='gpt-5-mini')body.reasoning_effort='minimal';
-    if(family==='gpt-6-luna'||/^gpt-6\.2(?:$|[.-])/.test(name))body.reasoning_effort='low';
   }
-  if(officialGemini&&family==='gemini-3.1-flash-lite')body.reasoning_effort='minimal';
-  if(officialGemini&&family==='gemini-4-hydrogen')body.reasoning_effort='low';
+  const {profile,selection}=reasoningSettings(api);
+  if(profile)body.reasoning_effort=selection==='auto'?profile.defaultLevel:selection;
   return body;
 }
 function completionContent(value){
@@ -798,7 +821,7 @@ async function readCompletionStream(body,onText,key){
       if(text.length!==before)onText(text);
       if(done)break;
     }
-    if(!text.trim()&&finish==='length')throw Error('回复额度用完后模型仍未输出文字。请提高最大回复长度，或换用低推理模型。');
+    if(!text.trim()&&finish==='length')throw Error('回复额度用完后模型仍未输出文字。请提高最大回复长度、调低推理强度，或换个模型。');
     return text;
   }finally{reader.cancel?.().catch(()=>{});}
 }
@@ -819,7 +842,7 @@ async function requestCompletion(messages,{limit,temperature,onText}){
     }
     const choice=completionChoice(data,key);
     const text=completionContent(choice?.message?.content);
-    if(!text.trim()&&choice?.finish_reason==='length')throw Error('回复额度用完后模型仍未输出文字。请提高最大回复长度，或换用低推理模型。');
+    if(!text.trim()&&choice?.finish_reason==='length')throw Error('回复额度用完后模型仍未输出文字。请提高最大回复长度、调低推理强度，或换个模型。');
     if(onText&&text)onText(text);
     return text;
   }catch(e){
@@ -1582,8 +1605,10 @@ function openSettings(){
        <button data-p="glm">智谱</button><button data-p="qwen">通义</button></div>
      <label class="hint" style="display:block;margin:10px 0 4px" for="baseInput">接口地址（支持 Chat Completions）</label>
      <input class="txt" id="baseInput" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://api.deepseek.com/chat/completions" value="">
-     <label class="hint" style="display:block;margin:10px 0 4px" for="modelInput">模型名</label>
+     <label class="lbl" style="display:block;margin:10px 0 4px" for="modelInput">模型名</label>
      <input class="txt" id="modelInput" autocapitalize="off" spellcheck="false" placeholder="deepseek-flash" value="">
+     <label class="lbl" style="display:block;margin:10px 0 4px" for="reasoningInput">推理强度</label>
+     <select id="reasoningInput"></select>
      <label class="lbl" style="display:block;margin-top:10px" for="keyInput">API key</label>
      <div class="hint" style="margin:4px 0 8px" id="keySavedHint"></div>
      <div class="keyrow"><input class="txt masked" id="keyInput" type="text" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" placeholder="粘贴你的 API key" value=""><button type="button" class="keyeye" id="keyEye" onclick="toggleKeyEye()">显示</button></div>
@@ -1622,6 +1647,15 @@ function openSettings(){
       input.onblur=()=>flushConnectionDraft(false);
     }
   });
+  $('reasoningInput').onchange=e=>{
+    const effort=e.target.value;
+    if(!flushConnectionDraft(false))return;
+    const {profile,target}=reasoningSettings(SET.api);
+    if(MODE==='server'||!profile||(effort!=='auto'&&!profile.levels.includes(effort)))return;
+    const ok=saveSet({api:{reasoningEffort:effort,reasoningFor:target}});
+    refreshSettingsFields();
+    connectionMessage(ok?'已保存推理强度。':STORE.status().error,!ok);
+  };
   try{
     const inf=$('memInfo'), st=$('memState'), lr=lastRoute();
     if(inf) inf.textContent='故事 '+savedCount()+' 个 · 仅当前浏览器 · '+(lr?('上次：'+((CHARS[lr]||{}).name||lr)):'还没有上次的故事')+' · 当前网址 '+location.origin;
@@ -1708,6 +1742,21 @@ function toggleKeyEye(){
   const masked=inp.classList.toggle('masked');
   btn.textContent=masked?'显示':'隐藏';
 }
+function refreshReasoningField(){
+  const input=$('reasoningInput');
+  if(!input)return;
+  const {profile,selection}=reasoningSettings(SET.api);
+  const editable=MODE!=='server'&&!!profile;
+  const autoLabel=MODE==='server'?'使用本地服务配置':editable?'自动（'+EFFORT_LABELS[profile.defaultLevel]+'）':'使用服务商默认值';
+  input.replaceChildren();
+  const addOption=(value,label)=>{
+    const option=document.createElement('option');option.value=value;option.textContent=label;input.appendChild(option);
+  };
+  addOption('auto',autoLabel);
+  if(editable)profile.levels.forEach(level=>addOption(level,EFFORT_LABELS[level]));
+  input.disabled=!editable;
+  input.value=editable?selection:'auto';
+}
 function refreshSettingsFields(){
   if(!connectionDraft||!$('memRange')||!$('keySavedHint'))return;
   const status=STORE.status(), host=apiHost(SET.api.base), key=storedKeyFor(SET.api.base);
@@ -1717,6 +1766,7 @@ function refreshSettingsFields(){
   $('costVal').textContent='≈'+(Math.round(SET.mem*0.55)+(SET.persona==='full'?900:450)+Math.round(SET.reply*0.75)).toLocaleString()+' tokens';
   if(!connectionDraft.baseDirty){connectionDraft.base.value=SET.api.base;connectionDraft.baseShown=SET.api.base;}
   if(!connectionDraft.modelDirty){connectionDraft.model.value=SET.api.model;connectionDraft.modelShown=SET.api.model;}
+  refreshReasoningField();
   connectionDraft.key.placeholder=key&&!Persistence.masked(key)?'已保存 '+keyHint(key)+'；留空保留，粘贴可替换':'粘贴 '+ (host||'当前服务商') +' 的 API key';
   $('keySavedHint').textContent=MODE==='server'?(SERVER_KEY?'本地服务已配置，无需填写':'本地服务没配 key'):
     Persistence.masked(key)?'之前保存成了遮罩，请重新粘贴原密钥。':key?('当前接口 '+host+' 已保存 key：'+keyHint(key)+'。'):('当前接口 '+host+' 尚未保存 key。');
@@ -1768,13 +1818,13 @@ async function testKey(){
     }catch(e){ box.style.color='#d98b7a'; box.textContent='连不上本地服务'; }
     return;
   }
-  const {base,model}=SET.api;
+  const {base,model,reasoningEffort,reasoningFor}=SET.api;
   const showResult=(text,bad=false)=>{
-    if($('keyMsg')!==box||SET.api.base!==base||SET.api.model!==model)return;
+    if($('keyMsg')!==box||SET.api.base!==base||SET.api.model!==model||SET.api.reasoningEffort!==reasoningEffort||SET.api.reasoningFor!==reasoningFor)return;
     box.style.color=bad?'#d98b7a':'var(--accent)';box.textContent=text;
   };
   try{
-    const text=await requestCompletion([{role:'user',content:'请只回复 OK。'}],{limit:512,temperature:0.78});
+    const text=await requestCompletion([{role:'user',content:'请只回复 OK。'}],{limit:Math.max(512,SET.reply),temperature:0.78});
     if(!text.trim())throw Error('模型没有返回文字，请核对模型名，或尝试使用其他文字模型。');
     showResult('连接成功，'+model+' 已返回文字。');
   }catch(e){showResult(e.message,true);}
@@ -1914,6 +1964,6 @@ $('memBtn').onclick=()=>{
     if(e.key===SKEY||String(e.key||'').startsWith(STORE.keys.sessionPrefix)||String(e.key||'').startsWith('ai.')||String(e.key||'').startsWith('aidemo.'))renderHome();
     refreshStorageNotice();
   });
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=19').catch(()=>{}); }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=20').catch(()=>{}); }
 })();
 </script></body></html>
