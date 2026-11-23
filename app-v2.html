@@ -74,10 +74,16 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Songti SC","Not
   padding:10px 18px;background:var(--bg2);border:0;border-bottom:1px solid var(--line);
   color:var(--dim);font:inherit;font-size:13px;cursor:pointer}
 .contextentry b{color:var(--accent);font-weight:500}.contextentry span:last-child{margin-left:auto;white-space:nowrap}
-.intro{position:absolute;inset:0;z-index:5;background:var(--bg);display:none;overflow-y:auto}
-.intro.on{display:block}
-.introbox{max-width:640px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) 22px calc(28px + env(safe-area-inset-bottom))}
-.introback{border:0;background:none;color:var(--dim);padding:8px 0 18px;font:inherit;font-size:13px;cursor:pointer}
+.intro{position:absolute;inset:0;z-index:5;background:var(--bg);display:none;flex-direction:column}
+.intro.on{display:flex}
+.introhead,.introfoot{flex:none;background:var(--bg2)}
+.introhead{padding:env(safe-area-inset-top) 22px 0;border-bottom:1px solid var(--line)}
+.introfoot{padding:8px 22px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.introactions,.introbox{max-width:640px;margin:0 auto}
+.introscroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.introbox{padding:20px 22px 26px}
+.introback{border:0;background:none;color:var(--dim);min-height:44px;padding:0;font:inherit;font-size:14px;cursor:pointer}
+.introfoot .btn{min-height:44px;margin:0}
 .ikicker{color:var(--faint);font-size:12px;letter-spacing:.18em}
 .introbox h2{margin:8px 0 4px;font-size:calc(var(--fs) * 1.6);font-weight:500;letter-spacing:.04em}
 .imeta{color:var(--dim);font-size:calc(var(--fs) * .82);margin-bottom:18px}
@@ -312,24 +318,6 @@ html[data-skin="glass"] .send{border-radius:16px}
   </div>
   <button class="contextentry" id="contextBtn" aria-haspopup="dialog"><b>前情</b><span id="contextLabel"></span><span>重看 ›</span></button>
   <div class="turntoast" id="turnToast" role="status"></div>
-  <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="iName" aria-hidden="true">
-    <div class="introbox">
-      <button class="introback" id="iBack">‹ 返回故事列表</button>
-      <div class="ikicker" id="iKicker"></div>
-      <h2 id="iName" tabindex="-1"></h2>
-      <div class="imeta" id="iMeta"></div>
-      <section id="iPlayerSection"><div class="isect">你是谁</div><p id="iPlayer"></p></section>
-      <section class="irelation" id="iRelationSection"><div class="isect">你们的关系</div><p id="iRelation"></p></section>
-      <div class="isect">故事背景</div><p id="iWorld"></p>
-      <div class="isect">此刻发生了什么</div><p id="iPremise"></p>
-      <section id="iKnownSection"><div class="isect">开场时你已经知道</div><ul id="iKnown"></ul></section>
-      <section id="iUnknownSection"><div class="isect">开场时尚未说清</div><p class="iunknown" id="iUnknown"></p></section>
-      <section id="iGoalSection"><div class="isect">眼下的事</div><p id="iGoal"></p></section>
-      <div class="isect">眼前的人</div><p id="iPersona"></p>
-      <button class="btn" id="iStart">进入故事</button>
-      <div class="ihint">对话上方的「前情」可以随时重看。</div>
-    </div>
-  </div>
   <div class="log" id="log" style="display:none"></div>
   <div class="choices" id="choices"></div>
   <div class="typing" id="typingBar">
@@ -344,6 +332,26 @@ html[data-skin="glass"] .send{border-radius:16px}
     <button class="send" id="send">发送</button></div>
   </div><!-- /.chat-main -->
   </div><!-- /.chat-shell -->
+  <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="iName" aria-hidden="true">
+    <div class="introhead"><div class="introactions"><button class="introback" id="iBack">‹ 返回故事列表</button></div></div>
+    <div class="introscroll" id="introScroll">
+      <div class="introbox">
+        <div class="ikicker" id="iKicker"></div>
+        <h2 id="iName" tabindex="-1"></h2>
+        <div class="imeta" id="iMeta"></div>
+        <section id="iPlayerSection"><div class="isect">你是谁</div><p id="iPlayer"></p></section>
+        <section class="irelation" id="iRelationSection"><div class="isect">你们的关系</div><p id="iRelation"></p></section>
+        <div class="isect">故事背景</div><p id="iWorld"></p>
+        <div class="isect">此刻发生了什么</div><p id="iPremise"></p>
+        <section id="iKnownSection"><div class="isect">开场时你已经知道</div><ul id="iKnown"></ul></section>
+        <section id="iUnknownSection"><div class="isect">开场时尚未说清</div><p class="iunknown" id="iUnknown"></p></section>
+        <section id="iGoalSection"><div class="isect">眼下的事</div><p id="iGoal"></p></section>
+        <div class="isect">眼前的人</div><p id="iPersona"></p>
+        <div class="ihint">对话上方的「前情」可以随时重看。</div>
+      </div>
+    </div>
+    <div class="introfoot"><div class="introactions"><button class="btn" id="iStart">进入故事</button></div></div>
+  </div>
 </div>
 
 <!-- 设置 -->
@@ -864,7 +872,7 @@ function showIntro(){
   $('iPersona').textContent=(c.desc||'')+(c.quote?'　'+c.quote:'');
   $('iStart').textContent=continuing?(S.ended?'返回这段故事':'继续这段故事'):'进入故事';
   setIntroVisible(true);
-  $('intro').scrollTop=0;
+  $('introScroll').scrollTop=0;
   $('iName').focus({preventScroll:true});
 }
 function closeIntro(){
@@ -881,7 +889,7 @@ $('intro').addEventListener('keydown',e=>{
   if(e.key==='Escape'){e.preventDefault();closeIntro();}
   if(e.key==='Tab'){
     const first=$('iBack'),last=$('iStart');
-    if(e.shiftKey&&(document.activeElement===first||document.activeElement===$('iName'))){e.preventDefault();last.focus();}
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
   }
 });
@@ -1811,6 +1819,6 @@ $('memBtn').onclick=()=>{
     if(e.key===SKEY||String(e.key||'').startsWith(STORE.keys.sessionPrefix)||String(e.key||'').startsWith('ai.')||String(e.key||'').startsWith('aidemo.'))renderHome();
     refreshStorageNotice();
   });
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=15').catch(()=>{}); }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=17').catch(()=>{}); }
 })();
 </script></body></html>
