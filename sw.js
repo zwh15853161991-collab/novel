@@ -1,5 +1,5 @@
 // 缓存策略：HTML 永远走网络优先（避免装到主屏后拿到旧版），静态资源缓存优先
-const CACHE = 'jieyu-v17';
+const CACHE = 'jieyu-v18';
 const PREFIX = 'jieyu-';                 // 只清理本应用的缓存（B15）
 const SCOPE = self.registration && self.registration.scope ? new URL(self.registration.scope).pathname : '/';
 const STATIC = ['./icon.svg', './manifest-app.json', './manifest-staging.json'];

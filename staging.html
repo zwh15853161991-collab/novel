@@ -391,6 +391,8 @@ const ACCENTS={
 };
 const PRESETS={
   deepseek:{name:'DeepSeek V4.1 Flash', base:'https://api.deepseek.com/chat/completions', model:'deepseek-flash'},
+  openai:{name:'OpenAI GPT', base:'https://api.openai.com/v1/chat/completions', model:'gpt-5-mini'},
+  gemini:{name:'Google Gemini', base:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', model:'gemini-3.1-flash-lite'},
   moonshot:{name:'Moonshot', base:'https://api.moonshot.cn/v1/chat/completions', model:'moonshot-v1-8k'},
   glm:{name:'智谱 GLM', base:'https://open.bigmodel.cn/api/paas/v4/chat/completions', model:'glm-4-flash'},
   qwen:{name:'通义千问', base:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model:'qwen-plus'}
@@ -653,19 +655,25 @@ const KEYS_MAP_KEY='jieyu.keys';
 let KEY=lsGet(KEYKEY,'');
 let KEY_HOST=lsGet('jieyu.key.host','');
 function apiHost(base){ try{ return new URL(base).host; }catch(e){ return ''; } }
+if(KEY&&!KEY_HOST){
+  KEY_HOST=apiHost(SET.api.base);
+  if(KEY_HOST)lsSet('jieyu.key.host',KEY_HOST);
+}
 function readKeyMap(){ try{ const m=JSON.parse(lsGet(KEYS_MAP_KEY,'{}')||'{}'); return m&&typeof m==='object'?m:{}; }catch(e){ return {}; } }
 function storedKeyFor(base){
   const host=apiHost(base||SET.api.base);
   const map=readKeyMap();
   if(host && typeof map[host]==='string' && map[host]) return map[host];
   const legacy=lsGet(KEYKEY,'');
-  const legacyHost=lsGet('jieyu.key.host','');
-  if(legacy && (!legacyHost || !host || legacyHost===host)) return legacy;
+  const legacyHost=lsGet('jieyu.key.host','')||KEY_HOST;
+  if(legacy && host && legacyHost===host) return legacy;
   return '';
 }
 function saveKeyFor(base,key){
   const host=apiHost(base||SET.api.base);
   const map=readKeyMap();
+  const legacy=lsGet(KEYKEY,''), legacyHost=lsGet('jieyu.key.host','')||KEY_HOST;
+  if(legacy&&legacyHost&&!map[legacyHost])map[legacyHost]=legacy;
   if(host){ map[host]=key; lsSet(KEYS_MAP_KEY,JSON.stringify(map)); }
   lsSet(KEYKEY,key); lsSet('jieyu.key.host',host);
   KEY=key; KEY_HOST=host;
@@ -674,8 +682,9 @@ function clearKeyFor(base){
   const host=apiHost(base||SET.api.base);
   const map=readKeyMap();
   if(host && host in map){ delete map[host]; lsSet(KEYS_MAP_KEY,JSON.stringify(map)); }
-  lsDel(KEYKEY); lsDel('jieyu.key.host');
-  KEY=''; KEY_HOST='';
+  if(host===(lsGet('jieyu.key.host','')||KEY_HOST)){
+    lsDel(KEYKEY);lsDel('jieyu.key.host');KEY='';KEY_HOST='';
+  }
 }
 function keyHint(k){
   const s=String(k||''); if(!s) return '空';
@@ -692,29 +701,131 @@ function currentKey(){
     const legacy=lsGet(KEYKEY,''), lh=lsGet('jieyu.key.host','');
     if(legacy && lh && host && lh!==host)
       throw Error('当前接口（'+host+'）还没有保存 key（本机已有 '+lh+' 的 key）。请在设置里为 '+host+' 填写对应 key。');
-    throw Error('当前浏览器还没有保存 '+ (host||'当前接口') +' 的 key。请点设置填写；若之前通过本地服务运行，请改用「启动.command」。');
+    throw Error('当前浏览器还没有保存 '+ (host||'当前接口') +' 的 key。请到设置填写对应服务商的 key。');
   }
   return Persistence.normalizeKey(raw);
 }
-async function readApiDetail(r){
+async function readApiDetail(r,key){
   try{
     const txt=await r.text(); if(!txt) return '';
-    try{ const j=JSON.parse(txt); return String((j.error&&j.error.message)||j.message||j.msg||'').trim().slice(0,140); }
-    catch(e){ return txt.replace(/<[^>]*>/g,'').trim().slice(0,120); }
+    try{
+      const data=JSON.parse(txt),j=Array.isArray(data)?data[0]:data;
+      return String(j?.error?.message||j?.message||j?.msg||'').replaceAll(key,'[已隐藏]').trim().slice(0,140);
+    }
+    catch(e){ return txt.replaceAll(key,'[已隐藏]').replace(/<[^>]*>/g,'').trim().slice(0,120); }
   }catch(e){ return ''; }
 }
-function apiFailure(status,base,detail,keyUsed){
-  let host='当前服务商';try{host=new URL(base).hostname;}catch(e){}
+function apiFailure(status,api,detail){
+  const host=apiHost(api.base)||'当前服务商';
   const extra=detail?('（服务商返回：'+detail+'）'):'';
-  const fp=keyUsed?('；当前发送的 key 为 '+keyHint(keyUsed)):'';
   const fileTip=(status===401&&location.protocol==='file:')?'；注意：直接双击打开的本地文件不读取 ~/.ai-novel-key，需在设置中填写或双击「启动.command」运行本地服务':'';
-  const messages={401:host+' 返回 401，认证未通过'+extra+fp+fileTip+'。请到设置核对或重新粘贴该服务商的 key。',
-    402:'服务商提示余额不足（402）'+extra+'。',403:'服务商拒绝访问（403）'+extra+'，请核对接口权限。',
+  const messages={401:host+' 返回 401，认证未通过'+extra+fileTip+'。请到设置核对该服务商的 key。',
+    402:'服务商提示余额不足（402）'+extra+'。',403:'服务商拒绝访问（403）'+extra+'，请核对权限及地区可用性。',
     404:'接口地址没有找到（404）'+extra+'，请核对设置中的完整接口网址。',
-    400:'请求参数或模型名（'+((SET.api&&SET.api.model)||'')+'）被服务商拒绝（400）'+extra+'，请核对模型设置。',
+    400:'请求参数或模型名（'+api.model+'）被服务商拒绝（400）'+extra+'，请核对模型设置。',
     429:'请求过于频繁（429）'+extra+'，请稍后重试。'};
   const err=new Error(messages[status]||'服务商返回 HTTP '+status+extra+'，请稍后重试或检查接口设置。');
   err.httpStatus=status; return err;
+}
+function completionURL(address){
+  let url;
+  try{url=new URL(address.trim());}catch(e){throw Error('请输入完整的接口网址。');}
+  if(!/^https?:$/.test(url.protocol)||url.username||url.password||url.hash)
+    throw Error('请输入不带用户名、密码或片段的 HTTP 或 HTTPS 接口网址。');
+  const path=url.pathname.replace(/\/+$/,'');
+  if(url.hostname==='api.openai.com'&&(!path||path==='/v1'))url.pathname='/v1/chat/completions';
+  else if(url.hostname==='generativelanguage.googleapis.com'&&['','/v1beta','/v1beta/openai'].includes(path))
+    url.pathname='/v1beta/openai/chat/completions';
+  else if(/\/v\d+(?:beta|alpha)?$/.test(path))url.pathname=path+'/chat/completions';
+  else if(path.endsWith('/chat/completions'))url.pathname=path;
+  return url;
+}
+function completionBody(api,url,messages,limit,temperature,stream){
+  const model=api.model.trim();
+  if(!model)throw Error('请填写服务商提供的模型名。');
+  const name=model.toLowerCase().split('/').pop();
+  const family=name.replace(/-\d{4}-\d{2}-\d{2}$/,'');
+  const reasoningGPT=/^(?:gpt-(?:[5-9]|\d{2,})(?:[.-]|$)|o\d+(?:[.-]|$))/.test(name);
+  const officialOpenAI=url.hostname==='api.openai.com';
+  const officialGemini=url.hostname==='generativelanguage.googleapis.com';
+  const body={model,messages,stream};
+  body[officialOpenAI||reasoningGPT?'max_completion_tokens':'max_tokens']=limit;
+  if(!reasoningGPT&&!(officialGemini&&/^gemini-[3-9]\./.test(name)))body.temperature=temperature;
+  if(officialOpenAI&&reasoningGPT){
+    body.messages=messages.map(m=>m.role==='system'?{...m,role:'developer'}:m);
+    if(family==='gpt-5-mini')body.reasoning_effort='minimal';
+    if(/^gpt-6\.2(?:$|[.-])/.test(name))body.reasoning_effort='low';
+  }
+  if(officialGemini&&family==='gemini-3.1-flash-lite')body.reasoning_effort='minimal';
+  return body;
+}
+function completionContent(value){
+  if(typeof value==='string')return value;
+  return Array.isArray(value)?value.filter(part=>part?.type==='text'&&typeof part.text==='string').map(part=>part.text).join(''):'';
+}
+function completionChoice(data,key){
+  if(data?.error){
+    const detail=String(data.error.message||data.error).replaceAll(key,'[已隐藏]').slice(0,140);
+    throw Error('模型接口返回错误：'+detail);
+  }
+  const choice=data?.choices?.[0];
+  if(choice?.finish_reason==='content_filter'||choice?.message?.refusal||choice?.delta?.refusal)
+    throw Error('模型拒绝了这次请求或内容被服务商过滤。');
+  return choice;
+}
+async function readCompletionStream(body,onText,key){
+  if(!body?.getReader)throw Error('模型接口没有返回可读的流式回复。');
+  const reader=body.getReader(),decoder=new TextDecoder();
+  let buffer='',text='',finish=null;
+  try{
+    while(!finish){
+      const {value,done}=await reader.read();
+      buffer+=done?decoder.decode():decoder.decode(value,{stream:true});
+      const events=buffer.split(/\r?\n\r?\n/);
+      buffer=done?'':events.pop();
+      const before=text.length;
+      for(const event of events){
+        const data=event.split(/\r?\n/).filter(line=>line.startsWith('data:')).map(line=>line.slice(5).trimStart()).join('\n').trim();
+        if(!data)continue;
+        if(data==='[DONE]'){finish='done';break;}
+        let payload;
+        try{payload=JSON.parse(data);}catch(e){continue;}
+        const choice=completionChoice(payload,key);
+        text+=completionContent(choice?.delta?.content??choice?.message?.content);
+        if(choice?.finish_reason){finish=choice.finish_reason;break;}
+      }
+      if(text.length!==before)onText(text);
+      if(done)break;
+    }
+    if(!text.trim()&&finish==='length')throw Error('回复额度用完后模型仍未输出文字。请提高最大回复长度，或换用低推理模型。');
+    return text;
+  }finally{reader.cancel?.().catch(()=>{});}
+}
+async function requestCompletion(messages,{limit,temperature,onText}){
+  const api={...SET.api},url=completionURL(api.base),key=currentKey();
+  const body=completionBody(api,url,messages,limit,temperature,!!onText);
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),90000);
+  try{
+    const response=await fetch(url.href,{method:'POST',signal:ctrl.signal,credentials:'omit',redirect:'error',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body)});
+    if(!response.ok)throw apiFailure(response.status,api,await readApiDetail(response,key));
+    const type=response.headers?.get('content-type')||'';
+    if(type.includes('text/event-stream')||(onText&&!type))return await readCompletionStream(response.body,onText||(()=>{}),key);
+    let data;
+    try{data=await response.json();}catch(e){
+      if(ctrl.signal.aborted)throw e;
+      throw Error('接口没有返回模型 JSON。请检查接口地址是否为 Chat Completions。');
+    }
+    const choice=completionChoice(data,key);
+    const text=completionContent(choice?.message?.content);
+    if(!text.trim()&&choice?.finish_reason==='length')throw Error('回复额度用完后模型仍未输出文字。请提高最大回复长度，或换用低推理模型。');
+    if(onText&&text)onText(text);
+    return text;
+  }catch(e){
+    if(ctrl.signal.aborted||e.name==='AbortError')throw Error('模型接口请求超时（90 秒）。');
+    if(e.name==='TypeError')throw Error('无法连接 '+url.host+'。请检查网络、服务商的地区可用性和网页跨域（CORS）权限。');
+    throw e;
+  }finally{clearTimeout(timer);}
 }
 let connectionDraft=null,connectionTimer=null;
 refreshStorageNotice();
@@ -1124,33 +1235,9 @@ async function callTurn(text, sess, route, reqId){
 }
 async function callTurnStream(text, onSections, sess, route, reqId){
   if(MODE==='server'){ return await callTurn(text, sess, route, reqId); }
-  const apiKey=currentKey(),api={...SET.api};
-  const body={model:api.model,temperature:0.78,max_tokens:SET.reply,stream:true,
-    messages:[{role:'system',content:sysPrompt(text)+STREAM_RULES},{role:'user',content:'读者说／做：'+text}]};
-  const ctrl=new AbortController(), _timer=setTimeout(()=>ctrl.abort(), 90000);
-  let r;
-  try{
-    r=await fetch(api.base,{method:'POST',signal:ctrl.signal,
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},body:JSON.stringify(body)});
-  }catch(e){ throw new Error(/abort/i.test(String(e&&e.name||e)) ? '请求超时（90 秒）' : e); }
-  finally{ clearTimeout(_timer); }
-  if(!r.ok)throw apiFailure(r.status,api.base,await readApiDetail(r),apiKey);
-  const reader=r.body.getReader(); const dec=new TextDecoder();
-  let buf='', all='';
-  while(true){
-    const {value,done}=await reader.read(); if(done) break;
-    buf+=dec.decode(value,{stream:true});
-    const lines=buf.split('\n'); buf=lines.pop();
-    let got=false;
-    for(const line of lines){
-      const t=line.trim(); if(!t.startsWith('data:')) continue;
-      const p=t.slice(5).trim(); if(p==='[DONE]') continue;
-      try{ const j=JSON.parse(p); const d=(j.choices&&j.choices[0]&&j.choices[0].delta&&j.choices[0].delta.content)||'';
-        if(d){ all+=d; got=true; } }catch(e){}
-    }
-    if(got){ const sec=parseSections(all); onSections(sec); }
-  }
-  let sec=parseSections(all);
+  const messages=[{role:'system',content:sysPrompt(text)+STREAM_RULES},{role:'user',content:'读者说／做：'+text}];
+  const all=await requestCompletion(messages,{limit:SET.reply,temperature:0.78,onText:value=>onSections(parseSections(value))});
+  const sec=parseSections(all);
   // A complete short answer or dialogue-only turn is valid. Never pad it with another model call.
   return {nar:sec.nar, say:sec.say, act:sec.act, ...sec.meta};
 }
@@ -1423,11 +1510,8 @@ async function endGame(){
       const ask='你在写一部中文互动小说的结局。角色：'+CHARS[CUR].name+'。已知：好感'+S.aff+'，信任'+S.trust+'，阶段'+S.stage
         +'，未解线索：'+((S.threads||[]).join('；')||'无')+'；剧情年表：'+((S.log||[]).slice(-6).join('；')||'无')
         +'；请写结局：'+tier+'。120-180字，纯叙述，必须回应至少一条线索，落在一个具体物件上。只输出 JSON：{"title":"4-8字","ending":"…"}';
-      const r=await fetch(SET.api.base,{method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+currentKey()},
-        body:JSON.stringify({model:SET.api.model,temperature:0.95,max_tokens:600,
-          messages:[{role:'system',content:ask},{role:'user',content:'写结局'}]})});
-      const d=await r.json(); let s=d.choices[0].message.content.trim();
+      const messages=[{role:'system',content:ask},{role:'user',content:'写结局'}];
+      let s=(await requestCompletion(messages,{limit:600,temperature:0.95})).trim();
       if(s.startsWith('```')) s=s.split('```')[1].replace(/^json/,'').trim();
       const i=s.indexOf('{'),j=s.lastIndexOf('}'); if(i>=0&&j>i) s=s.slice(i,j+1);
       const o=JSON.parse(s); title=o.title||title; body=o.ending||'';
@@ -1490,17 +1574,18 @@ function openSettings(){
    <div class="opt"><div><div class="lbl">每轮预估消耗</div><div class="hint">按上面三项估算，仅输入+输出</div></div><span class="val" id="costVal">—</span></div>
    <div class="sgroup">连接</div>
    <div class="opt" style="display:block">
-     <div class="lbl">API key</div>
-     <div class="hint" style="margin:4px 0 8px" id="keySavedHint"></div>
-     <div class="keyrow"><input class="txt masked" id="keyInput" type="text" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" placeholder="粘贴你的 API key" value=""><button type="button" class="keyeye" id="keyEye" onclick="toggleKeyEye()">显示</button></div>
-     <div class="hint" style="margin:10px 0 6px">服务商预设</div>
-     <div class="segs" id="presetRow">
+     <div class="lbl" style="margin-bottom:6px">服务商预设</div>
+     <div class="segs" id="presetRow" style="flex-wrap:wrap">
+       <button data-p="openai">OpenAI GPT</button><button data-p="gemini">Google Gemini</button>
        <button data-p="deepseek">DeepSeek</button><button data-p="moonshot">Moonshot</button>
        <button data-p="glm">智谱</button><button data-p="qwen">通义</button></div>
-     <div class="hint" style="margin:10px 0 4px">接口地址（OpenAI 兼容即可）</div>
-     <input class="txt" id="baseInput" placeholder="https://api.deepseek.com/chat/completions" value="">
-     <div class="hint" style="margin:10px 0 4px">模型名</div>
-     <input class="txt" id="modelInput" placeholder="deepseek-flash" value="">
+     <label class="hint" style="display:block;margin:10px 0 4px" for="baseInput">接口地址（支持 Chat Completions）</label>
+     <input class="txt" id="baseInput" type="url" inputmode="url" autocapitalize="off" spellcheck="false" placeholder="https://api.deepseek.com/chat/completions" value="">
+     <label class="hint" style="display:block;margin:10px 0 4px" for="modelInput">模型名</label>
+     <input class="txt" id="modelInput" autocapitalize="off" spellcheck="false" placeholder="deepseek-flash" value="">
+     <label class="lbl" style="display:block;margin-top:10px" for="keyInput">API key</label>
+     <div class="hint" style="margin:4px 0 8px" id="keySavedHint"></div>
+     <div class="keyrow"><input class="txt masked" id="keyInput" type="text" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" placeholder="粘贴你的 API key" value=""><button type="button" class="keyeye" id="keyEye" onclick="toggleKeyEye()">显示</button></div>
      <button class="btn" onclick="saveKey()">保存并关闭</button>
      <button class="btn ghost" onclick="testKey()">测试连接</button>
      <div class="hint" id="keyMsg" style="margin-top:8px"></div>
@@ -1522,11 +1607,12 @@ function openSettings(){
    <div class="opt" onclick="openAbout()"><div class="lbl">关于</div><span class="tag" id="buildTag">查看详情</span></div>`;
   $('sheet').classList.add('on');
   $('baseInput').value=SET.api.base;$('modelInput').value=SET.api.model;
-  connectionDraft={key:$('keyInput'),base:$('baseInput'),model:$('modelInput'),keyDirty:false,baseDirty:false,modelDirty:false,baseShown:SET.api.base,modelShown:SET.api.model};
+  connectionDraft={key:$('keyInput'),base:$('baseInput'),model:$('modelInput'),keyHost:'',keyDirty:false,baseDirty:false,modelDirty:false,baseShown:SET.api.base,modelShown:SET.api.model};
   [['key','keyDirty'],['base','baseDirty'],['model','modelDirty']].forEach(([field,flag])=>{
     const input=connectionDraft[field];
     input.oninput=()=>{
       connectionDraft[flag]=true;clearTimeout(connectionTimer);
+      if(field==='key')connectionDraft.keyHost=apiHost(connectionDraft.base.value.trim()||SET.api.base);
       connectionMessage(field==='key'?'已输入新 key，请点下方「保存并关闭」或「测试连接」保存。':'正在保存…');
       if(field!=='key')connectionTimer=setTimeout(()=>flushConnectionDraft(false),350);
     };
@@ -1594,7 +1680,12 @@ function openSettings(){
     b.classList.toggle('on', SET.api && SET.api.base===P.base);
     b.onclick=()=>{
       saveSet({api:{base:P.base,model:P.model}});
-      if(connectionDraft){ connectionDraft.base.value=P.base; connectionDraft.model.value=P.model; connectionDraft.baseShown=P.base; connectionDraft.modelShown=P.model; connectionDraft.baseDirty=false; connectionDraft.modelDirty=false; }
+      const draft=connectionDraft;
+      if(draft){
+        draft.base.value=draft.baseShown=P.base; draft.model.value=draft.modelShown=P.model;
+        draft.baseDirty=draft.modelDirty=false;
+        if(draft.keyDirty&&draft.keyHost!==apiHost(P.base)){draft.key.value='';draft.keyDirty=false;}
+      }
       pr.querySelectorAll('button').forEach(x=>x.classList.toggle('on', x.dataset.p===b.dataset.p));
       refreshSettingsFields();
       connectionMessage('已切换至 '+P.name+'（'+apiHost(P.base)+'）。');
@@ -1638,7 +1729,7 @@ function flushConnectionDraft(commitKey=false){
   if(draft.model.value!==draft.modelShown)draft.modelDirty=true;
   if(draft.baseDirty){
     const base=draft.base.value.trim();
-    try{if(base&&!/^https?:$/.test(new URL(base).protocol))throw Error('url');}catch(e){connectionMessage('请输入完整的接口网址。',true);return false;}
+    try{if(base)completionURL(base);}catch(e){connectionMessage(e.message,true);return false;}
     if(base)api.base=base;draft.baseDirty=false;
   }
   if(draft.modelDirty){const model=draft.model.value.trim();if(model)api.model=model;draft.modelDirty=false;}
@@ -1646,6 +1737,7 @@ function flushConnectionDraft(commitKey=false){
   if(commitKey && draft.keyDirty){
     const text=draft.key.value.trim();
     if(text){
+      if(draft.keyHost!==apiHost(SET.api.base)){connectionMessage('接口域名已更改。请为当前服务商重新粘贴 key。',true);return false;}
       let key;try{key=Persistence.normalizeKey(text);}catch(e){connectionMessage(e.message,true);return false;}
       saveKeyFor(SET.api.base,key);draft.key.value='';
     }
@@ -1675,14 +1767,16 @@ async function testKey(){
     }catch(e){ box.style.color='#d98b7a'; box.textContent='连不上本地服务'; }
     return;
   }
-  let k;try{k=currentKey();}catch(e){connectionMessage(e.message,true);return;}
+  const {base,model}=SET.api;
+  const showResult=(text,bad=false)=>{
+    if($('keyMsg')!==box||SET.api.base!==base||SET.api.model!==model)return;
+    box.style.color=bad?'#d98b7a':'var(--accent)';box.textContent=text;
+  };
   try{
-    const r=await fetch(SET.api.base,{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
-      body:JSON.stringify({model:SET.api.model,messages:[{role:'user',content:'ping'}],max_tokens:5})});
-    if(r.ok){ box.style.color='var(--accent)'; box.textContent='key 可用 ✅'; }
-    else { box.style.color='#d98b7a'; box.textContent=apiFailure(r.status,SET.api.base,await readApiDetail(r),k).message; }
-  }catch(e){ box.style.color='#d98b7a'; box.textContent='网络不通：'+e.message; }
+    const text=await requestCompletion([{role:'user',content:'请只回复 OK。'}],{limit:512,temperature:0.78});
+    if(!text.trim())throw Error('模型没有返回文字，请核对模型名，或尝试使用其他文字模型。');
+    showResult('连接成功，'+model+' 已返回文字。');
+  }catch(e){showResult(e.message,true);}
 }
 function clearKey(){
   clearTimeout(connectionTimer);
@@ -1806,7 +1900,7 @@ $('memBtn').onclick=()=>{
   if(want && CHARS[want]){ setTimeout(()=>openChat(want), 60); }
   else { const r=lastRoute(); if(r && getS(r)){ setTimeout(()=>openChat(r), 60); } }
   if(location.protocol==='file:' && MODE!=='server'){
-    setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」填 DeepSeek key\n· 或者用本地服务 http://127.0.0.1:8787（那边的 key 已配好）'); }, 600);
+    setTimeout(()=>{ if(!KEY) alert('你现在是用本地文件打开的：\n· 想直接玩 → 到「我的」选择服务商并填写对应 key\n· 或者启动本地服务 http://127.0.0.1:8787'); }, 600);
   }
   renderHome();
   const flush=()=>{try{flushConnectionDraft();}catch(e){} };
@@ -1819,6 +1913,6 @@ $('memBtn').onclick=()=>{
     if(e.key===SKEY||String(e.key||'').startsWith(STORE.keys.sessionPrefix)||String(e.key||'').startsWith('ai.')||String(e.key||'').startsWith('aidemo.'))renderHome();
     refreshStorageNotice();
   });
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=17').catch(()=>{}); }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js?v=18').catch(()=>{}); }
 })();
 </script></body></html>
