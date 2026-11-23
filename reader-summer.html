@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>陆星沉 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "陆星沉", "meta": "19 · 建筑系大二生", "premise": "评图前夜下起雷阵雨，你赶完最后一张模型图正趴在图板边揉酸痛的手腕。陆星沉淋着半肩雨推开画室门，皱着眉把一盒温热的黑巧直接丢进你桌洞，嘴里还嫌弃：「买一送一吃不完，别浪费。」你刚想推回去，他已经拉开对面高脚凳坐下，顺手拿过你的美工刀替你裁起了模型板。", "world": "南方大学城的梅雨季刚过，夏夜闷热，建筑楼三层通宵亮着白炽灯，楼下香樟树影被路灯拉得很长，蝉鸣从黄昏响到深夜。", "desc": "脾气有点冲、嘴上不饶人，却记得你所有忌口与熬夜画图的习惯。越紧张越爱拌嘴，送东西总说「多买的」。", "arch": "嘴毒心软的蓄谋少年", "vigs": [{"need": 3, "title": "黑巧包装纸", "lines": ["陆星沉每次丢进你桌洞的黑巧都是 72% 可可含量的同一款。", "你随口说过太甜的吃了犯困，他嘴上哼了一声说你真挑剔，往后却再没买错。", "他自己其实不爱吃苦巧克力，每次都把剩下的顺手塞给你。", "「买一送一不吃白不吃，快吃，别等会儿画图低血糖。」"]}, {"need": 6, "title": "模型板边角", "lines": ["通宵做模型那晚，你裁歪了三块椴木板，气得把尺子往桌上一拍。", "他嘴上嘲笑你手抖得像在画心电图，转头却把裁好的齐整木条一块块排在你手边。", "等你抬头道谢时，他正低头吹掉你图板上的木屑，睫毛在台灯下投出很长的影。", "「别发呆了，胶水快干了。」"]}, {"need": 9, "title": "速写本里的睡颜", "lines": ["那张夹在速写本末页的铅笔画，落款日期是去年十一月一个下大雨的周三。", "那天你在图书馆三楼靠窗的位子趴着睡着了，手边压着半张没画完的透视图。", "他在斜对面坐了两节课，用 2B 铅笔极轻地勾完轮廓，连你袖口沾的一点碳粉都没漏掉。", "画纸右下角写着极小一行字：睡醒别忘了带伞。"]}, {"need": 12, "title": "老街糖画", "lines": ["大二那年秋末他带你去老街巷口买糖画，摊主老伯问要画龙还是画凤。", "他盯着转盘想了两秒，说要一只拿着尺子的小猫，把老伯都逗笑了。", "递给你的时候糖浆还带着温热的甜香，他趁你低头咬糖角，悄悄把你的手指扣进了掌心。", "「走路看前面，摔了我不扶。」"]}, {"need": 15, "title": "画室小铜铃", "lines": ["古镇测绘那回你在老铺子里挑了两只巴掌大的小铜铃，随手给了他一只。", "他嫌叮当作响太吵，嘴上说才不挂，第二天却系在了画筒拉链上。", "往后每次建筑楼楼梯间传来清脆一声铃响，你不用回头就知道是他拎着热豆浆上来了。", "「刚路过食堂顺手带的，趁热喝。」"]}], "endings": {"A": {"title": "靠风扇的位子", "text": "跨年夜江边烟花落幕时，陆星沉把自己的羊绒围巾绕在你颈间两圈，嘴上还在嫌你出门不知道多穿件毛衣，手却一直牢牢扣着你的指缝没松开。人潮往地铁站涌去，他把你护在内侧，笑着说下学期所有联名作业都得继续跟你一组。\n开学第一天你推开建筑楼三层画室的门，最靠窗吹得到风扇的那张图板已经擦得干干净净。桌洞里照例放着一盒温热的黑巧和一张折齐的草稿纸，上面画着一只举着三角尺的小猫，写着「早安，这次不是顺路」。"}, "B": {"title": "速写本末页", "text": "期末评图拿了全系第一，庆功宴散场后你们沿着香樟大道走了很久。你笑着把那本夹着校园卡套的速写本还给他，说以后不用再找借口送巧克力了。他挠了挠后颈，耳根泛红，却老老实实应了一声好，把步子放得比平时更慢。\n大三那年你申请了去外校交换一学期，临走前他在你画筒里塞了一本新速写本。翻开最后一页，上面密密麻麻记着交换城市三家不踩雷的夜宵摊和一张手绘地图，落款写着「等暑假我去找你」。"}, "C": {"title": "未拆封的黑巧", "text": "香樟树下你安静听完他所有的坦白，却只是摇了摇头，说你现在只想把专业课和出国作品集顾好，不敢轻易接住这么沉的喜欢。陆星沉愣了半秒，很快扯出一个有点僵硬的笑，说没事，还是好搭档，转身时把原本攥在手里的糖画悄悄藏到了身后。\n毕业展那天他站在你的毕业设计模型前看了很久，留言簿上只留下干干净净的一行「采光比大二那年稳多了」。走出去几步，你看见他书包侧袋里还挂着那年古镇测绘时一起买的小铜铃。"}, "D": {"title": "蓄谋的满分", "text": "江边烟火照亮半片夜空，你迎着他亮得惊人的眼睛，把藏了一整季的喜欢先说了出口。向来嘴快的陆星沉罕见地卡了壳，半晌才低头笑出声，伸手把你整个人拢进大衣前襟挡住江风，哑声说这下他大一写下的所有计划总算全部通关。\n第二年盛夏你们一起去南方老镇做古建修复实习，傍晚收工后并排坐在青石板台阶上分吃一根绿豆冰棍。他把没化掉的那头递给你，夕阳把两个人的影子拉得很长，手背贴着手背，谁也没往回缩。"}}, "chapters": [{"title": "第一章 课桌上的糖纸", "scenes": [{"n": 1, "lines": [["nar", "六月评图前夜，雷阵雨哗啦啦砸在建筑楼三层玻璃上。你刚改完最后一张立面图，累得趴在图板边揉发酸的手腕。"], ["nar", "画室门被推开，带着一阵潮湿风声。陆星沉半边肩膀湿透，皱着眉走过来，直接把一盒还带着体温的 72% 黑巧丢进你桌洞。"], ["say", "“超市买一送一，吃不完。快吃了，别等会儿熬低血糖还得我背你去医务室。”"], ["nar", "他嘴上嫌弃得厉害，人却顺手拉过对面高脚凳坐下，拿过你的美工刀替你裁起了最费力的模型底板。"], ["act", "台灯光落在他微湿的碎发上，他低头对准标尺刻度，动作比平时安静得多。"]], "choices": ["“买一送一还能刚好买我爱吃的牌子？”", "把巧克力推回去：“我不要别人顺手买的。”", "递给他一张干纸巾擦擦肩膀上的雨"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "你把那盒黑巧重新推回他手边，认真看了他一眼：「陆星沉，我不要别人顺手买的。」"], ["nar", "画室风扇吱呀转了两圈。陆星沉盯着手里的巧克力盒沉默了整整三秒，原本有点臭的脸色忽然松开，低头忍不住笑出声。"], ["say", "“懂了，那是要我专程给你买的。”"], ["nar", "他抬手把盒子又稳稳放回你图板左上角，指尖在盒盖上敲了两下，语气别扭又直球。"], ["say", "“行，这盒就是我跑两条街专程给你买的。这下能吃了吧？”"], ["act", "他说完耳根悄悄泛红，飞快别开眼继续裁木板，嘴角却怎么也压不下去。"]], "choices": ["剥开一颗放进嘴里，顺手分他半块", "笑着吐槽他嘴硬心软", "低头继续画图，心里却突然轻快起来"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "凌晨两点，模型只剩最后一层屋顶。你困得眼皮打架，握着美工刀的手一滑，刀刃眼看就要擦过左手食指。"], ["nar", "一只骨节分明的手快如闪电伸过来，稳稳按住你手背把刀抽走。他掌心滚烫，力道大得让你整个人彻底清醒。"], ["say", "“困成这样还硬撑什么，手不要了？”"], ["nar", "你刚想辩解自己没困，他已经把你的椅子往后一推，把剩下所有细碎部件全揽到了自己面前。"], ["say", "“去趴二十分钟。屋顶我来粘，弄不齐明天评图我替你挨许教授骂。”"], ["act", "他把自己的薄外套脱下来盖在你肩上，低头继续干活，连呼吸都放轻了些。"]], "choices": ["乖乖趴在桌边眯一会儿", "“不行，这是我们俩的作业，我帮你递零件。”", "看着他侧脸轻声说了句谢谢"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "次日上午评图，一向毒舌的许教授绕着你们的模型转了两圈，难得点了点头，吐出四个字：「采光稳了。」"], ["nar", "全班松了口气，你紧绷了一周的神经这才松下来。讲台下，陆星沉伸脚轻轻踢了踢你的帆布鞋尖，压低声音凑过来。"], ["say", "“怎么样，昨晚没白听我的吧。”"], ["say", "“谢了陆大佬，晚上请你吃饭？”"], ["nar", "他挑了下眉，眼里闪着少年藏不住的得意。"], ["say", "“吃饭太敷衍。请我去老街喝冰美式，再陪我逛一圈材料店。”"], ["act", "他顺手帮你把沉重的图筒背到自己肩上，转身朝教室门口扬了扬下巴。"]], "choices": ["“成交，冰美式管够。”", "伸手抢回自己的图筒：“我自己背得动。”", "笑着跟上他的步子"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "傍晚系里篮球赛中场休息，你拎着两瓶常温矿泉水站在场边。陆星沉刚下场，额头挂着汗，一眼看见你便大步走过来。"], ["nar", "队长陈野一把揽住他肩膀起哄，指着他水瓶上贴的那张小猫贴纸喊你小名。陆星沉脸色一沉，直接把陈野的手甩开。"], ["say", "“人家跟你熟吗，叫全名不行？”"], ["nar", "陈野愣了半秒嗷一声笑着跑远，陆星沉转过身接过你递来的水，刚才还冲得要命的语气瞬间软了八度。"], ["say", "“大太阳的站这儿干嘛，去树荫底下待着，下半场还有十分钟。”"], ["act", "他拧开瓶盖仰头喝了半瓶，临上场前把挂在脖子上的干毛巾随手搭在了你手里。"]], "choices": ["“陆星沉，你刚才护短的样子挺凶的。”", "站在树荫下看他打完下半场", "递给他一颗薄荷糖：“下半场别逞强。”"], "fx": [0, 0, 0]}, {"n": 6, "lines": [["nar", "晚饭后老街飘起细雨，路灯把青石板照得发亮。你们在巷口买了两支小猫糖画，慢悠悠往学校方向走。"], ["nar", "你低头咬着甜脆的糖角，没留神手背轻轻碰到了他的手。陆星沉瞄了你一眼，直视着前方假装看路，垂在身侧的手指却悄悄挪过来，一点点挤开你的指缝，与你十指相扣。"], ["nar", "你脚步顿了一下，他掌心瞬间沁出一点薄汗，嘴上还强装镇定。"], ["say", "“路滑，牵着点免得你踩水坑。你现在开心一点没？”"], ["say", "“比评图拿第一还开心一点。”"], ["act", "他弯起唇角没说话，把扣着你的那只手收得更紧了些，放慢步子陪你踩过路灯长影。"]], "choices": ["悄悄回握紧他的手指", "笑着拆穿他手心在出汗", "举起糖画喂他尝一口"], "fx": [0, 0, 0]}]}, {"title": "第二章 蓄谋的巧合", "scenes": [{"n": 1, "lines": [["nar", "十月系里组织去南方古镇测绘，走到半山腰突降瓢泼大雨。两人躲进路边一间狭小的铁皮棚，雨点砸得棚顶震天响。"], ["nar", "风斜着灌进来，陆星沉直接侧身把你往最里侧挡住，自己半边牛仔外套很快被雨打湿。见你抱着手臂发抖，他干脆拿刚才画歪的村口石狮讲起冷笑话。"], ["say", "“别抖了，再抖回去许教授以为我欺负你。”"], ["nar", "雨声太大，你听不清他后半句，下意识往他那边靠了一寸，冰凉的耳廓几乎贴到他温热的肩头。"], ["say", "“我说，等雨停了我背你下这段泥路，别弄脏你那双白鞋。”"], ["act", "他声音被雨声稀释得极温柔，抬手替你把滑落的连衣帽重新戴正。"]], "choices": ["“不用背，我抓着你袖子慢慢走就行。”", "靠在他没湿的那半边肩上等雨小", "笑着把干手帕塞给他擦脸"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "当晚古镇民宿突然跳闸停电，整栋木楼陷入漆黑。你打开手机电筒继续核对白天测绘的门窗尺寸，陆星沉搬了张小凳凑到你身旁。"], ["nar", "微弱白光照亮两人极近的侧脸，窗外虫鸣清晰得像在耳边。一缕碎发滑下来挡住你的视线，他下意识抬手替你别到耳后。"], ["nar", "温热的指尖轻轻擦过你耳廓，空气仿佛一下凝固。两个人都同时停住动作，谁也没先移开目光。"], ["say", "“……头发挡着数字了。”"], ["say", "“陆星沉，你声音怎么哑了？”"], ["act", "来电的瞬间白炽灯亮起，他猛地撤回手轻咳一声，低头假装认真看图纸，耳根红得藏都藏不住。"]], "choices": ["故意凑近问他刚才想说什么", "低头继续抄数据，嘴角悄悄扬起", "把另一只手电关掉递给他一杯热茶"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "回校后他把测绘速写本借给你补画剖面。你翻到最后一页，一张折叠的卡片从夹层里滑出来——正是你大一开学丢在图书馆的那只旧校园卡套。"], ["nar", "卡套背面压着一页铅笔速写：去年十一月的大雨天，你趴在图书馆靠窗的桌边睡着，画纸右下角用极轻的笔迹写着一行小字：「睡醒别忘了带伞。」"], ["nar", "你指尖停在纸面上，忽然把这一年来所有的「刚好顺路」「超市买一送一」「借你钥匙」全串成了一条线。"], ["say", "“原来根本没有那么多巧合。”"], ["act", "你合上速写本走出画室，一眼看见楼下香樟树下正拎着两杯热饮等你的少年。"]], "choices": ["拿着速写本直接下楼去找他", "先拍下那页速写再慢慢下楼", "装作不知道，看他今天又编什么借口"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "黄昏香樟树影落满石阶，你举起速写本拦在他面前，一根根掰着手指细数他的「罪状」。"], ["say", "“大二换到我隔壁画室是故意的吧？超市黑巧从来没有买一送一吧？上次把钥匙落在我的画筒里也是人为的吧？还有大一这张图书馆速写——”"], ["nar", "陆星沉手里的两杯热豆浆差点没端稳。向来嘴上不饶人的少年被逐一拆穿，窘迫得抬手蹭了蹭鼻尖，耳尖红得透亮。"], ["say", "“……你翻我速写本怎么还带翻夹层的。”"], ["say", "“少转移话题，陆星沉，是不是全是故意的？”"], ["act", "他深吸一口气，干脆把热豆浆全塞进你怀里，眼底的窘迫一点点褪成认真。"]], "choices": ["笑着等他自己老实交代", "“那你还有什么事瞒着我？”", "戳了戳他发红的耳根"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "暮色把香樟大道染成暖橘色。陆星沉往前跨了半步，借着树影微微低头看你，彻底收起了平日里爱拌嘴的伪装。"], ["say", "“是。换画室、带早饭、落钥匙、装顺路，全是我蓄谋已久。”"], ["nar", "他声音又低又沉，带着少年人孤注一掷的坦诚，连呼吸都变得清晰。"], ["say", "“我怕直接说会吓跑你，才绕了这么大一圈。现在全被你抓了个现行，你打算拿我怎么办？”"], ["nar", "晚风吹过树梢沙沙作响，他没有逼你立刻给答案，只是悄悄伸手拉住了你的一角衣袖。"], ["act", "“给个准话吧，别让我再接着装顺路了。”"]], "choices": ["“那罚你以后每天都名正言顺来找我。”", "“看你接下来表现再决定。”", "踮脚替他把被风吹乱的领口理平"], "fx": [0, 0, 0]}]}, {"title": "第三章 烟火与回声", "scenes": [{"n": 1, "lines": [["nar", "期末周熬到第三夜，你的课程设计方案被退回重画。空荡画室里只剩你一个人盯着满桌废稿，委屈和疲惫一起涌上来。"], ["nar", "窗台忽然传来两声轻敲。陆星沉撑着外廊护栏探进半个身子，手里提着一只保温杯，额前还沾着夜露。"], ["say", "“就知道你又在画室里跟自己较劲。把门开一下，热牛奶要凉了。”"], ["nar", "他进门后没说一句空洞的安慰，直接拉着你盘腿坐到地板上，把废稿一张张摊开重新推敲结构线。"], ["say", "“天亮前肯定改得完。有我在，这次不许你一个人硬扛。”"], ["act", "他拧开保温杯递到你手里，自己先拿起了那支 2B 铅笔。"]], "choices": ["喝一口热牛奶靠在他肩边喘口气", "和他一起重新画草图", "“你怎么知道我今晚没回宿舍？”"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "画到凌晨四点，他伸手替你压住长丁字尺时，袖口滑落露出一块贴在手腕上的白色膏药——是前两天球赛旧伤复发。"], ["say", "“手腕疼怎么还陪我熬通宵画图？”"], ["say", "“左手按尺子又不费劲。别动，最后一条剖面线画完就收工。”"], ["nar", "看着他明明困得眼尾发红、却仍一丝不苟替你收尾的样子，你眼眶一时没忍住泛了酸。"], ["nar", "陆星沉一抬头看见，立刻手忙脚乱放下铅笔，笨拙地用干净的指腹轻轻擦过你眼角。"], ["act", "“别哭啊，我手一点不疼。真疼我就喊你帮我贴膏药，行不行？”"]], "choices": ["拉过他的手腕仔细检查膏药", "破涕为笑：“拉钩，以后不许瞒着我硬撑。”", "把最后一张图纸签上两个人的名字"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "跨年夜江边广场挤满人群，冷风里飘着烤红薯的甜香。零点倒数响起，漫天烟花轰然炸开，人声鼎沸几乎淹没一切。"], ["nar", "无数句「新年快乐」从四面八方钻进耳朵。陆星沉忽然低下头，温热的掌心护在你耳侧挡住喧嚣，声音低而温柔地落进你耳底。"], ["say", "“新年快乐，笨蛋。”"], ["nar", "烟花爆竹震耳欲聋，可那一瞬间，整个世界仿佛只听得见他这一句。"], ["act", "他退开半寸看着你被烟火映亮的眼睛，唇角弯出最明亮的笑。"]], "choices": ["“新年快乐，陆星沉。”", "踮脚凑近他耳边回一句悄悄话", "静静看着他的眼睛笑出来"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "金色烟火在夜空散落成细碎流光。你仰头看他看了很久，陆星沉被你盯得微微一愣，笑着弯腰凑近了些。"], ["say", "“干嘛这么看我？脸上沾到什么了？”"], ["nar", "你嘴角扬起，迎上他亮得惊人的眸子，把攒了一整个秋冬的心意轻声说出口。"], ["say", "“我问了问心，它说，对你情不自禁。”"], ["nar", "向来最能贫嘴的少年瞬间僵在原地，半晌才低头轻笑出声，眼底的光比头顶的烟花还烫。"], ["act", "他伸手把你整个人稳稳拢进大衣前襟挡住江风，低声说「那我这半年总算没白蓄谋」。"]], "choices": ["伸手抱住他的腰", "笑着问他：“现在还算不算顺路？”", "把冰凉的手塞进他大衣口袋里"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "寒假离校前最后一场小雨落在高铁站广场。检票口人来人往，陆星沉把自己的羊绒围巾解下来，仔仔细细绕在你颈间两圈。"], ["say", "“回家记得报平安。开学前一天我去车站接你，不许自己扛大箱子。”"], ["say", "“那开学第一天画室靠风扇的位子，还留不留给我？”"], ["nar", "他笑着敲了敲你的行李箱拉杆，眉眼张扬又温柔。"], ["say", "“留着呢。以后不管画室还是球场，最好的位子都只留给你。”"], ["act", "检票铃响起，他松开手朝你挥了挥，一直站在人群外目送你的背影消失在闸机尽头。"]], "choices": ["回头朝他用力挥手", "把一颗黑巧塞进他掌心再进站", "发消息给他：“开学见，陆同学。”"], "fx": [0, 0, 0]}]}], "route": "summer", "context": {"player": "建筑系大二学生，习惯把所有事自己扛着、熬夜改图也不爱求助的同班同学。", "relation": "总爱跟你拌嘴的同系同学。他上学期搬来你隔壁画室后，动不动就挑你图纸的刺，却总在你熬通宵时顺手往你桌上丢热豆浆和巧克力。", "world": "南方大学城的梅雨季刚过，夏夜闷热，建筑楼三层通宵亮着白炽灯，楼下香樟树影被路灯拉得很长，蝉鸣从黄昏响到深夜。", "premise": "评图前夜下起雷阵雨，你赶完最后一张模型图正趴在图板边揉酸痛的手腕。陆星沉淋着半肩雨推开画室门，皱着眉把一盒温热的黑巧直接丢进你桌洞，嘴里还嫌弃：「买一送一吃不完，别浪费。」你刚想推回去，他已经拉开对面高脚凳坐下，顺手拿过你的美工刀替你裁起了模型板。", "known": ["他嘴上天天说你画图太慢，却把你上次随口提过的那家老街甜品铺记了一整学期。", "他手腕上有道打球留下的旧擦伤，一到下雨天就会隐隐发酸。", "全班都以为你们俩见面就掐，只有你知道他每次都把靠风扇的位置留给你。"], "unknown": "他这半年里那些「顺路」「买多」「刚好有空」的巧合，究竟有多少是他早就计划好的。", "goal": "赶在明早九点前把联名模型做完，也在这一场夏夜阵雨里决定要不要拆穿他的别扭。", "public_meta": "19 · 建筑系大二生", "opening": "评图前夜雷阵雨砸在画室玻璃上，陆星沉淋湿半肩推门进来，把一盒温热黑巧直接丢进你桌洞，皱着眉说买一送一吃不完。"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

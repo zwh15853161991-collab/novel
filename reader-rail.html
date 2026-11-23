@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>程远山 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "程远山", "meta": "27 · 老铁路支线巡道工 / 检车员", "premise": "深秋细雨斜落在青坪站铁轨碎石上，7024 次绿皮慢车晚点六分钟停靠。你拎着沉重的采访皮箱踩下铁梯，箱角差点磕上水泥沿，一只戴着白线手套的大手先一步稳稳托住箱底。穿藏青工装的程远山抬头看了一眼站台挂钟：「青坪站台阶高半寸，下车先迈左脚。」", "world": "2000 年前后即将因新干线贯通而谢幕的山区老铁路支线「青坪站」。绿皮 7024 次慢车、敲轨锤声、煤炉烤红薯与雨夜绿色信号灯。", "desc": "极度务实、手稳话少、自带冷幽默的生活实干派。准点巡道、修好漏风的窗、记住你每趟慢车的到站时间，永远接得住生活琐碎。", "arch": "岁月里的「铁道实干家」", "vigs": [{"need": 3, "title": "时刻表背后的红笔", "lines": ["青坪站值班室墙上贴着一张旧列车时刻表，平时全是黑笔写的正点时间。", "唯有 7024 次和 7025 次旁边，被人用红铅笔标了两个极小的箭头。", "小周偷偷告诉你，那是程远山记的你每次下乡坐车和回站的时间，生怕哪回晚点让你在风口干等。"]}, {"need": 8, "title": "多削的两块木楔", "lines": ["替你修好招待所木窗那天，他其实一口气刨了六块松木楔子，挑了两块木纹最顺、一点毛刺没有的给你顶窗，剩下四块全留在自己工具箱底。", "马站长笑他修个破窗还讲究木纹，他低头吹掉木屑，闷声回了一句：“万一她晚上手碰着，扎刺疼。”"]}, {"need": 12, "title": "加绒棉手套", "lines": ["你冬至送他的那副加绒棉手套，整个冬天他都没舍得拿去沾机油。", "平时拧螺栓还是戴旧白线手套，只有清晨空手巡道或者骑车出门时才拿出来套上。", "小周想借去戴半小时，被他一把按回兜里：“自己去供销社买，这副码数不对。”"]}, {"need": 16, "title": "冷幽默的来历", "lines": ["有回你问他，平时话那么少，怎么偶尔蹦出一句话能把人逗乐。", "他正蹲在院里修自行车链条，抬头想了想，一脸认真地回答：“平时在铁轨上走一天，除了风就是石子，不自己琢磨两句顺口的话，闷得慌。", "你爱笑，我以后多琢磨两句。”"]}, {"need": 20, "title": "永远留着的硬板票", "lines": ["搬进省城新屋后，你在他书桌玻璃板底下看见两张并排压着的旧硬板火车票——一张是你离开青坪那天坐的 7024 次，另一张是他开春来省城找你那天补的同车次票根。", "两张票根并排放着，始发站都是青坪，终点站写着同一座城。"]}], "endings": {"A": {"title": "同轨新程", "text": "签售会散场那晚，雨歇云开。程远山带你穿过新机务段外的梧桐街，把新配好的房门钥匙放进你掌心。他说，自己嘴笨，不会说漂亮话，但这些年巡道养出来的毛病改不掉——答应好的事绝不晚点，走上来的路绝不半途改道。\n次年冬至，省城落了场薄雪。厨房煤气灶上滚着白菜猪肉饺子，书桌一角稳稳压着那块从青坪三号桥拆下来的钢轨镇纸。每逢你加班写稿到深夜，他总会在十一点整准时敲响书房门，递进来一杯兑好温度的蜂蜜水，顺手把你脚边漏风的门缝用棉条压实，安稳得像一趟永远准点的慢车。"}, "B": {"title": "错峰发车", "text": "天桥晚风微凉，程远山听完你那句话，手掌在栏杆上收紧又慢慢松开。他看着你，眼神依旧坦荡实诚。他说，自己刚调来大机务段，夜班轮值紧，连个安稳落脚的地方都还没置办妥当，不想让你跟着他从头吃这份奔波苦；等他在省城站稳脚跟，如果那时候你还愿意，他再郑重来问你一次。\n次年夏天，你在铁路文化展上再次遇见他。他穿着笔挺的新式检修制服，比去年晒黑了些，神情沉稳利落。散场时他在门口递给你一小袋晒得极甜的青坪红枣，笑着说宿舍窗框今年换了新的，一点风也不漏。"}, "C": {"title": "准点相逢", "text": "两人都没戳破天桥上那层薄纸，却在省城自然而然延续了青坪小站的默契。每逢你出差赶早班火车，只要恰逢他在东站当班，总能看见他在站台柱子旁站着，替你提一把箱子、叮嘱一句车厢空调冷；每次你发了新书样册，也总会第一时间给机务段寄去一本。\n入冬第一场寒潮来袭那天，你在家门口收到他托小周捎来的一对厚棉门帘和两块刨得光滑的松木窗楔。附着的纸条上还是他那手方正实在的字：“降温了，门窗塞紧，别着凉。”"}, "D": {"title": "各赴远站", "text": "青坪站最后一趟慢车停运后，你调往外省主持新的地方志编纂，两人只偶尔在年节时互寄一张简短的明信片。你听说他顺利进了省城机务段，还评上了技术骨干，替他高兴，却再没机会坐上他检过的同一趟车。\n三年后的秋日，你整理旧书箱，从《青坪铁道志》里滑出一张剪掉一角的旧硬板站台票。你捏着那张发黄的硬纸片站了一会儿，耳边似乎还能听见深秋山雾里那几声清脆均匀的敲轨声。"}}, "chapters": [{"title": "第一章 青坪慢车", "scenes": [{"n": 1, "lines": [["nar", "【晚点六分钟的绿皮车】2000 年深秋傍晚，山区老支线「青坪站」，细雨斜斜落在铁轨碎石上，绿皮 7024 次慢车缓缓停靠。"], ["nar", "你作为省城地方志编辑，下乡收集这条老铁路支线的历史口述史。拎着沉重的旧帆布箱踩下铁梯时，车厢门框松动，箱角差点磕在站台水泥沿上。"], ["nar", "一只戴着白线手套的大手先一步稳稳托住箱底。穿藏青工装的年轻男人站在雨里，手里拎着一把长柄检车小铁锤，眉眼被帽檐遮住一半。"], ["say", "“青坪站台阶高半寸，下车先迈左脚。”他单手把你的箱子提上雨棚干燥处，抬头看了一眼站台大挂钟，“7024 次今天晚点六分钟，马站长在候车室烧好水了，走吧。”"]], "choices": ["道谢并问他怎么知道你来：撑开伞跟在他身侧：“谢谢师傅，你怎么知道我是来找马站长的？”", "“我自己拿就行，里头装的都是采访本，挺沉的。”"], "fx": [0, 0]}, {"n": 2, "lines": [["nar", "【漏风的招待所木窗】站房隔壁的铁路旧招待所二楼，夜风吹得老木窗框哗哗作响，桌上煤油灯旁摆着采访提纲。"], ["nar", "刚整理完半页老站长口述，窗缝灌进来的山风把稿纸吹散一地。你拿旧报纸往缝里塞，塞了两回还是被风顶出来。"], ["nar", "敲门声响了两下。程远山站在门外，手里拿着刨子、一卷牛皮纸胶带和两块削得方方正正的松木楔子。"], ["say", "“小周说二楼西头这间窗框去年就歪了。”他进门先在门槛蹭净鞋底泥水，动作利落地拿木楔把窗缝顶实，又拿锤柄轻敲两下试了试风，“行了。风进不来，蚊子进来也得买站台票。”"]], "choices": ["“程师傅，你平时说话都这么实在吗？”", "“麻烦你大晚上跑一趟，喝口水暖暖手吧。”"], "fx": [0, 0]}, {"n": 3, "lines": [["nar", "【清晨巡道锤声】清晨六点半，山雾未散，铁轨在微光里泛着冷铁光泽，远处传来清脆有节奏的敲轨声。"], ["nar", "你背着相机沿铁轨采风，撞见程远山正弯腰一米一米敲击钢轨扣件。铁锤落下去，“叮——叮——”的声音脆亮均匀。"], ["nar", "听见脚步声，他直起腰，从工装内袋摸出一只用油纸包得严严实实的热烤红薯递过来：“刚从马站长煤炉膛里扒出来的，还烫手，兜着暖手。”"]], "choices": ["“这么大一个我吃不完，分你一半。”", "好奇问他怎么听出铁轨有没有裂缝：举起相机拍下他手里的检车锤。"], "fx": [0, 0]}, {"n": 4, "lines": [["nar", "【老账本与铁道志】青坪站值班室，马站长戴着老花镜翻出 1968 年建站时的蓝皮值班日志，墙上老挂钟滴答作响。"], ["nar", "泛黄的日志里记着几十年来每一场暴雪、塌方和准点发车记录。你一边记笔记，一边问起青坪桥当年是怎么一锤一钎架起来的。"], ["nar", "马站长刚开了个头，去接调度电话了。程远山坐在炉边烤干湿手套，听见你念到 1983 年一场山洪抢修记录，极轻地接了一句：“那年守桥头的是我爸。他那时候也是青坪的巡道工。”"]], "choices": ["“原来你家两代人都在这条线上。能跟我说说你爸当年的事吗？”", "“这几个旧岔道口的名字字迹淡了，你能认出来吗？”"], "fx": [0, 0]}, {"n": 5, "lines": [["nar", "【雨夜信号灯】晚间九点，暴雨倾盆，青坪站西口信号灯因线路受潮闪了两下熄灭。"], ["nar", "九点二十还有最后一趟回城慢车要过西口。小周急得满头汗，程远山拎起防水信号灯和绝缘钳，套上黄胶雨衣就要往雨里冲。"], ["nar", "你顺手抓起值班室那把大号手电跟了上去：“西口路黑，我给你照灯，两只手空出来修得快。”"], ["nar", "他回头看你一眼，没像别人那样大声赶你回去，只把挂在门钩上的另一件备用雨衣抖开罩在你身上，拉好按扣：“行，跟紧我脚后跟，别踩道砟外沿。”"]], "choices": ["稳稳举着电筒照准接线盒：任雨水顺着帽檐往下流，光柱纹丝不动钉在螺丝上。", "替他把雨衣领口扣严：见他脖子灌了雨水，顺手帮他把领扣按实。"], "fx": [0, 0]}]}, {"title": "第二章 旧轨新程", "scenes": [{"n": 6, "lines": [["nar", "【抽屉里的调令】午后放晴的值班室，小周哼着歌去换磁带，风把程远山半开的抽屉里一张纸角吹了出来。"], ["nar", "你弯腰捡起那张滑落到地上的红头通知，无意间瞥见抬头——《关于青坪支线停运善后及人员分流调令》，最下方印着程远山的名字，去向是省城大机务段检修组，报到截止日期就在下个月底。"], ["nar", "程远山推门进来，看见你手里的通知，脚步顿了一下，神色却很快平静下来。"], ["say", "“别跟马站长提。”他接过纸折好放回抽屉，声音放低，“老头子还没收到正式文件，我想等最后一趟春节前的慢车跑完再说。”"]], "choices": ["“省城机务段条件好得多，你为什么压着调令没签字？”", "“放心，我写地方志也会避开未公开的撤站消息。”"], "fx": [0, 0]}, {"n": 7, "lines": [["nar", "【省城的催稿电报】青坪站小邮局柜台，你收到省城编辑部打来的长途催促，要求两周内结束采访回城定稿。"], ["nar", "走出邮局时，天色阴沉下来。程远山刚修完站台长椅的松动木条，正坐在石阶上擦手。"], ["nar", "你走过去坐到他旁边，把两周后要回省城的事平平淡淡说了出来。"], ["nar", "他擦手的动作停了两秒，没有追问你能不能多留几天，只抬眼算了算日子：“两周后正好是冬至前一天。7024 次那天上午十点十分发车，这几天山里起雾，我提前帮你把剩下的老职工采访路线排出来，省得你白跑。”"]], "choices": ["“我要走了，你就只替我排采访路线啊？”", "“谢谢你，有这份路线图，我能把沿线三个扳道房全收进志书里。”"], "fx": [0, 0]}, {"n": 8, "lines": [["nar", "【二八大杠的后座】沿着铁轨外侧的土路，秋风卷着枯黄的杨树叶，车铃清脆地响了一声。"], ["nar", "去最远的三号扳道房不通班车，程远山借了马站长那辆擦得锃亮的二八大杠，后座特意绑了一块厚棉垫。"], ["nar", "下坡土路颠簸，你下意识抓紧了他工装外套后摆。他脊背瞬间挺得笔直，脚下却把车速控得极稳，每一次过石子坑都提前减速。"], ["nar", "路过半山腰一片野枣林，他停下车，随手摘了一把晒得半干的红酸枣，用袖子擦干净递到你手里：“歇会儿。前头还有两里路，喝口水再走。”"]], "choices": ["“光给我摘，你自己也尝一颗。”", "“马站长的车哪有这么厚的棉垫？”"], "fx": [0, 0]}, {"n": 9, "lines": [["nar", "【塌方抢修与老桥】冬至前三天，连绵冷雨引发三号桥南端碎石滑落，压住了半截铁轨。"], ["nar", "紧急抢修铃声拉响。程远山和小周扛着撬棍与道砟叉冲进雨里。下午三点，最后一车碎石刚清理完毕，程远山为了撬开卡在枕木缝里的巨石，铁撬滑手，虎口震裂渗出血，他却只拿手帕草草一缠，继续弯腰拧紧最后两颗轨枕螺栓。"], ["nar", "等临时巡检车平稳驶过老桥，天色已经擦黑。他靠在桥头石墩边大口喘气，满身泥水，脸上却挂着实打实的松快劲儿。"]], "choices": ["“手伸出来。每次都说不碍事，这口子再不管明天拿锤子都费劲。”", "“先喝两口暖暖胃，马站长在站房烧好热水等你们了。”"], "fx": [0, 0]}, {"n": 10, "lines": [["nar", "【空站台的真话】离别前夜，青坪站候车室熄了大半灯，只剩站台一盏橘黄路灯照着冰冷的钢轨。"], ["nar", "马站长白天已经接到了撤站预通知，破天荒没背时刻表，早早回宿舍歇下了。"], ["nar", "你和程远山并肩坐在站台木长椅上，手里捧着两只烤热的橘子。夜风吹过铁轨，带出低低的嗡鸣。"], ["say", "“明天十点十分，你就上车了。”他剥开一颗橘子，把橘络理得干干净净递给你一半，“省城那边路宽灯亮，你写完这本铁道志，前程肯定好。”"], ["nar", "停了两秒，他低头摩挲着检车锤木柄，语气平淡却极沉：“我不会拦你。不过……等开春青坪站彻底收完尾，我把调令签了去省城机务段，你介不介意多一个熟人？”"]], "choices": ["“何止不介意。程远山，你早点签调令吧，我在省城站台等你下车。”", "“到了大机务段，可没有青坪站这么清静的慢车了。”"], "fx": [0, 0]}, {"n": 11, "lines": [["nar", "【冬至饺子】冬至清晨七点，距离 7024 次发车还有三个小时，值班室煤炉上煮着热腾腾的白菜猪肉饺子。"], ["nar", "马站长和小周在屋里忙着端碗拿醋。程远山站在门口，把你那只沉重的帆布皮箱重新用麻绳捆了一道提手，省得路上勒手。"], ["nar", "他盛了满满一饭盒饺子塞进保温布套里递给你：“车上开水房人多，别去挤泡面了，趁热吃。”"]], "choices": ["“你那副白线手套早就磨破了，这副加绒的，巡道别冻着手。”", "“马站长、小周、程师傅，来，站煤炉边笑一个，我要把这张放进地方志扉页。”"], "fx": [0, 0]}]}, {"title": "第三章 新轨重逢", "scenes": [{"n": 12, "lines": [["nar", "【十点十分的哨声】青坪站站台，薄雾散尽，7024 次绿皮慢车准点进站，车轮与钢轨摩擦出熟悉的节奏。"], ["nar", "马站长举起绿旗，小周挥着磁带盒喊你常写信。"], ["nar", "程远山帮着把你的皮箱提上车厢行李架，转身站在车门台阶下。哨声快吹响前，他从兜里摸出一张剪掉一角的旧硬板站台票递进你手里——背面写着他在省城机务段报到后的新宿舍地址和值班座机号。"]], "choices": ["“收好了。开春别晚点，程远山。”", "“等我的铁道志印出来，第一本寄给你。”"], "fx": [0, 0]}, {"n": 13, "lines": [["nar", "【一封带泥香的挂号信】次年二月，省城编辑部办公室，窗外春雨初落，桌上躺着一只从青坪寄来的牛皮纸厚信封。"], ["nar", "你拆开信封，里面除了马站长手抄的最后一页停运纪念日志，还有程远山夹在最底下的半张纸——字迹方正有力，没有半句肉麻话，只写了三件事：青坪站最后一趟慢车已平安送出；马站长退休回了县城女儿家；他的调令已正式批复，三月十号上午九点半，省城东站下车。"]], "choices": ["立刻在日历上把三月十号圈成红圈：拿起座机给编辑部请了半天假，决定亲自去东站接人。", "连夜把铁道志样书包好：准备见面那天亲手把印着青坪站合影的样书交给他。"], "fx": [0, 0]}, {"n": 14, "lines": [["nar", "【省城东站的九点半】三月十日上午九点半，省城东站出站口人潮涌动，雨后的春风清冽明亮。"], ["nar", "报站广播刚落，出站闸机里走出一个熟悉的挺拔身影。程远山换下了旧工装，穿着一件洗得干净的深蓝夹克，肩上背着帆布行李包，手里还拎着一小袋从青坪老树上新摘的干枣。"], ["nar", "人群喧闹，他只扫了一眼，便精准朝你站的位置大步走了过来。"]], "choices": ["“一分钟不算晚点。欢迎来省城，程师傅。”", "“第一本样书，先给你过目。”"], "fx": [0, 0]}, {"n": 15, "lines": [["nar", "【天桥上的铁轨声】省城机务段外的人行天桥，傍晚晚霞漫天，脚下铁道线上崭新的列车平稳驶过。"], ["nar", "帮他办完机务段宿舍报到手续，两人并肩趴在天桥栏杆上看晚霞。脚下不再是山区那条冷清的单线旧轨，而是交错通往四面八方的新铁道。"], ["nar", "程远山手肘撑在栏杆上，偏头看你。春风吹得他额前黑发微动，神情比在青坪时舒展了许多。"], ["say", "“青坪的旧轨拆了，但我把那把小铁锤带过来了。”他声音不高，落得很实，“以前我觉得，把一条线走稳就够了。现在到了省城，我想问你一句实在话。”"]], "choices": ["“问吧。要是问我愿不愿意跟你走同一条新轨，答案是我愿意。”", "“什么实在话？机务段的宿舍窗框漏不漏风？”"], "fx": [0, 0]}, {"n": 16, "lines": [["nar", "【新宿舍的铁锤】周末午后，你来帮他收拾省城的新住处，阳光照在刚铺好的素色床单上。"], ["nar", "新屋不大，却被他收拾得一尘不染。书桌抽屉里摆着那把陪了他七年的检车小铁锤，旁边并排放着你送的加绒棉手套和那本《青坪铁道志》。"], ["nar", "灶台上炖着排骨莲藕汤，满屋都是踏实的烟火味。"]], "choices": ["“程远山，别人送镇纸送玉石，你送半斤铁轨。”", "“汤好香，今天我算蹭饭还是按伙食费算？”"], "fx": [0, 0]}, {"n": 17, "lines": [["nar", "【春雨新站台】清明细雨后的省城新客站广场，空气清新，远方汽笛声悠长清亮。"], ["nar", "你的《青坪铁道志》正式出版签售，马站长和小周特意从县城坐新开通的快车赶来捧场。"], ["nar", "散场时飘起了细雨。程远山撑开一把大号黑伞站在台阶下等你，伞面大半往你这边偏着，左手提着两盒刚买的热桂花糕。"]], "choices": ["“走吧，回家。外面雨要大了。”", "“马站长刚才还夸你，说你现在比在青坪时爱笑多了。”"], "fx": [0, 0]}]}], "route": "rail", "context": {"player": "2000 年深秋从省城下乡、负责采写山区老铁路支线口述史的年轻地方志编辑。", "relation": "暂住青坪小站的地方志编辑与值守巡道工。绿皮慢车晚点六分钟进站，他戴着白线手套替你稳稳托住滑落的旧帆布皮箱。", "world": "2000 年前后即将因新干线贯通而谢幕的山区老铁路支线「青坪站」。绿皮 7024 次慢车、敲轨锤声、煤炉烤红薯与雨夜绿色信号灯。", "premise": "深秋细雨斜落在青坪站铁轨碎石上，7024 次绿皮慢车晚点六分钟停靠。你拎着沉重的采访皮箱踩下铁梯，箱角差点磕上水泥沿，一只戴着白线手套的大手先一步稳稳托住箱底。穿藏青工装的程远山抬头看了一眼站台挂钟：「青坪站台阶高半寸，下车先迈左脚。」", "known": ["青坪支线修建于上世纪六十年代，你这次下乡只有不到一个月时间整理沿线老职工口述史。", "程远山父子两代都在这条线上巡道，他每天清晨六点准时拎着检车锤沿铁轨敲检扣件。", "这条老支线客流稀少，坊间隐约传闻新干线通车后小站迟早会裁撤。"], "unknown": "他抽屉里早就压着一张省城大机务段的调令，以及在旧轨停运与你回省城之间，他打算如何落子。", "goal": "在回省城交稿前完成《青坪铁道志》沿线采访，也在慢车与雨夜巡道里看清彼此的新去处。", "public_meta": "27 · 老铁路支线巡道工 / 检车员", "opening": "青坪站雨雾里 7024 次慢车缓缓停靠，程远山伸手稳稳托住你滑落的旧皮箱，抬头看了眼大挂钟：「青坪站台阶高半寸，下车先迈左脚。马站长烧好水了，走吧。」"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

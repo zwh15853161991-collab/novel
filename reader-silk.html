@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>温舒窈 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "温舒窈", "meta": "27 · 新中式成衣主理人 / 立体打版师", "premise": "秋雨敲打弄堂老洋房的木窗。你带着三册苏州织厂色卡推开「素尺」的门，温舒窈正握着黄铜裁布剪一剪裁开素白重磅真丝，连半毫米毛边也没留。她直起身搁下剪刀：「比约定早了七分钟。先擦手，真丝沾了雨气容易留水渍。」", "world": "梧桐弄堂老洋房二楼的「素尺」裁衣工作室、轻纺城面料档口、湖州织厂与老仓库秀场。划粉、重磅真丝、黄铜裁布剪与手工盘扣交织。", "desc": "断崖清醒、利落果决，从前东家一剪刀剪断工牌单干。对布料垂感与人际边界一样苛刻，却把最软的真丝留给并肩破局的人。", "arch": "断崖清醒的「裁云织锦者」", "vigs": [{"need": 3, "title": "软尺的刻度", "lines": ["工作室墙上挂着七八条软尺，唯有她挂在颈间的那条浅米色软尺，在四十四厘米的位置用极细的红线缝了个小记号。", "陈姨有回问起，她低头继续画粉线，面不改色：“标准男装肩宽参考位，顺手标的。”其实那是第一回请你试穿样衣时量出来的数字。"]}, {"need": 8, "title": "多留的三米料", "lines": ["湖州织厂发来的那批 30 姆米素绉缎紧俏得很，每一寸都算进了秀场成衣。", "清点库存时你却发现，料架最里层单独用防潮纸卷着三米藏青色料子。", "陈姨笑呵呵递茶过来：“舒窈特意压下来的，说藏青衬你，等忙完大秀给你裁件衬衫。”"]}, {"need": 12, "title": "剪断的旧工牌", "lines": ["她在抽屉最底格收着半张被剪成两截的旧工牌，那是当年离开「锦序」那天亲手剪断的。", "你偶然看见时，她大方地拿出来搁在桌上：“留着提醒自己，往后只给认手艺的人裁衣服，绝不委屈自己。”"]}, {"need": 16, "title": "深夜蟹粉面", "lines": ["弄堂口那家老面馆十一点半收摊。", "有回你俩赶秀场排期忙到十一点二十，她硬是放下剪刀拉着你一路小跑去巷口，赶在老板熄火前抢到最后两碗热腾腾的蟹粉面。", "她把碗里大半勺蟹黄拨进你碗里，理直气壮：“你今天帮我搬了六匹布，按劳分配。”"]}, {"need": 20, "title": "盘扣里的暗结", "lines": ["你穿了一阵那件藏青衬衫，才发现最上面那颗手工琵琶扣的扣芯里，藏着一根极细的金线，不迎着光根本看不见。", "你问她这是什么讲究，她耳尖微热，低头摆弄着衣领：“老辈裁缝说，给重要的人做衣服，扣芯里要压一根金线，走路稳，日子顺。”"]}], "endings": {"A": {"title": "并肩裁云", "text": "立春那晚展示厅打烊后，温舒窈把「素尺」新刻的铜印放在长案中央，印文旁边刻着两人的名字缩写。她说，以前总觉得手艺和真心一样，握在自己手里才最保险，直到那晚雨里你撑起防雨布替她挡住斜雨，她才明白，有些布料一个人拉不平，得两个人各按一端才能裁得最正。\n次年深秋，「素尺」受邀赴江南古镇做非遗成衣展。你在后台替她核完最后一批真丝吊牌，抬头看见她正蹲在箱边细心收好你那件常穿的藏青衬衫。窗外细雨敲打青瓦，案头那把黄铜剪刀安静躺在绒布上，两人的茶杯并排放在暖炉边，冒着淡淡白汽。"}, "B": {"title": "各自成峰", "text": "秋装大秀大获成功后，订单与资本邀约如雪片般涌来。弄堂铁门前，温舒窈听完你那句话，手指在黄铜门环上停了很久。她抬头看你，眼神依旧清醒坦荡。她说，「素尺」刚站稳脚跟，接下来两年她要把全部心力都押在扩建工坊和打通海外渠道上，不想让你陪着她过连一顿安稳晚饭都凑不齐的日子。\n次年冬天，你在一家买手店橱窗里看见「素尺」最新一季的压轴大衣，衣领走线利落得一眼就能认出她的手笔。元旦前夕你收到一只素白布盒，里面是一条织得极密实的藏青真丝围巾，卡片上只有她一贯干脆的字迹：“天冷，护好嗓子。”"}, "C": {"title": "尺素相知", "text": "大秀之后，两人顺理成章成了最默契的事业搭档。「素尺」每一季的新品研发，都由你提前跑遍江南织厂把关面料支数与缩水率，再交到她的打版案上裁剪成型。谁都没把那层纸戳破，却在每一匹真丝的经纬里留足了对彼此的信任。\n入冬初雪那天，陈姨在工作室炖了萝卜老鸭汤。温舒窈端了一碗放上你的书桌，顺手把一条刚试完版的羊绒披肩搭在你肩上，口吻如常地让你帮忙试一下垂感。窗外雪片安静飘过梧桐枝头，屋里缝纫机停着，暖意刚好。"}, "D": {"title": "一剪两宽", "text": "独立秀圆满收官的次周，温舒窈按合同结清了最后一笔顾问尾款，把签好字的结项单装在干净的素白信封里递给你。弄堂口阳光正好，两人客气道谢，互祝前程顺遂。她转身回二楼继续忙新季排产，步伐利落得没有回头。\n一年后你在机场候机厅翻开时尚季刊，专访页里温舒窈站在新落成的展厅前，手握黄铜裁布剪，眉眼笃定从容。你看着配图里那件熟悉的素白立领大衣，想起那个飘着靛蓝草木香的雨夜，安静合上了杂志。"}}, "chapters": [{"title": "第一章 一刀两断", "scenes": [{"n": 1, "lines": [["nar", "【弄堂二楼的黄铜剪】梧桐弄堂老洋房二楼「素尺」工作室，秋雨敲打木窗框，案台上摊着一匹素白重磅真丝。"], ["nar", "你作为独立面料供应链顾问，按约带着三册苏州织厂色卡上门。推开门时，温舒窈正俯身在三米长的打版案前，右手稳稳握着一把黄铜裁布剪。"], ["nar", "布料沿着画粉线发出极利落的“沙沙”声，一剪到底，连半毫米毛边也没留。"], ["nar", "她直起身，把剪刀轻搁在案角，视线扫过你拎着的防水色卡袋，语调清淡有礼：“比约定的时间早了七分钟。先擦手，真丝沾了雨气容易留水渍。”"]], "choices": ["擦干手再递出色卡：接过毛巾擦净指尖水汽，把三册样布按克重顺序摊开：“19 姆米、22 姆米和 30 姆米素绉缎全齐，缩水率报告夹在封底。”", "注意到她手腕的旧针眼：递出色卡时，顺口提了一句“窗台风口大，案头放真丝容易受潮”。"], "fx": [0, 0]}, {"n": 2, "lines": [["nar", "【轻纺城的闭门羹】城郊轻纺面料市场二期，雨棚滴滴答答漏着水，一家老字号真丝档口拉下了一半卷帘门。"], ["nar", "原本订好的两百米定制提花缎，老板临时变卦说机器排期满了，要拖到下个月才能交货——距离「素尺」秋季独立发布秀只剩十八天。"], ["nar", "老板支支吾吾不敢看人，柜台边却摆着「锦序」秋季采购单的蓝色回执。"], ["nar", "温舒窈没跟老板吵一句，只拿回定金收据折好放进大衣口袋，转身对你说：“走吧。别人已经把定金押到年底了，留在这儿磨嘴皮子浪费时间。”"]], "choices": ["“湖州有家做外贸尾单的老织厂，上周刚空出两台提花机，我下午带你直接去厂里看坯布。”", "“柜台那张回执是‘锦序’的，你要不要先打个电话问清楚？”"], "fx": [0, 0]}, {"n": 3, "lines": [["nar", "【湖州织厂的夜车】通往湖州的高速服务区，深夜十一点，玻璃窗外细雨拉成银线。"], ["nar", "在织厂盯完坯布色牢度测试已是深夜，回程路上堵了半小时车。你买了两杯热豆浆递进车厢。"], ["nar", "温舒窈靠在副驾椅背上，手里还捏着一小块刚剪下来的桑蚕丝布样，在昏暗的车灯下反复捻着纬线韧度。"], ["say", "“刚才在厂里，老板开价比市价高了一成半，你替我压回了原价。”她接过热豆浆暖着指尖，偏头看你，“其实你只是面料顾问，没必要替我跟厂长死磕那十五块钱一米。”"]], "choices": ["“料子是你用来上秀的，成本压不下来，你回头又得自己熬夜省工费。我只是不想好版型毁在账面上。”", "“压价成功我也有口碑，下回找我做顾问的品牌会更多。”"], "fx": [0, 0]}, {"n": 4, "lines": [["nar", "【袖口试针】「素尺」工作室深夜，裁缝人台立在落地灯下，缝纫机哒哒声刚停。"], ["nar", "新批次坯布赶工裁出第一件男装立领中式外衫样衣，工作室里没有合身的男模，她让你帮忙披上试一下肩线垂感。"], ["nar", "温舒窈捏着几枚珠针走近，指尖微凉，极专注地替你理顺肩缝与袖笼。距离近得能闻见她发间极淡的栀子与浆洗棉布气味。"], ["nar", "她低头别最后一枚珠针时，窗外忽地响起一声闷雷，她手指微顿，针尖差点擦过你锁骨，被她极快地收腕避开。"]], "choices": ["“别慌，没扎着。你手挺冷的，先歇五分钟？”", "抬手帮她接住滑落的软尺：顺手把从她肩头滑下的软尺稳稳托住递回去。"], "fx": [0, 0]}, {"n": 5, "lines": [["nar", "【旧合伙人的来访】午后放晴的弄堂口，顾明朗拎着一只精致的茶礼盒，正站在「素尺」楼下台阶前。"], ["nar", "顾明朗穿着剪裁考究的深灰西装，语气一如既往温和体面：“舒窈，听说湖州那边刚给你挤出两百米料子？独立办秀太费神了。‘锦序’下季的联名线还留着主理人位置，你带着陈姨回来，署名权这次我亲自写进合同。”"], ["nar", "陈姨在楼上窗户边气得差点把剪刀拍在窗台上。温舒窈站在两级台阶上，双手插在亚麻围裙兜里，神情平静得像在看一个陌生推销员。"], ["say", "“顾总，三年前那套云肩版型，你说等品牌做大了再给我署名。”她声音清亮干脆，“如今我自己的牌子已经裁出第一批样衣了，不需要谁再施舍署名栏。”"]], "choices": ["“温主理人，湖州第二批提花缎明天入库，色差检测全过。”", "安静站在门口替她挡住多余目光：等顾明朗说完离开，才顺手把院门扣上。"], "fx": [0, 0]}]}, {"title": "第二章 版型之争", "scenes": [{"n": 6, "lines": [["nar", "【提前泄露的“联名款”】独立秀前七天，「素尺」工作室里，平板电脑正放着「锦序」抢先发布的秋冬预览图。"], ["nar", "屏幕上那件主打新中式立领大衣，从斜襟弧度到暗扣排布，与温舒窈熬了两个月画出的主秀款有八成雷同，只粗糙地换了廉价化纤混纺。更棘手的是，「锦序」公关稿抢先注册了外观图，反咬小工作室“跟风抄袭大牌”。"], ["nar", "陈姨急得手都在抖，温舒窈却异常安静。她拉过一把椅子坐下，放大预览图的袖笼褶皱，指尖在屏幕上一点：“他们只偷走了我留在旧电脑里的初版草图，没偷到我后来改的三处立体省道——你看模特抬手时腋下堆出来的死褶，那是初版的硬伤。”"]], "choices": ["“把这俩月你在牛皮纸上改过的七版纸样、修改日期和试衣记录全封存公证，细节能直接钉死谁是原版。”", "“公关稿刚发出去，买手肯定在观望，我先一家家去沟通，把真丝实样寄给他们摸手感。”"], "fx": [0, 0]}, {"n": 7, "lines": [["nar", "【雨夜晾布架】老洋房顶楼露台，暴雨突袭，风卷得晾衣绳剧烈摇晃。"], ["nar", "下午刚染完植物靛蓝的十二米真丝衬里还晾在天台。雷声刚落，温舒窈顾不得撑伞就冲上露台收布。"], ["nar", "你抓起大号防雨布追上去时，她正踮脚去解最外侧被风吹缠死结的绳扣，雨水顺着她的鬓角往下滑，素白衬衫贴在肩头，整个人在冷风里微微发抖却咬牙不肯放手。"]], "choices": ["抢前一步把防雨布连布带人一起罩住：单手撑起防雨布挡住斜雨，另一只手利落解开死结：“布交给我抱，你先下楼换干衣服。”", "默契分工先护染料布卷：迅速接过她抱下来的湿布卷紧护在怀里往楼梯口撤。"], "fx": [0, 0]}, {"n": 8, "lines": [["nar", "【热姜茶与断指茧】工作室暖炉旁，刚抢回来的布料摊在烘干架上，屋里飘着淡淡的草木染清香。"], ["nar", "换完干衣服，陈姨煮好一壶红糖姜茶便先回家了。灯下，温舒窈拿着小剪刀修整一根磨毛的盘扣丝线，你这才看见她右手食指和中指内侧常年握剪刀磨出的厚茧，虎口还有一道当年裁厚呢料划出的浅疤。"], ["say", "“顾明朗总说我太较真，换机器压褶省一半成本，没人看得出来。”她放下剪刀，捧起热茶抿了一口，“可衣服穿在人身上，领口差半寸舒不舒服，皮肤骗不了人。”"]], "choices": ["“较真没错，但别总把自己当铁打的。手擦一下，明天还要赶工。”", "“真正懂衣服的买手，摸一眼走线就知道‘锦序’那批化纤货连你的边都沾不上。”"], "fx": [0, 0]}, {"n": 9, "lines": [["nar", "【改版通宵】秀前四天凌晨三点，工作室落地灯亮着，地上落满剪下来的白色纸样边角。"], ["nar", "为了彻底拉开与「锦序」抄袭款的差距，温舒窈决定把压轴主秀款的领口与下摆全部推倒重裁，在原本简洁的立领内侧嵌入极隐蔽的双面苏绣暗纹——站远看是极简素色，走动开衩时才露出一抹流云暗光。"], ["nar", "她趴在长案前用划粉勾弧线，连续熬了两宿，揉眼睛时划粉不小心蹭了一道白印在颧骨上。"]], "choices": ["“别揉眼睛了，脸颊都蹭花成小猫了。”", "“你闭眼靠二十分钟，我先把辅料按编号配齐，到点叫你。”"], "fx": [0, 0]}, {"n": 10, "lines": [["nar", "【晚场赌局】秀前两天下午，秀场主办方临时通知：受大品牌联合施压，原定黄金时段被调到晚间八点冷门空档，且取消了官方直播机位。"], ["nar", "工作室里一片安静，陈姨气得把线轴重重搁在案上。"], ["nar", "温舒窈听完电话没发火，只合上笔记本，抬头看你：“你觉得该延期吗？”"], ["nar", "你皱眉权衡利弊——冷门场没有官方流量，真硬上可能白费两个月心血，换个下月的独立场地更稳妥。"], ["nar", "温舒窈摇头，手指按在压轴样衣的领口上，语调极稳：“拖一个月，顾明朗的仿款就铺满商场，到时候真版反倒成了跟风。我只做一场二十人的私密买手闭门秀，不靠直播，靠摸手感——你愿不愿意跟我赌这一晚？”"]], "choices": ["“不延期。二十人的闭门秀更适合看走线，我现在去联系七家独立买手店主理人，今晚就把真丝样卡全发出去。”", "“赌可以，但得把公证过的七版纸样印成小册子放进每位买手座位，万一现场有人发难，直接拿纸样说话。”"], "fx": [0, 0]}, {"n": 11, "lines": [["nar", "【秀前夜的最后一道盘扣】秀前夜十一点，工作室里十八套成衣整齐挂满衣架，灯光照出真丝温润的哑光。"], ["nar", "陈姨刚钉完压轴大衣上最后一颗手工琵琶扣，揉着腰先去休息了。"], ["nar", "温舒窈站在衣架前，指尖轻轻掠过每一件衣领，最后停在那件重新改版的素白立领大衣前。"], ["say", "“如果明天台下只有十个人，我也认了。”她转过身靠在裁衣案边看你，眼里没有半分怯意，“只是拉你跟着我熬了这么多个通宵，要是没溅起水花，我过意不去。”"]], "choices": ["“就算台下只有十个人，只要摸过这批料子和版型，明天过后圈子里就都会记住‘素尺’。”", "“有你在，压轴款不可能没水花。早点睡，明天你还得上台谢幕。”"], "fx": [0, 0]}]}, {"title": "第三章 锦上留名", "scenes": [{"n": 12, "lines": [["nar", "【冷门场的满座】老仓库秀场晚间八点，原以为空荡的冷门档，前三排却坐满了收到真丝样卡赶来的独立买手与老藏家。"], ["nar", "后台灯光杂乱，温舒窈正在替最后一位模特调整暗襟垂度。你掀开侧幕走进来，低声告诉她前排买手几乎全员到齐，连顾明朗也低调坐在了最后一排角落。"], ["nar", "温舒窈手里的珠针稳稳别好最后一道折痕，抬头看你，眼神沉静：“开场吧。”"]], "choices": ["“放心去后台控场，前排买手和媒体我替你盯着。”", "把刚印好的纸样溯源卡递给前台：确保每位入场嘉宾手里都有一份原版打版时间线。"], "fx": [0, 0]}, {"n": 13, "lines": [["nar", "【压轴款的流云暗光】T 台主灯暗下，一束暖白追光落下，压轴模特身着素白立领真丝大衣步入台心。"], ["nar", "前排瞬间安静下来。模特转身定格的一瞬，大衣下摆随步幅微扬，内衬极细的双面苏绣流云在追光下掠过一道极克制的银光，整件衣服肩线服帖得像顺着骨相长出来的——与「锦序」那件腋下堆褶的化纤抄袭款高下立判。"], ["nar", "台下响起一片低声惊叹，几位资深买手当场举起手机拍下走线细节。最后一排的顾明朗脸色微沉，坐了不到两分钟便悄无声息起身离场。"]], "choices": ["等温舒窈登台谢幕时第一个鼓掌：迎着舞台追光望向她。", "在台下直接递出公证过的七版纸样对比册：*(若持有 `c2_draft` 标记，知名时尚主编翻看完修改手稿，当场约定了次日专访，抄袭谣言不攻自破。)*"], "fx": [0, 0]}, {"n": 14, "lines": [["nar", "【后台的剪刀】散场后的安静后台，衣架上挂着刚卸下的压轴大衣，几家买手店已签下首批订货意向。"], ["nar", "喧闹退去，后台只剩你们两个人。温舒窈靠在化妆台边，卸下了紧绷了一整月的肩线，手指正把那把黄铜裁布剪放回皮套里。"], ["say", "“刚才顾明朗走之前，托助理留了张名片，说之前的事是公关部误会，以后还可以谈联名。”她把名片随手夹进废纸堆，抬头看你，神色清淡，“我连回都没回。衣服立住了，就再也没人能拿渠道吓唬我。”"]], "choices": ["“恭喜温主理人，今晚这把剪刀，把旧账全剪干净了。”", "“首批订单够湖州织厂开足马力跑两个月，明天得加紧排产了。”"], "fx": [0, 0]}, {"n": 15, "lines": [["nar", "【弄堂口夜风】深夜十一点半的梧桐弄堂，路灯把树影拉长在青石板上，刚吃完热气腾腾的蟹粉面。"], ["nar", "两人沿着弄堂慢慢往工作室走。温舒窈手里拎着一袋给陈姨留的桂花糕，步子比平时慢了不少。"], ["nar", "走到老洋房铁门前，她停下脚步，回头看你。夜风吹起她耳边碎发，她指尖搭在门环上，难得有了一点迟疑。"], ["say", "“我这个人，习惯什么事都握在自己手里，觉得少依靠别人一寸，就少一分受制于人的风险。”她抬起眼直视你，“但这次办秀，我发现把后背交给你，竟然一点都不慌。”"]], "choices": ["“那就别收回去了。温舒窈，我喜欢你——不是只做你的供应链顾问，是想一直站在你身边。”", "“以后有事随时叫我，搭档之间本来就该互托后背。”"], "fx": [0, 0]}, {"n": 16, "lines": [["nar", "【新裁的衬衫】两周后的午后，「素尺」工作室窗明几净，阳光照在铺满真丝样布的长案上。"], ["nar", "首批秋装订单顺利发往各家买手店，工作室也新招了两名年轻版师。"], ["nar", "你来核对冬装面料清单时，温舒窈从防尘袋里取出一件熨得笔挺的藏青立领真丝混纺衬衫递给你——领口内侧用同色丝线极隐蔽地绣了一枚极小的云纹。"]], "choices": ["“领口和肩线分毫不差，温主理人这手艺，我可付不起定制费。”", "“这针脚真细，舍不得穿出门了。”"], "fx": [0, 0]}, {"n": 17, "lines": [["nar", "【春装开剪】次年立春，老洋房院里的迎春花开了满墙，「素尺」新扩了一楼展示厅。"], ["nar", "春季面料色卡刚刚送到，陈姨在里间泡好了明前龙井。"], ["nar", "温舒窈穿着一件月白立领衬衫站在新打版案前，把那把擦得发亮的黄铜裁布剪递到你手边，又递过来一卷素白真丝样布。"], ["say", "“今年春装第一匹料子，帮我压个边？”"]], "choices": ["“随时听温主理人调遣。”", "“先说好，春装大秀的压轴款，第一排位置得留给我。”"], "fx": [0, 0]}]}], "route": "silk", "context": {"player": "受邀协助解决新中式独立品牌真丝面料排期与秀场筹备的独立面料供应链顾问。", "relation": "初次合作的供应链顾问与独立成衣主理人。她刚从大品牌断崖辞职单干，独立大秀在即却遭前东家断供与版型狙击。", "world": "梧桐弄堂老洋房二楼的「素尺」裁衣工作室、轻纺城面料档口、湖州织厂与老仓库秀场。划粉、重磅真丝、黄铜裁布剪与手工盘扣交织。", "premise": "秋雨敲打弄堂老洋房的木窗。你带着三册苏州织厂色卡推开「素尺」的门，温舒窈正握着黄铜裁布剪一剪裁开素白重磅真丝，连半毫米毛边也没留。她直起身搁下剪刀：「比约定早了七分钟。先擦手，真丝沾了雨气容易留水渍。」", "known": ["温舒窈半年前离开「锦序」创立独立工作室「素尺」，首场秋季发布秀只剩十八天。", "她在打版与新中式立体剪裁上极有名气，但独立品牌在面料供应链上极易被大厂卡脖子。", "她腰间常挂一把小号黄铜裁布剪，右手食指内侧磨着厚厚的剪刀茧。"], "unknown": "三年前她与前东家「锦序」彻底决裂的署名权旧账，以及大秀前夕前东家还会使出什么渠道狙击。", "goal": "帮「素尺」抢通湖州真丝供应链、凭立体纸样击碎抄袭谣言，把首场独立大秀稳稳立在圈内。", "public_meta": "27 · 新中式成衣主理人 / 立体打版师", "opening": "老洋房二楼案台前，温舒窈一剪裁开素白重磅真丝，直起身搁下黄铜剪刀看你：「比约定早了七分钟。先擦手，真丝沾了雨气容易留水渍。」"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

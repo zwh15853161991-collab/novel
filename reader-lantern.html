@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>谢清晏 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "谢清晏", "meta": "24 · 礼部女史", "premise": "细雨初歇，你在金光门漕渠石阶边拾起一盏差点被暗流打翻的素白河灯，灯底压着半枚与漕运旧案吻合的朱砂印。抬眼时，撑着油纸伞的谢清晏正立在柳影下看你，温声开口：「公子拾了我的灯，按京中旧俗，可是要替我完一个愿。」", "world": "晚秋京城，七夕刚过余俗未歇，金光门漕渠两岸挂满纸灯，河面浮灯顺流漂向西市许愿池，暗巷里却各方耳目密布。", "desc": "表面温润守礼、滴水不漏，实则性情极刚、步步为营。越是试探你，端茶斟水的手越稳。", "arch": "外柔内刚的谋局女史", "vigs": [{"need": 3, "title": "素白河灯", "lines": ["京城七夕流灯多用红粉彩纸，唯独谢清晏折的灯一律用素白宣纸。", "阿栀问她怎不添两笔金粉，看着喜庆些。", "她用竹篾压紧灯骨，淡声说花哨的灯最容易被暗流打湿沉底。", "「素一点，反而漂得远，也容易被该看见的人认出来。」"]}, {"need": 6, "title": "暖手铜炉", "lines": ["礼部值房临水，一入秋便湿冷刺骨，谢清晏案头常备两只小巧铜炉。", "一只留给自己暖手抄卷，另一只总让阿栀用银炭煨着。", "你每次从漕渠查账回来推门而入，案角恰好摆着那只温度正好的铜炉。", "她头也不抬地翻着册子：「顺手多煨了一只，别冻僵了字。」"]}, {"need": 9, "title": "素帕缠腕", "lines": ["那晚芦苇荡里她手腕被箭羽擦出一道浅口，回去后自己草草上了药。", "你递过去的那方素色棉帕，她洗净晒干后叠得方方正正收进了妆匣底层。", "阿栀翻找发钗时撞见，打趣说姑娘平日最挑缎面，怎留着块粗布帕子。", "谢清晏把妆匣轻轻合上，眼尾染了点浅淡笑意：「好用，留着应急。」"]}, {"need": 12, "title": "爬墙送橘", "lines": ["闭门思过那半月，院门前总有御史台的眼线晃悠。", "你干脆绕到后巷踩着老槐树翻进矮墙，怀里揣着一篮霜打过的黄橘。", "谢清晏靠在窗边看你拍掉袍角树叶，递过去一盏热茶。", "「堂堂司直大人，这翻墙的身手倒是比翻卷宗还利落。」"]}, {"need": 15, "title": "江南茶笺", "lines": ["风波平息后，她整理旧案抄录时顺手留了一沓干净的宣纸边角。", "闲下来便在上面记几句当日茶味、雨势，或是一句没当面说出口的玩笑。", "等你下值过来吃茶，她就把那一小叠纸推到茶盘边。", "「今日无事可报，只记一句，城南桂花开了。」"]}], "endings": {"A": {"title": "双名河灯", "text": "漕运旧案昭雪后的第一个上元夜，金光门漕渠两岸灯火如昼。谢清晏脱了礼部女史的青衫，换上一身素雅襦裙立在石桥边，将一盏并排写着两人姓名的河灯放进水里。河灯顺着微澜缓缓漂向西市许愿池，她偏过头看你，眼底再无试探与防备。\n次年深秋你调任京兆府，每日下值经过金光门时总能遇见她提着一卷新拟的仪典图册在柳树下等你。她袖中常备两块温热的桂花糖糕，说京城秋风凉，先垫垫肚子再回家。"}, "B": {"title": "半枚朱砂印", "text": "大案落定，你奉旨南下继续核查江南水运，谢清晏则留在礼部接掌仪典司。临行前夜她在城外十里亭替你斟了一杯饯行茶，把那半枚朱砂印用锦囊收好递给你，说山高水长，彼此保重。马车驶出官道时，你回头看见她仍撑着油纸伞站在细雨里。\n后来每逢京城来信，公文夹层里偶尔会附一张抄着新茶品评的素笺，字迹依旧清峻沉稳。你把那只锦囊一直悬在书房砚台旁，像留住那年秋夜漕渠上的一点微光。"}, "C": {"title": "各守一局", "text": "宫宴风波平息后，朝局暗流仍未停歇。你在礼部廊下归还了那张漕渠舆图，谢清晏接过纸卷，端端正正福了一礼，唇角仍是最初那副滴水不漏的浅笑。你们都明白，在这座处处皆是算计的京城里，保持半步距离反而是保全彼此最稳妥的法子。\n入冬后她升任司仪正官，朝会上偶尔与你隔阶相望，彼此只微微颔首。直到那年腊月下大雪，你案头无声多了一只刻着竹纹的暖手铜炉，炉灰里还留着余温。"}, "D": {"title": "同舟共渡", "text": "你翻过矮墙把新摘的橘子放在她窗台时，谢清晏没有再讲规矩，只伸手拉你进了屋，替你拂去肩头落叶。她说这半生替朝廷守过太多礼数，唯独这一回，想替自己留住一个并肩看风浪的人。你在灯下握住她微凉的手，把当年拾灯许下的愿亲口兑现。\n第二年春暖花开，她辞去宫中繁务，与你一同领旨巡查江南水道。官船泊在烟雨渡口时，船头挂着两盏一样的素白风灯，风吹过水面，灯影始终挨在一处。"}}, "chapters": [{"title": "第一章 金光门流灯", "scenes": [{"n": 1, "lines": [["nar", "晚秋细雨刚歇，金光门漕渠两岸挂满纸灯，水面浮灯顺流漂向西市许愿池。你在青石阶边俯身，捞起一盏险些被暗流打翻的素白河灯。"], ["nar", "灯底压着半枚朱砂残印，纹路与你怀中那份漕运旧账分毫不差。刚要细看，头顶忽然多了一把绘着墨竹的油纸伞。"], ["nar", "谢清晏立在柳影下，一身青色女史官袍衬得眉眼清峻，唇角带着恰到好处的礼数浅笑。"], ["say", "“公子拾了我的灯。按京中流灯旧俗，拾灯者可是要替放灯人完一个愿的。”"], ["act", "她没有急着伸手讨回河灯，只将伞沿微微抬高半寸，静静打量你的神色。"]], "choices": ["“姑娘的愿，怕是比这盏灯沉得多。”", "把河灯稳稳递还给她，不露声色", "“巧了，我也正有一件事想请教女史。”"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "西市茶楼二层雅间临水而建，窗外灯影摇曳。谢清晏将茶盏握在掌心暖了暖，不紧不慢斟出两杯明前龙井。"], ["say", "“司直大人奉诏入京不过三日，便能摸到金光门漕渠，倒是比传闻里勤快得多。”"], ["nar", "你端杯轻啜，笑意不达眼底：「女史在礼部协理仪典，却把带朱砂印的灯放进漕渠，不也一样醉翁之意不在酒？」"], ["nar", "她眉梢微扬，眼底闪过一丝棋逢对手的兴味。"], ["say", "“大人既认得那枚印，便该知道这局棋单靠你我任何一人，都掀不开盖子。”"], ["act", "她指尖在瓷杯沿轻点一下，茶面漾开一圈细纹。"]], "choices": ["“合作可以，先亮你的底牌。”", "“我凭什么信礼部女史不是对方的人？”", "将半页账目抄本推过桌面"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "楼下忽然传来甲叶轻碰的脚步声，两队巡城司暗哨停在茶楼门口盘查过客。你手刚按上腰间佩刀，对面的谢清晏却已先一步起身。"], ["nar", "她不动声色将你的折扇收进广袖，执起茶壶绕到你身侧倾身添茶，衣袖恰到好处挡住半开的窗缝。"], ["say", "“别动，楼下领头的是户部侍郎的心腹。”"], ["nar", "她压低的声音混着淡淡冷梅香落在耳畔，近得能看清她微垂的长睫与稳得纹丝不动的指节。"], ["nar", "待巡哨脚步远去，她才退回半步，神色如常仿佛方才那瞬屏息从未发生。"], ["act", "她将折扇放回你掌心，指腹一触即离：「大人这般沉不住气，可不像能查大案的人。」"]], "choices": ["“多谢女史解围，刚才靠得太近，失礼了。”", "“你心跳也没比我慢多少。”", "起身推窗确认暗哨已经走远"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "三日后皇家马场筹备秋猎仪典，几名世家子弟借口你出身寒门不懂礼制，当众拿陈年酒礼刁难。"], ["nar", "你正欲冷声应对，阶上忽然传来清越平稳的女声。谢清晏执着礼部卷宗缓步走下，三言两语引经据典，将对方驳得哑口无言。"], ["say", "“礼制是为定分止争，不是给诸位在马场里逞口舌之快的。”"], ["nar", "众人悻悻散去，她转过身看你，神色却比方才冷了三分。"], ["say", "“大人若是次次都要让人把靶子架到脸上，我这礼部女史可护不住第二回。”"], ["act", "她合上卷宗转身往廊下走，青色裙裾扫过青砖，步履极稳。"]], "choices": ["快步追上去道谢", "“刚才那一出，女史演得比我好。”", "留在原地拱手一礼"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "马棚后廊秋风穿堂而过，你追上她时，看见她正站在廊柱旁独自吹风，眉间罕见地透出一丝倦色。"], ["nar", "听见脚步声，她很快敛去疲态，从袖里摸出一只煨得温热的竹纹铜炉，直接塞进你微凉的手心里。"], ["say", "“京城水深，你既已查到账册有异，为何不趁早递折子回江南？”"], ["say", "“那女史明明可以安稳做你的世家贵女，为何偏偏要去礼部趟这浑水？”"], ["nar", "她怔了半瞬，随即轻轻笑了一声，目光望向远处的朱红宫墙。"], ["say", "“因为有些账，总得有人记到水落石出那一天。”"], ["act", "她没有拿回铜炉，只替你把被风吹偏的领口指了指，转身进了内廊。"]], "choices": ["“既然同路，往后这笔账一起算。”", "低头摩挲手里余温尚存的铜炉", "问她是不是也为了三年前的沉船旧案"], "fx": [0, 0, 0]}, {"n": 6, "lines": [["nar", "夜雨落瓦，更鼓敲过二更。侍女阿栀冒雨敲开你客栈房门，递进来一只封着火漆的细竹筒，行完礼便悄无声息退入雨夜。"], ["nar", "你展开竹筒里的素绢，里面画着精细无比的金光门漕渠暗闸水路图，几处暗哨标记得清清楚楚。"], ["nar", "纸背右下角，只有她亲手写下的四个小楷：「明夜子时，桥下候君。」"], ["nar", "灯火映着墨迹，你第一次确信，这位滴水不漏的礼部女史，已经把真正的筹码推到了桌上。"], ["act", "你吹熄油灯，将水路图贴身收进怀里，听着窗外雨声一夜未眠。"]], "choices": ["提前半个时辰去石桥下探路", "重新核对残账上的船号与暗闸日期", "备好伤药与短刃以防万一"], "fx": [0, 0, 0]}]}, {"title": "第二章 漕渠暗流", "scenes": [{"n": 1, "lines": [["nar", "子时石桥下水雾弥漫，两艘熄了灯的私盐货船悄无声息滑过暗闸。你与谢清晏并肩伏在湿冷石阶后，借着微弱月光核对船身暗记。"], ["nar", "船头忽有一盏风灯朝岸边扫过来。你刚要抽刀护人，一只微凉却极稳的手便按在了你手背上。"], ["say", "“别动，他们只是例行照水。”"], ["nar", "潮气里她的声音压得极低，指尖因为久伏石阶而有些发冷，却丝毫没有退缩。待船影彻底隐入桥洞，她才慢慢吐出一口气。"], ["say", "“第三艘船的吃水深了三寸，夹层里装的不是盐，是军械账簿。”"], ["act", "她借着你挡风的阴影迅速记下船号，抬眸时眼里亮得像映了整条河的星光。"]], "choices": ["反手握住她冰凉的指尖暖一下", "低声赞她眼力惊人", "示意她先退回岸上，自己断后"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "石阶苔滑，退身时脚下一颗碎石滚落水中。船尾暗哨立刻警觉，三支羽箭破空直直射向岸边。"], ["nar", "你本能揽住她的肩滚进深处芦苇荡。泥水溅湿衣袍，她发间的玉簪滑落，半缕青丝扫过你颈侧。"], ["nar", "暗哨划桨搜索片刻一无所获，渐渐远去。黑暗里四周静极了，只剩你胸口剧烈起伏的心跳声。"], ["say", "“司直大人，刚才挡箭倒是利落，怎么这会儿手反倒在抖？”"], ["say", "“我怕那支箭擦着你。”"], ["nar", "芦苇丛里沉默了足足三息。黑暗中你看不清她的脸，却感觉到她搭在你肩上的手指轻轻收紧了一瞬。"], ["act", "她低声说了一句「多谢」，借着你的手稳稳站起身。"]], "choices": ["弯腰替她拾起落在草里的玉簪", "把外袍解下来披在她湿透的肩上", "确认安全后护送她绕小路回府"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "次日早朝未散，御史台便突然发难，借口有人目击礼部女史深夜私会外臣，欲将你们双双扣上结党之名。"], ["nar", "公堂上气氛紧绷，谢清晏却端坐案前神色不动。待对方说完最后一字，她起身从容行礼，反手将一卷盖着礼部大印的秋祭巡河公文呈上案头。"], ["say", "“昨夜子时确在金光门，奉旨核查漕渠水位与灯船旧制，司直大人随行护卫，公文在此，御史大人可要一并查验？”"], ["nar", "一堂官员面面相觑，发难者脸色铁青却寻不出半点破绽。"], ["act", "她退回班列时目光极轻地掠过你一眼，像在无声说：这一局，我接住了。"]], "choices": ["顺着她的话递上巡河佐证", "散朝后立刻去廊下等她", "暗自佩服她早早留好的后手"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "退堂后你在偏廊无人处拦住她，目光一眼便落在她刻意垂在身侧的左袖——青色布料深了一小块，隐隐透出血色。"], ["say", "“昨夜箭羽擦伤了，怎么不说？”"], ["say", "“不过划破点皮，说了难道就不上堂了？”"], ["nar", "你没顺着她斗嘴，直接从怀里取出干净素帕与伤药，拉过她手腕轻轻卷起袖口。她下意识想抽手，对上你沉静的眼神后，终究还是站着没动。"], ["nar", "上药时她微微蹙眉却一声不吭。你放轻力道替她打好结，声音低下来：「往后受伤，别瞒我。」"], ["act", "她低头看着腕间缠得工整的素帕，唇角极浅地弯了一下：「好，记下了。」"]], "choices": ["叮嘱她回去让阿栀换药", "“你这样硬撑，以后谁敢放心把后背交给你。”", "顺手把剩下半瓶金疮药塞进她袖袋"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "深夜礼部偏房烛火通明，你们将暗闸船号与残账逐条对上，幕后主谋的名字赫然指向掌管漕运的权臣。"], ["nar", "合上账册时已近三更。谢清晏看着跳动的烛芯，第一次卸下所有礼数客套，声音轻得像怕惊动夜风。"], ["say", "“三年前漕运沉船案，我兄长也在那艘船上。朝廷定性为风浪失事，可我知道他是查到了账目才遭的毒手。”"], ["nar", "她眼底没有泪，只有三年来压在心底的冷光，抬眼直直看着你。"], ["say", "“明日宫宴便是收网之机，押上去的不止官位，还有性命。司直大人，这一局你敢不敢陪我押到头？”"], ["act", "她把另一半朱砂印推到烛火正中，等待你的落子。"]], "choices": ["“这局棋，我陪你下到底。”", "把自己的残账叠在她的朱砂印上", "握住她微凉的手：“你不必再一个人扛了。”"], "fx": [0, 0, 0]}]}, {"title": "第三章 许愿池明月", "scenes": [{"n": 1, "lines": [["nar", "秋祭宫宴丝竹声停，权臣果然先发制人，当殿指认你私藏伪账、构陷朝臣。满殿视线瞬间聚拢过来，空气冷得像冰。"], ["nar", "你刚要出列自辩，身旁已有人先你一步踏出班列。谢清晏着一身端庄礼服，双手高举木匣跪于丹陛之下，声音清朗响彻大殿。"], ["say", "“臣女谢清晏，愿以身家前程作保，呈上漕运真账、朱砂合印与暗闸人证，请陛下明察三年前沉船旧案。”"], ["nar", "满殿哗然。她脊背挺得笔直，回头看了你一眼，那一眼里再无半分试探，全是交付。"], ["act", "你紧随其后步出班列，与她并肩跪在玉阶之上，将手中半卷账册一并呈上。"]], "choices": ["当殿逐条宣读暗闸船号证词", "侧头低声对她说一句「别怕」", "迎着权臣阴冷目光寸步不让"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "三日后铁证如山，主犯下狱，三年前沉船旧案得以平反。谢清晏因越权查案被罚俸半年、闭门思过半月。"], ["nar", "深秋午后你买了一篮霜打过的黄橘，绕到后巷踩着老槐树翻进她家矮墙。刚拍干净袍角树叶，就听见窗棂吱呀一声推开。"], ["nar", "谢清晏卸了发冠，只用一根木簪松松挽着长发，倚在窗边看你，眼里满是藏不住的笑意。"], ["say", "“堂堂司直大人，几时学会了翻人家姑娘后墙的本事？”"], ["say", "“前门眼线太多，怕坏了女史清誉。橘子甜，尝尝？”"], ["act", "她伸手接过竹篮，顺势挑了一颗剥开，将一半橘瓣隔着窗台递到你手里。"]], "choices": ["接过橘瓣就着窗台坐下陪她聊天", "问她手腕上的伤好全了没有", "“等你思过结束，我走正门来请茶。”"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "案情彻底了结，京城下了入冬前最后一场细雨。你们重回西市那间临水茶楼，窗外漕渠恢复了往日平静。"], ["nar", "茶香袅袅里，谢清晏垂眼拨着杯盖，语气听上去漫不经心，垂在膝上的手指却悄悄攥紧了衣角。"], ["say", "“大人，金光门那夜你拾了我的素白河灯，按旧俗欠我一个愿。如今大案已结，那个愿还作不作数？”"], ["say", "“自然作数。女史想求什么，只要我办得到。”"], ["nar", "她抬起眸，眼底映着窗外微亮的天光，没有再用礼数兜圈子。"], ["say", "“我想求大人往后莫再独自赴险。若有难处，先来寻我。”"], ["act", "茶烟散开，她安静看着你，等一个不带试探的回答。"]], "choices": ["“不止难处，往后好景也先寻你。”", "笑着问：“那女史可还愿借我半把伞？”", "伸手轻轻覆在她攥紧的指节上"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "又至放灯夜，金光门漕渠两岸灯火绵延数里。谢清晏没穿礼部青衫，换了一身素青绣竹襦裙立在石桥头，眉眼被灯火映得温柔。"], ["nar", "她手里提着两盏一样的素白河灯，见你走近，将其中一盏递进你掌心。你低头一看，灯壁上用工整小楷并排写着你们两人的名字。"], ["say", "“先前那盏灯压着旧案，漂得太沉。今晚这一盏，只许我们自己的愿。”"], ["nar", "河风拂过桥面，远处传来孩童放灯的欢笑声。她没有再退开半步，自然地站在你身侧。"], ["act", "你们一同俯身在青石阶边，将两盏并肩的河灯轻轻推入微澜之中。"]], "choices": ["问她今晚在灯上许了什么愿", "替她挡住桥边吹来的晚风", "看着两盏河灯并排漂向许愿池"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "两盏素白河灯顺着渠水缓缓漂远，一路未散，汇入西市许愿池漫天灯影之中。"], ["nar", "谢清晏直起身，衣袖随风轻扬。她偏过头看你，眼底盛着整条漕渠的碎光，伸出微温的手轻轻勾住了你的小指。"], ["say", "“风浪再大，往后也不必各自撑伞了。”"], ["nar", "桥下水声潺潺，檐角灯笼轻轻晃动。这一次，你们谁都没有再留后手。"], ["act", "你反手将她的手稳稳握进掌心，并肩沿着亮满灯火的长街慢慢走去。"]], "choices": ["“好，往后同舟共渡。”", "牵着她去街口买两块热桂花糕", "笑着说：“这一愿，我用余生来完。”"], "fx": [0, 0, 0]}]}], "route": "lantern", "context": {"player": "奉命入京协查漕运旧账的年轻司直，表面闲散观灯，实则手里握着半份残缺账册。", "relation": "初次在金光门漕渠碰面的同道兼试探者。你知她出身世家却甘居礼部女史之位，她猜你此番入京并非只为游春。", "world": "晚秋京城，七夕刚过余俗未歇，金光门漕渠两岸挂满纸灯，河面浮灯顺流漂向西市许愿池，暗巷里却各方耳目密布。", "premise": "细雨初歇，你在金光门漕渠石阶边拾起一盏差点被暗流打翻的素白河灯，灯底压着半枚与漕运旧案吻合的朱砂印。抬眼时，撑着油纸伞的谢清晏正立在柳影下看你，温声开口：「公子拾了我的灯，按京中旧俗，可是要替我完一个愿。」", "known": ["谢清晏是礼部新晋女史，常代宫中拟定仪典，连几位亲王都要敬她三分礼数。", "金光门流灯本是京中男女祈愿的旧俗，她却把带印记的灯放进了漕渠。", "她身边的侍女阿栀警觉极高，显然早已察觉今夜渠边不止你们二人。"], "unknown": "那枚朱砂印背后牵连着哪位权贵，以及她今夜放灯究竟是引蛇出洞，还是专程在等你。", "goal": "接住她递来的这盏河灯，在各方眼线合围前决定是与她联手查案，还是各自抽身。", "public_meta": "24 · 礼部女史", "opening": "金光门漕渠边细雨初歇，你捞起一盏压着半枚朱砂印的素白河灯。柳影下撑伞的谢清晏温声开口：「公子拾了我的灯，按旧俗可是要替我完一个愿。」"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

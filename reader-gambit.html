@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>陆寻 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "陆寻", "meta": "27 · 城市应急复盘顾问 / 档案推演师", "premise": "暴雨引发地下档案库积水倒灌、电箱跳闸，卷闸门卡死在半空。你蹚水退到电箱旁，看见穿黑风衣的陆寻正蹲在污水里测线路。他抬眼扫过你湿透的裤脚，把电筒递过来，平静地报出排水泵断电的倒计时：九分四十秒。", "world": "深秋暴雨连绵的旧工业区与市档案资料库。潮湿的地下电控箱、三米长的三维沙盘、绿罩台灯与听证会走廊构成一场无声的规则博弈。", "desc": "终日与倒计时、推演沙盘和旧卷宗打交道。习惯把所有变故算成胜率，却在你父亲的旧案上亲手把算盘打碎。", "arch": "规则博弈里的「执子人」", "vigs": [{"need": 3, "title": "雨前气压", "lines": ["工作室窗台上摆着一支老式水银气压计。", "每次落雨前四十分钟，水银柱刚往下跌，陆寻就会起身把靠南的百叶窗拉严，顺手在电磁炉上坐一壶水。", "你问他怎么比天气预报还准，他低头洗着茶杯，淡淡说了一句：“缝过十一针的骨头比气压计灵敏，它一发酸，十分钟内准下雨。”"]}, {"need": 8, "title": "第二根保险丝", "lines": ["在地下档案库换下来的那枚烧黑保险丝，后来被他用透明环氧树脂封成了一块正方体镇纸，压在书桌右上角。", "老程笑他什么破烂都收，他用指腹擦了擦树脂切面，面不改色地回嘴：“全城唯一一块在零点四秒内没让我俩留在地底下的铜片，摆着不亏。”"]}, {"need": 12, "title": "薄荷糖配方", "lines": ["他抽屉里常备的铁盒薄荷糖极呛人，一点甜味也没有。", "有回你熬夜核数据含了一颗，才发现铁盒底垫着半张便签，上面是他规整的小字：“专注力散神超过三秒，推演容错率降 14%。”旁边还有一行被铅笔涂淡的小字：“她今天打了三个哈欠，下次换甜一点的。”"]}, {"need": 16, "title": "黑色护腕的秘密", "lines": ["洗手池边，他第一次没在你走近时把右腕藏进袖口。", "那道旧疤又深又长，横在腕骨内侧。", "你指尖轻轻碰了一下，他小臂肌肉瞬间绷紧，又很快松下来。", "他声音低沉：“当年被钢筋划穿，医生说以后拿筷子都费劲。", "我练了两年握力器，现在拧生锈的机械锁，比谁都快。”"]}, {"need": 20, "title": "不外借的伞", "lines": ["玄关伞架上插着七八把透明塑料伞，专供来访委托人应急。", "唯独墙钉上挂着的那把深蓝双人长柄伞，换了碳纤维伞骨，木柄刻着细密的防滑纹。", "老程有次遇大雨想借，陆寻快步从里屋出来，直接塞了张五十块过去：“门口便利店买两把，这把不借。”老程纳闷问为什么，他侧头看了一眼在沙发上打盹的你：“伞骨沉，她自己撑不动。”"]}], "endings": {"A": {"title": "双向掀翻", "text": "新馆开馆那天，陆寻在台阶尽头站了很久。初夏的日光穿过玻璃穹顶落在他肩上，那件穿了整冬的黑风衣收进了柜底，换成一件柔软的米白针织衫。老程在门口招呼客人，陆寻没有上台念准备好的发言稿，只走到你身边，把那把重新换过伞骨的深蓝色长柄伞递进你手里。他说，沙盘和算盘都封箱了，往后不再算胜率，只算每天几点回家。\n次年深秋，旧城片区彻底完工。他在新事务所二楼向阳的窗边安了一张双人木桌，桌角常年放着两盒薄荷糖和一只黄铜量角器。每逢阴雨天，他依然会在傍晚五点半准时合上卷宗，在玄关备好烘干的棉袜和滚热的姜茶；只是那柄曾挡过无数风浪的深蓝旧伞，长长久久挂在门厅木钩上，伞尖再也没沾过一片泥水。"}, "B": {"title": "独木难支", "text": "听证会的裁决书虽还了清白，行业里的暗流却没有立刻散去。在长街尽头，陆寻听完你那句话，手指在长柄伞的木把上收紧又松开。他静静看了你两秒，垂下眼把伞塞回你怀里。他说，这桩案子的余波还没收干净，暗处盯着他的人不止许昭一个，他给不了你安稳的日子，不该把你拉进没有退路的局里。\n次年春天，顾问事务所的铜牌摘了下来，他在城北背街开了一间极小的古籍胶装铺。偶尔在行业内刊的技术勘误栏里，你还能看见那个工整的署名；寄到你住处的挂号信里，除了每季度一份详尽的城市汛期避险图和一张无字的薄荷绿书签外，再也没留过半句私人的字。"}, "C": {"title": "同向回响", "text": "风波落定后，谁都没有再把那层纸戳破。两人顺理成章成了最合拍的搭档。新案子一桩接一桩，他在图纸这端圈出受力断点，你便在桌对面递上核验好的光谱样本；下雨天依然会在便利店屋檐下共撑一把黑伞，步调一致地避开路面积水，肩头之间始终留着恰到好处的半拳空隙。\n入冬初雪那天，老程在门卫室烤热红薯。陆寻从里屋走出来，顺手把烘得微热的羊毛围巾搭在你椅背上，语气一如既往公事公办地交代明早去省城调卷的车次。你低头绕上围巾，布料里带着淡淡的松木烟草味；推门走进落雪的巷口时，两道影子在路灯下拉得很长，脚步始终落在同一个节拍上。"}, "D": {"title": "概率归零", "text": "听证会散场的那个下午，天色干爽，连一滴雨也没落。办完档案交接，他在行政大厅旋转门外和你道别。街上车流嘈杂，两人的话短促又客气。他把装有更正公证书的文件袋双手递过来，交代完后续手续的窗口编号，便抬手拦了辆出租车。车门合拢时，后视镜里他侧脸望着窗外，没有回头。\n三年后的一个雨天，你在市图书馆借阅一本旧版《城市地下管网应力复盘》，在扉页借阅卡最底行看见了“陆寻”两个字。借阅日期正是当年你们走出大厦的那一天。你在借阅台前站了一会儿，想记起他当年推眼镜时的神情，却只记得那天长街的风很凉，把没说出口的话吹得很淡。"}}, "chapters": [{"title": "第一章 概率破局", "scenes": [{"n": 1, "lines": [["nar", "【暴雨盲盒】旧工业区地下档案库，电箱跳闸，暴雨引发积水倒灌，应急红灯规律闪烁。"], ["nar", "水漫过脚踝，冷意透过帆布鞋底往上蹿。卷闸门卡在半空，机械锁芯发出干涩的卡顿声。"], ["nar", "陆寻蹲在电控箱前，右手握着测电笔，黑风衣下摆浸在浑浊的积水里也没顾上提。他抬眼扫了你一下，视线在你湿透的裤脚停了半秒。"], ["say", "“距离排水泵断电还有九分四十秒。”他把手电筒递过来，语调平得像在报数，“拿稳光斑，照准第三根保险丝，手别晃。”"]], "choices": ["稳妥配合：双手握紧手电筒，压住呼吸照向电箱第三枚卡槽。", "质疑反问：问他为什么不直接砸碎旁边的逃生玻璃。"], "fx": [0, 0]}, {"n": 2, "lines": [["nar", "【干燥的热毛巾】档案库值班室内，电炉丝泛着暗红微光，铁水壶咕嘟冒气。"], ["nar", "退到值班室后，两人发梢都在滴水。老程咳了两声，晃着钥匙串去走廊接备用线，桌上留下一条刚烫过的白棉毛巾。"], ["nar", "陆寻换了件干衬衫，右腕的黑色护腕吸饱了雨水，勒出紧绷的轮廓。他用木镊子夹起热毛巾，没有直接递到你手里，而是搁在离你三寸远的瓷盘边。"], ["say", "“擦手，别碰脸。”他拉开铁皮抽屉，取出一罐未开封的生姜红糖，“老管网铁锈超标，水滚三分钟再喝。”"]], "choices": ["道谢并接过：拿起毛巾擦手，顺手替他把糖罐盖拧松推回去半寸。", "注意护腕：视线落在他渗着水珠的黑色护腕上，问他手腕是不是受过伤。"], "fx": [0, 0]}, {"n": 3, "lines": [["nar", "【沙盘上的红旗】陆寻的工作室，一张三米长的三维地形沙盘占了半间屋子，白板上贴满事故时间轴。"], ["nar", "你把委托复盘的家属旧档案袋放到案头。陆寻戴上白棉手套，用铅笔尖在图纸几个受力节点间轻点，线条利落得像刻度尺画出来的。"], ["say", "“你父亲当年的避险报告被人抽掉了第三页。”他取出一枚细针红旗，插在沙盘的地下管网交叉口，“抽掉这一页，事故定性就会从‘排水设计冗余不足’变成‘值班员违规关阀’。”"]], "choices": ["追问抽页动机：走近沙盘，指着红旗问他“谁有权限在归档前抽掉那一页”。", "克制退后：深吸一口气，低声说“我只认能上台面的证据”。"], "fx": [0, 0]}, {"n": 4, "lines": [["nar", "【便利店屋檐下】凌晨两点半，街角便利店外，秋雨细密地斜扫过玻璃门。"], ["nar", "核对完第一批施工日志已是后半夜。便利店招牌的冷白灯管在雨地里拉出一片泛青的水光。陆寻拎着两罐热麦茶走出来，铝罐外壁贴着烫手的保温标。"], ["nar", "一辆重型水泥车贴着积水带呼啸碾过，浊水卷起半人高。他手里的热茶没撒，左肩却先一步斜插到你外侧。泥点全扑在他深色风衣下摆上，顺着布料往下滴。"]], "choices": ["掏纸巾替他擦拭：抽出纸巾蹲下身，想去擦他风衣下摆的泥浆。", "问他为什么不躲：站在屋檐下抬头看他：“车灯早就照过来了，你怎么不往里退？”"], "fx": [0, 0]}, {"n": 5, "lines": [["nar", "【第七秒的对视】老式居民楼楼梯间，声控灯坏了两层，窗外只透进一点灰白月光。"], ["nar", "楼道里浮着隔夜油烟和潮湿水泥的气味。你的钥匙串在门锁前滑脱，叮当一声滚到台阶边缘。"], ["nar", "陆寻几乎同时弯腰拾起，顺着月光递到你面前。两人的指尖在冰凉的铜钥匙环上轻轻一碰，楼下野猫在雨棚上踩出一声脆响。暗处里他没立刻松手，垂眸看了你足足七秒，呼吸很稳，却比平日慢了半拍。"]], "choices": ["握住钥匙不躲避：合拢手指接住钥匙，视线稳稳迎着他。", "慌乱抽手：指尖一缩，钥匙环差点再次滑落。"], "fx": [0, 0]}]}, {"title": "第二章 裂缝与博弈", "scenes": [{"n": 6, "lines": [["nar", "【不速之客】行业评审会场外长廊，许昭带着两名法务顾问迎面拦住去路。"], ["nar", "许昭抖了抖手里的律师函，笑意只挂在嘴角：“陆顾问，私下替涉案家属复盘原始卷宗，按行规里的保密条文，你的执业资质还打算要吗？”"], ["nar", "陆寻站在你斜前方半步，把牛皮纸文件夹倒扣在臂弯里，目光越过许昭的肩头，先扫了一眼走廊顶端的广角监控。"], ["say", "“第一，行业保密协议第二十七条只约束商业竞业，不禁止技术纠偏。”他抽出一张复印件，平平递到许昭胸口前，“第二，当年封存原始卷宗的骑缝签字，和你在第十四页补录的笔迹倾斜度差了六度。要不要现在请评审组一起看？”"]], "choices": ["并肩上前：跨前一步出示亲属委托书：“我是合法委托人，复盘流程全部合规。”", "拉住他衣袖：轻轻拽了一下陆寻袖口，低声提醒他别把对方逼急。"], "fx": [0, 0]}, {"n": 7, "lines": [["nar", "【冷水洗脸】走廊尽头的洗手间外，冷风吹得铝合金百叶窗轻敲墙面。"], ["nar", "应付完会场盘问，陆寻独自站在洗手池前掬了把冷水拍在脸上。水珠顺着下颌线滴进领口，洇出几道深色水痕。"], ["nar", "他解下了湿透的黑色护腕搭在台沿，右腕内侧那道缝了十一针的旧疤露在惨白灯光下，边缘因受潮微微泛红。听见走廊脚步声，他下意识伸手去抓护腕。"]], "choices": ["按住护腕递上纱布：从包里摸出独立包装的无菌纱布按在台面上：“别拿湿护腕捂着，边缘都红了。”", "移开视线递温水：没提伤疤，只把一瓶常温矿泉水放在他手边：“许昭那套施压，你不必一个人顶。”"], "fx": [0, 0]}, {"n": 8, "lines": [["nar", "【档案室密谈】深夜闭馆的旧档案室，老程在门外台阶抽旱烟，室内只亮一盏绿罩台灯。"], ["nar", "尘封的原始卷宗被搬上长桌。翻到事故责任认定页，签字栏里赫然落着你父亲的名字。"], ["nar", "你盯着那行已经泛褐的钢笔字，指尖发凉。陆寻没说话，戴上白手套，取出一只十倍光学放大镜，沿着装订线边缘的纸张毛边一点点挪过去。"], ["say", "“墨水扩散度不对。”他在绿灯下微微偏转纸页，“这批纸是七年前的再生道林纸，装订孔有二次穿针的毛刺，但签名用的碳素墨水配方是近三年才流通的。这页是后来换进去的。”"]], "choices": ["追问鉴定周期：握紧桌沿问他：“纸张和墨水年份能出司法采信的报告吗？”", "冷静取证留底：掏出手机打开微距镜头，把装订孔毛刺、纸页编号和页眉水印逐一拍下存证。"], "fx": [0, 0]}, {"n": 9, "lines": [["nar", "【天台避风处】暴雨将至的旧办公楼天台，铁皮水箱被狂风吹得闷响，远处雷声滚过云层。"], ["nar", "查墨水批次惊动了背后的人，楼下巷口停了两辆没熄火的陌生黑车，你们只能暂时退上天台等老程把侧门清开。"], ["nar", "陆寻靠在避风的矮墙边，脱下黑色厚风衣递过来，见你没接，直接抖开披在你肩上。风衣带着体温和极淡的松木烟草味。"], ["say", "“楼梯间只有一扇防火门，我用铁楔卡死了，他们一时上不来。”他只穿件单薄衬衫，在风口摸出一支烟夹在指间，没点。"]], "choices": ["掀开风衣一角往他那边挪：拉起宽大衣摆盖住他半边肩膀：“风这么硬，一起挡。”", "要把风衣还他：抬手去解肩上的风衣：“你右腕本来就怕受潮，快穿上。”"], "fx": [0, 0]}, {"n": 10, "lines": [["nar", "【白板上的名字】工作室深夜，电脑屏幕蓝光映在白板上，几组风险推演路径全被红笔标了死结。"], ["nar", "如果以联合署名的形式递交光谱报告，对方会立刻以“非授权调阅涉密档案”反诉，把你直接拖进漫长的行政诉讼里。"], ["nar", "陆寻站在白板前，拿起板擦，一笔把白板右上角你的名字抹了个干净，只留下他自己单独署名。"], ["say", "“听证会你不用进场。”他语调低平得没有一丝起伏，像在念一份既定方案，“程序瑕疵由我一人承担，事务所注销也冲我来，你退出委托。”"], ["nar", "你走过去按住他握笔的手腕，问他凭什么替你划掉名字。"], ["nar", "陆寻垂眸看着你，没抬高半点音量，可指节把白板笔捏出了一声极轻的塑料脆响。沉默足足拉长了三秒。"]], "choices": ["“陆寻，案子是我家的。你算过胜率，却没算过我答不答应。”", "拿过板擦自己改：抽走他手里的白板笔，把你的名字重新工整写回他旁边：“要扛一起扛，别拿‘为你好’当借口。”"], "fx": [0, 0]}, {"n": 11, "lines": [["nar", "【暴雨前的长街】清晨六点空旷的长街，环卫扫帚沙沙划过湿沥青，早点摊蒸笼冒着白汽。"], ["nar", "通宵核完第二套方案，两人沿着街沿慢慢走。他买了两只刚出笼的热肉包，牛皮纸包得严实，递过来时特意捏了捏袋口试温。"], ["say", "“如果今天听证会翻车，我的顾问资质会被吊销。”他看着前方跳红的信号灯，双手插在风衣袋里，语气很淡，“后悔找上我吗？”"]], "choices": ["“不后悔。换成别人，第三页抽掉的事我一辈子都看不见。”", "“你不是说算过概率，从来没失手？”"], "fx": [0, 0]}]}, {"title": "第三章 终局定局", "scenes": [{"n": 12, "lines": [["nar", "【听证会门前】市综合执法大厦走廊，登记台前挤满各方代表，窗外天色阴沉。"], ["nar", "许昭站在走廊另一端整理袖扣，身后跟着三名专职律师。"], ["nar", "陆寻拎着装有原始光谱比对报告的银色手提箱走来，步伐稳得像丈量过步距。走到你身侧时，他停下脚步，自然地抬手替你把被穿堂风吹翻的风衣领口按平。"], ["say", "“别慌。”他的指尖擦过你颈侧，干燥温热，“箱子密码是你的生日。万一里面临时休会扣人，你直接带箱子去三楼找督察组。”"]], "choices": ["“箱子你自己拎进去，出来之后亲手交给我。”", "接过备用复印袋：把公证副本稳稳抱进怀里：“我在旁听席第一排看着，哪也不去。”"], "fx": [0, 0]}, {"n": 13, "lines": [["nar", "【致命质询】密闭听证室内，长桌两侧坐满评议专家，投影幕上停着光谱曲线图。"], ["nar", "质询进入僵局。对方律师咬定私自调档程序不合规，要求整份光谱报告作废。"], ["nar", "陆寻站起身，没有争辩半句，只抬手按灭投影，把一只贴着泛黄封条的旧录音笔平放在证物盘中央。"], ["say", "“谈程序的话，请各位核对三年前事故当晚二十三点零四分的应急调度录音。”他语速平稳，字字清晰，“这支笔封存在现场遗留工具箱里，老程在市档案馆做了原始入库登记，全程零私人经手。”"]], "choices": ["在旁听席起身递交微距照：亮出提前留存的装订孔毛刺与原始保管链编号。（若持有 `c2_evidence` 标记，专家组当场采信并立刻叫停对方辩解）", "保持克制静观其变：按住手心记录对方律师的漏洞，等陆寻收网。"], "fx": [0, 0]}, {"n": 14, "lines": [["nar", "【地库延时锁】大厦地下车库通道，裁决公示前夜，许昭的人试图抢先运走一箱涉案原始水文样本。"], ["nar", "货梯提示灯刚亮，许昭的助理推着封存箱快步往地下出口撤。陆寻早站在消防通道拐角，看了一眼腕表：“延时门禁还有六秒落闸，他们出不去。”"], ["nar", "对方慌忙强行撞门，厚重的防火门在警报声里沉沉下压。你站在通道内侧，陆寻先一步伸出右臂抵住门框边沿，把你往安全线里带了半步。门框重重磕在他右腕旧伤上，他眉头猛地一蹙，却没松手，直到楼上督察组保安循着警报赶到。"]], "choices": ["立刻托起他的右手查看：拉起他渗出冷汗的右腕，解开护腕看有没有崩线：“我就知道你又拿这只手去挡。”", "冷静配合保安核对封条：先确认样本箱封条完好，再转身拉他去医务室。"], "fx": [0, 0]}, {"n": 15, "lines": [["nar", "【雨停的街角】放晴后的老街长椅，水洼倒映着发白的云层，树梢偶尔落下一两滴残雨。"], ["nar", "调查组正式撤销了当年的不实责任认定。陆寻右腕缠着新换的白色绷带，和你并肩坐在街角木椅上。"], ["nar", "风吹过湿漉漉的梧桐叶，他侧过头看你，没戴眼镜，眉间那道常年紧绷的竖纹平了不少。"], ["say", "“旧账都清了。”他垂眼拨了拨袖口，“只剩一件事，我一直没算明白。”"]], "choices": ["“我喜欢你。这件事，是不是没写进你的概率模型里？”", "“什么事连陆顾问都算不明白？”"], "fx": [0, 0]}, {"n": 16, "lines": [["nar", "【旧屋搬迁】陆寻的工作室，纸箱码得齐整，午后阳光斜斜铺在木地板上。"], ["nar", "他退出了商业风险咨询圈，准备专做民间安全复盘与古旧档案鉴定。你帮他把发黄的卷宗装进防潮箱。"], ["nar", "翻到一本厚厚的推演笔记末页时，一张拍立得旧照滑了出来：那是暴雨初遇那天，你蹲在电箱前双手握着手电筒的背影，照片白边用铅笔细细记着那晚的日期和坐标。"]], "choices": ["拿着照片递到他眼前：走到他身后，把拍立得轻轻晃了晃。", "悄悄夹回原处：没声张，把照片夹回笔记原页，替他合上纸箱盖。"], "fx": [0, 0]}, {"n": 17, "lines": [["nar", "【次年立夏】当年避雨的地下档案库旧址，如今改建成了一座采光通透的城市记忆馆。"], ["nar", "立夏这天晴空无云。新馆开馆，老程戴着红袖章在门口给路人发导览册。"], ["nar", "你站在主展柜前，看着那份已被纠偏盖上红章的原始报告。身后传来熟悉的脚步声，陆寻穿着一件浅灰色亚麻衬衫走到你身侧，手里没带伞，只夹着两张去海边的动车票。"]], "choices": ["伸手接过车票：抬头看他：“这次提前查过天气预报了？”", "“谢谢你，把这份公道还给了我爸。”"], "fx": [0, 0]}]}], "route": "gambit", "context": {"player": "前来复盘父亲三年前事故旧档案的委托人，带着一叠发黄的工程卷宗走进地下档案库。", "relation": "素不相识的委托人与应急复盘顾问。暴雨夜在积水倒灌的地下档案库初遇，随后因被抽掉的第三页避险报告绑在同一张推演桌上。", "world": "深秋暴雨连绵的旧工业区与市档案资料库。潮湿的地下电控箱、三米长的三维沙盘、绿罩台灯与听证会走廊构成一场无声的规则博弈。", "premise": "暴雨引发地下档案库积水倒灌、电箱跳闸，卷闸门卡死在半空。你蹚水退到电箱旁，看见穿黑风衣的陆寻正蹲在污水里测线路。他抬眼扫过你湿透的裤脚，把电筒递过来，平静地报出排水泵断电的倒计时：九分四十秒。", "known": ["你父亲三年前的事故责任认定疑点重重，原始避险报告里似乎缺了关键一页。", "陆寻是业内名声极冷的应急复盘顾问，只认数据与原始记录，极少接私人委托。", "他右腕常年戴着一只黑色护腕，受潮时会下意识避开别人视线。"], "unknown": "三年前他右腕那道缝了十一针的旧疤怎么来的，以及当年抽掉第三页报告的真正推手是谁。", "goal": "先在排水泵断电前逃出地下档案库，再与陆寻联手查清被伪造替换的原始责任页。", "public_meta": "27 · 城市应急复盘顾问 / 档案推演师", "opening": "地下档案库积水漫过脚踝，陆寻蹲在跳闸电箱前抬头扫了你一眼，把手电筒递过来，语调平得像在报数：「距离排水泵断电还有九分四十秒，照准第三根保险丝，手别晃。」"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

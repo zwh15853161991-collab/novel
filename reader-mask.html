@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>裴砚之 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "裴砚之", "meta": "26 · 老戏院衣箱检修师 / 脸谱画师", "premise": "深秋傍晚，暴雨砸在萃华楼的青瓦上。你带着勘察函踏进空无一人的天井，后台朱红毡帘掀开，穿鸦青长衫的裴砚之走出来。他瞥见你浸湿的裙角，没急着寒暄，只取出一柄修补过竹骨的桐油黄纸伞撑开递了半尺。", "world": "深秋阴雨连绵的老街与百年戏院「萃华楼」。漏雨的青石天井、浮着松烟墨与牛皮胶气味的调色室、斑驳衣箱库房与老胡琴声交织。", "desc": "守着百年老戏院「萃华楼」的衣箱与矿彩。台前画尽人间喜怒，台下惜字如金，唯独对你留着一盏炭炉和五年前火场的一段旧事。", "arch": "戏面守艺人「假面执炬者」", "vigs": [{"need": 3, "title": "朱砂的份量", "lines": ["调色室架子上摆着一杆纯铜小药秤。", "每次配矿彩，裴砚之手腕一抖就是稳稳的三分二厘。", "你问他怎么练出来的，他用指腹拂去秤盘余粉，淡淡道：“五岁起在暗室磨朱砂，少一钱发暗，多一钱伤生丝。", "人跟人处也是这分量，过近则浊，过远则淡。”"]}, {"need": 8, "title": "千层底布鞋", "lines": ["他常年穿黑布千层底，踩在老木地板上听不见脚步声。", "有晚你加班写勘察报告，低头发现脚边多了一双崭新的提花棉拖鞋，鞋底特意包了厚毡布。", "六叔路过笑道：“砚之拿做戏靴余下的云头毡连夜给你纳的，嫌老木板返潮冻脚。”"]}, {"need": 12, "title": "不唱的那出戏", "lines": ["六叔的胡琴谱里收着一出《白蛇传·断桥》，裴砚之从不让人在萃华楼排演。", "有回新来的学徒随口问起，被他冷着脸罚去抄了三天曲牌。", "后来你翻看他的旧戏目手记，在页角看见一行朱砂小字：“桥未断，人未散，何须唱断桥。”"]}, {"need": 16, "title": "火场里的红绳", "lines": ["他贴身系着一根褪色的旧红绳，绳结里裹着一颗微微变形的小银珠。", "那是五年前从火场把你抱出来时，从红斗篷盘扣上刮落的一颗纽扣。", "好些个雷雨夜他从梦魇里惊醒，指尖摩挲着那颗微凉银珠，才确认自己当年真的把人带出了火海。"]}, {"need": 20, "title": "桐油纸伞上的画", "lines": ["那柄修补过的桐油纸伞外表陈旧，雨天迎着光撑开，伞面内侧却用极淡的矿彩细细勾了一幅《雨后老街晴光图》，画角站着一个撑伞远眺的姑娘。", "六叔说这幅画他画了整整三年，每落一场雨添两笔，画收笔那年，人也就真回来了。"]}], "endings": {"A": {"title": "惊鸿同归", "text": "复演散场那晚，老街红灯笼在晚风里轻晃。裴砚之在空下来的戏台中央摆了一张小方桌，温了半壶桂花冬酿，把那枚存了五年的掐丝双鱼银锁重新替你系上。他说，半辈子都在库房里修别人的戏袍与折子，直到今晚才算替自己把这出戏的开头写稳。\n次年仲夏，天井石阶边开满月季。他在东厢房廊下辟了张采光最好的调色长案，案头常年摆着两把红木椅和两盏冰糖梨汤；每逢雷雨骤至，他总会在收摊前合上戏折，撑着那柄重新上过桐油的黄纸伞去文保所门前接你，青石板路上的雨水洗得发亮，两人的步子再没分开过。"}, "B": {"title": "曲终人散", "text": "老戏楼虽保住了产权，历史遗留的修缮债务仍要慢慢偿清。露台看晚霞那天，裴砚之听完你那句话，手指在木栏上收紧又松开。他静静看了你两秒，脱下外衫披在你肩头，低声说，戏院这笔账还要还上三年，他舍不得把你困在潮气重、灰尘多的老院子里一起熬。\n次年秋风起时，你调回省城主持新的古建勘察项目。萃华楼复演那天你因公没能赶回，只收到一个从老街寄来的红木长盒；打开来，里面叠着当年那件补好的红呢斗篷，领口焦痕处用极细的苏绣针脚补了一枝海棠，盒里没有留字，只余一点淡淡松香。"}, "C": {"title": "静水深流", "text": "风波过去后，两人都没戳破那层薄纸。戏院改建成非遗传承工坊，他守着衣箱矿彩，你管着古籍档案，日子安静得像檐下滴落的露水。碰上难辨的旧戏折，他在宣纸上勾出工尺谱推过来，你便顺手找出对应年代的修补竹纸递回去；下雨天照旧在走廊下听六叔拉胡琴，中间始终隔着半拳温和的分寸。\n冬至那天落了场大雪，老槐树枝头压满积雪。裴砚之端着刚出锅的素馅饺子掀帘进屋，顺手拿一支磨润的老竹簪替你挽起垂在桌边的长发，语气如常地交代明早有批外省古戏服入库。你咬下一口热饺子，看着窗外飞雪，心里安稳得像落了地。"}, "D": {"title": "镜花水月", "text": "文保勘察按期结项，萃华楼顺利纳入专项修缮基金。办完交接的下午天色微阴，裴砚之送你到戏院门槛前，双手拢在袖里，周全客气地道谢。两人的道别短促克制，像合上一本翻完的旧账。出租车驶出老街时，后视镜里他仍一身青衫立在砖雕门楼下，很快隐进细雨里。\n四年后你在南方一场戏曲文献展上路过萃华楼展位。展柜正中陈列着一本精装《萃华楼古戏折释义》，副主编印着他的名字。你隔着玻璃看那张黑白作者照，想起昏暗库房里他握着细银针开锁的侧脸，才发觉自己竟没见过他在晴天里真正放松笑开的模样。"}}, "chapters": [{"title": "第一章 天井桐油", "scenes": [{"n": 1, "lines": [["nar", "【漏雨的天井】深秋傍晚，暴雨如注的萃华楼老戏院天井，青石板泛着墨绿水光。"], ["nar", "你受文保部门委托，前来评估老戏院旧藏文物的修缮价值。前厅空无一人，屋檐断线的雨珠砸在青瓦上发出闷响。"], ["nar", "后台厚重的朱红毡帘掀开一角，走出个穿鸦青长衫的年轻男人。他手里端着一只粗陶瓦罐，脚踏黑布千层底，走路几乎听不见声响。"], ["nar", "他瞥见你浸湿的裙角，眉心微蹙，没急着寒暄，只转身从门后取出一柄修补过竹骨的桐油黄纸伞，撑开往前递了半尺。"], ["say", "“屋顶年久漏雨，檐水凉，别站在滴水兽底下。”"]], "choices": ["双手接过桐油伞：道谢接过，指尖触到伞柄上磨得温润的竹节。", "先出示文保委托书：从防水公文包中抽出盖着红章的勘察函。"], "fx": [0, 0]}, {"n": 2, "lines": [["nar", "【朱砂与矿彩】戏院后台调色室，四壁全是药柜般的小抽屉，空气浮着松烟墨与牛皮胶的微腥。"], ["nar", "裴砚之坐在老梨木长桌前研一碟朱砂，石杵转出细密低沉的磨击声。"], ["nar", "你摊开几页受潮黏连的民国工尺谱手稿，不敢贸然上手。他搁下石杵，从木架抽出一把薄如蝉翼的牛角刮刀和一小盏温井水。"], ["say", "“别用手揭，面浆回潮会把字迹带走。”他挽起右袖，露出一截劲瘦小臂，指腹沾着一点洗不净的赭石色，“替我掌一下那盏防风马灯，光低半寸。”"]], "choices": ["稳稳提灯靠前：把马灯挪到刀尖前方半寸，暖黄光圈刚好贴住纸张纤维。", "轻声问矿彩配方：指着旁边一排瓷碟，问朱砂里调了什么胶才不发暗。"], "fx": [0, 0]}, {"n": 3, "lines": [["nar", "【锁孔里的断针】昏暗的衣箱库房，一只沉重的铁皮大箱锈迹斑斑，铜锁锁孔被铁锈封死。"], ["nar", "箱里收着当年大火后幸存的最后几套老蟒袍。苏老板带的人在院外催着，扬言再打不开就直接上液压钳剪锁。"], ["nar", "裴砚之从袖口抽出一枚三寸长的细银针探入锁孔，侧耳贴在冰凉生锈的铁皮上。"], ["say", "“咔哒”一声轻响，第一道簧片开了，第二道却死死卡在锈斑里。他额角渗出一层薄汗，右臂因旧力难继微微发紧。"]], "choices": ["递上针管润滑油：从勘察工具包里摸出细嘴缝纫机油，顺着锁缝滴了两滴。", "转身拦住门外工人：挡在库房门槛前，亮明文物勘察期间禁止蛮力破拆的规定。"], "fx": [0, 0]}, {"n": 4, "lines": [["nar", "【六叔的胡琴声】深夜雨声渐歇，空旷戏台只留一盏廊灯，盲琴师六叔坐在侧幕调弦。"], ["nar", "理完第一批戏箱清册已是半夜，后背酸得发僵。天井青砖积着一汪浅水，映出半角屋檐。"], ["nar", "六叔的胡琴咿咿呀呀拉起一段《游园惊梦》，弦音苍凉里透着柔韧。裴砚之提着一只紫砂小炭炉走到回廊下，轻轻搁在你脚边。"], ["say", "“山里收的野秋梨，煨了冰糖。”他递过来一只白瓷小碗，碗沿温得刚好不烫手，“润嗓子的。成天翻发霉的旧账，容易呛咳。”"]], "choices": ["捧着瓷碗慢喝：双手暖着碗壁抿了一口，抬头说“甜度刚好，谢谢”。", "问他为什么不上台：轻声问他，懂戏又懂脸谱，当年怎么没开嗓唱戏。"], "fx": [0, 0]}, {"n": 5, "lines": [["nar", "【失手的账簿】戏院后台更衣室，你弯腰拾起滑落的清册，包袋侧挂的银锁在风灯下轻轻晃了一下。"], ["nar", "那是一枚双鱼戏莲纹的掐丝银锁，边角被烟火熏得发乌。"], ["nar", "裴砚之刚掀帘进来，目光撞上那枚银锁，整个人顿在门槛处。怀里抱着的蓝布账簿啪嗒一声滑落在地，散开几页泛黄的纸。"], ["nar", "他没有立刻去捡书，只垂着眼盯了银锁两秒，指尖在袖口里微微蜷起，声音比平时哑了一点：“这枚锁……你一直戴着？”"]], "choices": ["“五年前在一场大火里被人拉出来，救我的人塞进我衣领里的。”", "“小时候留下的旧物，裴师傅认得这花样？”"], "fx": [0, 0]}]}, {"title": "第二章 裂缝与水迹", "scenes": [{"n": 6, "lines": [["nar", "【商业协议的通牒】暴雨倾盆的戏院前厅，苏老板带着拆迁评估队上门贴封条。"], ["nar", "苏老板把一份产权变更函拍在八仙桌上，支票本在掌心轻叩：“裴师傅，别抱着这堆老木头耗了。市里批文下周生效，文保名录里根本没萃华楼三个字。”"], ["nar", "几名工人拎着撬棍往后院走。"], ["nar", "裴砚之一身青衫立在天井正中，檐水顺着瓦当浇在他鞋尖前。他手里横着一把裁蟒袍用的重铁剪，声音不高，却压过了雨声。"], ["say", "“地界碑是我太爷爷立的，老契压在档案馆里三百年。今天谁敢越过这道门槛，先问问手里这把剪子。”"]], "choices": ["“萃华楼新发现明清孤本戏折，已报请紧急冻结勘察，擅动建筑属违法行为。”", "“把剪子收起来，他们门口架了摄像机，别落人口实。”"], "fx": [0, 0]}, {"n": 7, "lines": [["nar", "【后背的烫伤旧疤】后台偏厅，他换下湿透的青衫，屋里浮着淡淡的红花油气味。"], ["nar", "刚才拦人时他被倒下的木架擦伤肩头。你在门外敲了两声没人应，推开虚掩的木门送药，正撞见他背对着铜镜往肩上抹跌打油。"], ["nar", "昏黄灯光下，他整个后背布满大片暗红扭曲的烫伤旧痂，从右肩胛一直斜拉到后腰。听见门轴轻响，他手一顿，迅速扯过挂在椅背上的长衫往肩上披，动作急了扯到新擦伤，极轻地吸了口气。"]], "choices": ["“别乱动，肩胛下面你自己够不着。”", "“药放这儿了，你自己慢点涂。”"], "fx": [0, 0]}, {"n": 8, "lines": [["nar", "【密室里的红斗篷】戏台底下的防潮夹室，一盏马灯照亮角落里那只锁着的樟木箱。"], ["nar", "为了查清《断桥残折》下卷下落，你们开了夹室暗箱。箱子里除了防虫樟脑和用油纸包好的戏折，最上层齐齐整整叠着一件被火星烧出焦洞的红呢斗篷。"], ["nar", "斗篷领口内侧，银线绣着半个残缺的名字——正是你小时候的乳名。"], ["nar", "你捏着布角僵在箱前。裴砚之提着马灯立在半步外，火光在他清瘦的侧脸上晃出深浅阴影。"], ["say", "“五年前拉你出火场时，这件斗篷挂在了断梁上。”他声音低得像怕惊动尘灰，“后来你家人连夜把你送去省城医院。我去过一次，没进去。”"]], "choices": ["“那前天看见银锁，为什么不认？”", "“原来那晚背我穿过浓烟的人，一直就在这里。”"], "fx": [0, 0]}, {"n": 9, "lines": [["nar", "【深夜修卷】夜深雨急，窗棂被风敲得轻响，调色室只剩毛笔蘸水的细碎声。"], ["nar", "明早就是文保专家终审。残卷最后三页霉脆严重，必须连夜用调淡的骨胶重新托裱。"], ["nar", "你调浆糊，他执羊毫笔顺纸纹，两道影子被马灯拉长叠在斑驳砖墙上。"], ["nar", "凌晨三点，连日奔波的困意压下来，你的头一点一点往下栽。裴砚之停下手里的笔，搁在笔山上，极轻地抬起左手，用微凉的掌心稳稳托住了你的额角，没让你磕到坚硬的青石砚台。"]], "choices": ["惊醒后轻碰他的手腕：睁开眼，正撞进他安静垂落的视线里。", "“对不起，差点把砚台碰翻。”"], "fx": [0, 0]}, {"n": 10, "lines": [["nar", "【门房的牛皮纸袋】次日清晨，阴雨绵绵，文保所门房递来一只用红绳捆得一丝不苟的牛皮纸袋。"], ["nar", "苏老板昨晚托人递话，扬言已经整理了你“私下介入非公开产权评估”的匿名举报信，只要你今天再去萃华楼，就立刻递交纪检，让你丢掉评职资格。"], ["nar", "你赶去戏院前，却先在单位门房收到了六叔清早送来的纸袋。里面是裴砚之连夜按公文格式装订好的古籍清单、勘察移交回执，还有一纸工整的小楷便签：*“萃华楼自今日起歇业盘点，后续评估请改派他员，毋须再往，免生枝节。”*"], ["nar", "他没说一句重话，却把你干干净净摘了出去。"]], "choices": ["拎着纸袋直接奔向萃华楼：把公文袋塞进防水包，顶着雨拦车直奔老街：“想用一纸回执把我打发走，没那么便宜。”", "先向所里提交正式联合勘察申请：拿着他整理完备的清单直接找分管主任签字，把私人勘察升级为官方联合封存。"], "fx": [0, 0]}, {"n": 11, "lines": [["nar", "【长廊里的木匣】萃华楼侧门雨廊下，六叔独自坐在门槛边擦胡琴，身旁搁着一只老紫檀木匣。"], ["nar", "六叔听见脚步声，停下手里擦松香的布，轻轻叹了口气：“砚之料到你犟，说你若真赶回来，让我把这匣子交给你。”"], ["nar", "木匣里垫着旧红绒布，码着《断桥残折》的托裱底片、萃华楼三百年老地契的公证拓片，还有那柄修好的桐油纸伞。"], ["nar", "压在最底下的宣纸上只写了两行字：“前路宽阔，莫为破楼折腰。伞归原主。”"]], "choices": ["抱起木匣推开前厅大门：擦掉脸上雨水，大步往亮着灯的正厅走去。", "握紧桐油伞柄深吸一口气：把公证拓片和批文叠在一起，稳步跨过门槛。"], "fx": [0, 0]}]}, {"title": "第三章 残折还魂", "scenes": [{"n": 12, "lines": [["nar", "【空台点灯】萃华楼正厅，院外停着拆迁评估车，戏院里却静悄悄点起了两盏防风马灯。"], ["nar", "裴砚之没有穿戏服，依旧是一身洗得干净的鸦青长衫，净过手，正将修补完好的《断桥残折》真本平平摊在戏台中央的八仙桌上。"], ["nar", "六叔坐在侧幕，弓子压着弦，起了一段极沉稳的定场曲。"], ["nar", "前厅木门被推开，风卷着雨雾灌进来。裴砚之抬头看见抱着木匣站在门口的你，搭在桌沿的右手顿在半空，喉结动了一下。"]], "choices": ["“裴师傅，你的地契拓片和底片我都带来了。今天谁要动这楼，先过文保鉴定这一关。”", "请门外专家组与执法人员入场：转身亮出盖着红章的联合封存批文。（若持有 `c2_parting` 标记，文保所主任亲自带队进场，苏老板当场失去阻拦立场）"], "fx": [0, 0]}, {"n": 13, "lines": [["nar", "【侧光验真】戏院正厅，文保专家组围在八仙桌前，苏老板仍试图质疑残卷真伪。"], ["nar", "苏老板冷笑一声，指着桌上修补平整的戏折：“这纸面这么完整，谁知道是不是裴师傅自己拿旧纸仿的？”"], ["nar", "裴砚之神色未动，只请老专家接过冷光手电，斜着贴近纸面打出一道强侧光。"], ["say", "“明代竹纸抄纸帘纹细密，每寸二十四道，今人机抄仿不出这弧度。”他指尖隔空点在残卷装订骑缝处，“再看骑缝折痕里半枚萃华楼万历年间的朱砂暗印，和馆藏老账簿第三十七号登记录完全吻合。请诸位掌眼。”"]], "choices": ["递上老账簿编号对照表：翻开你提前核验过的比对页，与专家逐条核对。", "冷静监督封存贴条：按规程核对封箱编号，确保苏老板再无空子可钻。"], "fx": [0, 0]}, {"n": 14, "lines": [["nar", "【铜盆净手】散场后的后台静谧无声，铜盆盛着温水，白棉布搭在盆沿。"], ["nar", "人潮退去，只剩檐外细雨沙沙作响。裴砚之坐在妆台前的旧木凳上，手背还沾着刚才封箱时蹭上的朱砂印泥，整个人透出连日熬夜后的倦意。"], ["nar", "你拧了块温热湿帕递过去，替他一点点擦掉指缝里的红痕。"], ["nar", "他垂着眼没动，等你擦到腕骨时，忽然抬手轻轻覆住你的手背，把你的掌心贴在自己微凉的侧脸上停了一瞬。"], ["say", "“别动，让我靠两秒。”他声音哑得发低，带着劫后余生的温热。"]], "choices": ["“辛苦了，裴师傅，老戏楼保住了。”", "“先喝口热的，别空着胃吹风。”"], "fx": [0, 0]}, {"n": 15, "lines": [["nar", "【戏楼顶的晚霞】雨过天晴的黄昏，萃华楼飞檐露台，晚霞把老城青瓦染成一片暖橘色。"], ["nar", "两人并肩坐在露台木栏边，晚风吹散了连日积攒的潮气。"], ["nar", "裴砚之洗净手上的矿彩，换了一件素净白衬衫，袖口卷到小臂。他望着远处亮起灯火的老街巷，安静了片刻才开口："], ["say", "“以前我觉得，守着这栋老戏楼过完这辈子就够了。现在不太这么想了。”"]], "choices": ["“那现在想怎么过？”", "“老戏楼保住了，往后会越来越热闹的。”"], "fx": [0, 0]}, {"n": 16, "lines": [["nar", "【修伞与裁衣】立春午后，阳光铺满修葺一新的天井，老槐树枝头抽出了嫩芽。"], ["nar", "萃华楼挂上了非遗戏服与古籍修复工坊的木牌。你调到老街文保分所，工位就在东厢房。"], ["nar", "裴砚之坐在竹椅上，用细铜丝替那柄旧桐油伞换最后一根裂骨。你拿着软尺走出来，绕到他身后量肩宽。"], ["say", "“量尺码做什么？”他偏头问。"], ["say", "“给你裁一件不跑水的新长衫。”"]], "choices": ["软尺绕过肩头轻轻一圈：顺势靠在他背上停了一秒。", "认真记下尺码：在小本子上写下数字：“肩宽四十四，袖长二尺一，别动。”"], "fx": [0, 0]}, {"n": 17, "lines": [["nar", "【大幕拉开】萃华楼百年复演日，前厅挂起暖黄灯笼，台下座无虚席，锣鼓声稳稳起拍。"], ["nar", "六叔在侧幕拉响开场胡琴，弦音亮得透彻。"], ["nar", "后台侧门阴影里，裴砚之换上了你亲手裁的新青布长衫，盘扣扣得一丝不苟。他站在光影交界处，朝你摊开右手掌心。"], ["say", "“台前的折子戏他们开锣了。”他声音不高，却字字落得极实，“咱们这一出，该出门见光了。”"]], "choices": ["把手放进他掌心：迈步与他并肩走出侧幕。", "“走吧，前厅都在等工坊揭牌呢。”"], "fx": [0, 0]}]}], "route": "mask", "context": {"player": "受文保部门委托前来评估百年老戏院旧藏修缮价值的年轻文保员。", "relation": "素昧平生的文保勘察员与老戏院守艺人。你并不知道，你包袋上那枚熏黑的掐丝双鱼银锁，牵着五年前戏院后台那场大火里的一段救命旧缘。", "world": "深秋阴雨连绵的老街与百年戏院「萃华楼」。漏雨的青石天井、浮着松烟墨与牛皮胶气味的调色室、斑驳衣箱库房与老胡琴声交织。", "premise": "深秋傍晚，暴雨砸在萃华楼的青瓦上。你带着勘察函踏进空无一人的天井，后台朱红毡帘掀开，穿鸦青长衫的裴砚之走出来。他瞥见你浸湿的裙角，没急着寒暄，只取出一柄修补过竹骨的桐油黄纸伞撑开递了半尺。", "known": ["萃华楼正面临旧城改建拆迁，若找不到足以降级叫停的馆藏孤本，老楼下周就会进场清拆。", "裴砚之常年守在戏院后台修蟒袍、配矿彩，传闻他早年嗓子在火场里呛坏了，再未登台。", "你包上一直挂着一枚五年前在火场获救时得到的掐丝银锁。"], "unknown": "五年前那场火里究竟是谁把你抱出来的，以及夹室樟木箱里藏着哪半卷失传的《断桥残折》。", "goal": "在拆迁期限前完成萃华楼旧藏古籍的修复与真伪鉴定，守住老戏楼，也解开五年前的火场旧事。", "public_meta": "26 · 老戏院衣箱检修师 / 脸谱画师", "opening": "萃华楼天井暴雨如注，裴砚之掀开后台朱红毡帘走出来，瞥见你湿透的裙角，转身取出一柄桐油黄纸伞撑开往前递了半尺：「檐水凉，别站在滴水兽底下。」"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>梁砚辞 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "梁砚辞", "meta": "29 · 急诊外科主治医师", "premise": "你从高原飞回清城的当晚发起了低烧，拎着行李箱打车去市一院挂急诊。叫号屏跳出你的名字，推开诊室门，抬头看见坐在灯下写病历的值班医生是梁砚辞。他手里的笔顿了半秒，起身先拿过椅背上那件厚黑羽绒服，不由分说罩在了你单薄的外套外面。", "world": "十一月底的清城，雨夹雪下了一整晚。市一院急诊楼通宵亮着惨白灯管，候诊区弥漫着消毒水与潮湿羊毛大衣的味道。", "desc": "三年前因一场医疗纠纷调查与你断联。说话极冷、习惯用医嘱代替关心，却把你落下的银质书签收在白大褂内袋里三年。", "arch": "嘴硬护短的归来旧人", "vigs": [{"need": 3, "title": "旧钢笔", "lines": ["梁砚辞白大褂左胸口袋里一直别着一支磨掉漆的深蓝钢笔。", "规培护士问他怎么不换支顺手的中性笔，他低头写完医嘱只说习惯了。", "笔帽内侧刻着一个极小的日期，是三年前你在急诊楼外送他上夜班那天。", "每回开处方前，他都会习惯性用拇指在笔帽上摩挲一下。"]}, {"need": 6, "title": "蜂蜜水温度", "lines": ["急诊室饮水机只有滚水和冰水两档，他却总能兑出刚好入口的温度。", "周朗笑他给自己泡胃药都没这么讲究。", "他说发烧的人喝太烫会呛，喝太凉胃不舒服。", "说完把一次性纸杯外又套了一只空杯，防着烫手。"]}, {"need": 9, "title": "停在副驾的羽绒服", "lines": ["那件厚黑羽绒服他其实很少穿，常年整齐叠在车子后座。", "清城十一月刚降温那天，他顺手把它放到了副驾驶椅背上。", "你从高原飞回来那天穿着单薄冲锋衣冲进诊室，他几乎没犹豫就拿起来罩在了你身上。", "衣领里还带着一点干净的雪松洗衣液味道。"]}, {"need": 12, "title": "胃药盒", "lines": ["他值班室抽屉最里层摆着三盒铝箔板胃药，每盒边上都用黑笔标着开封日期。", "你替他整理值班包时才发现，有一盒快过期了还剩大半板。", "你皱眉念叨他只管病人不管自己，他老实接过你递来的温水仰头咽下一片。", "「以后每天下班发照片给你检查，行不行。」"]}, {"need": 15, "title": "炒栗子", "lines": ["立春那场小雪后，他休假第一件事是绕了半个城去买老巷口的糖炒栗子。", "排了四十分钟队，他把纸袋揣在羽绒服内侧一路捂着回来。", "剥好第一颗递到你嘴边时，他指尖沾了一点焦糖黑灰。", "「还热着，吃吧。」"]}], "endings": {"A": {"title": "白大褂内袋", "text": "立春那天清城出了大太阳，屋檐积雪化水滴在阳台上噼啪作响。梁砚辞把那枚收了三年的银质书签重新放回你掌心，没有再替你做任何决定，只问你下周休假愿不愿意陪他去城郊看一次日落。你把书签夹进新洗出来的相册扉页，点头说好。\n入冬时他仍旧常值夜班，只是每回下班前都会提前十分钟给你发一条消息报备路况。你去医院接他时，看见他白大褂左胸口袋里依然别着那支旧钢笔，旁边多了一张你随手塞进去的暖贴。"}, "B": {"title": "复诊预约单", "text": "雨雪彻底停了的那天，你去市一院做了最后一次复查。梁砚辞低头签完病历，把单子递过来时手指停了一瞬，语气恢复了最初的克制，只叮嘱你回高原前记得按时吃药。你们在急诊楼门口道别，像一对各自走过漫长弯路的老友。\n后来你又去了几次西南采风，手机里始终留着他的号码。每年入冬下第一场雪时，对话框里都会准时多出一句极短的「降温了，别穿太薄」，你也总会回他一张雪山晴天的照片。"}, "C": {"title": "没寄出的明信片", "text": "那天晚上你在旧酒馆听完了三年前的全部隐情，没有责怪，也没有回头。你把那一叠未寄出的高原明信片留在桌面上，起身披好自己的外套推门走进雪里。他在窗口站了很久，没有追出来拦你，把迟来三年的分寸还给了你。\n第二年春天你调去了海边城市的分社，整理行李时发现包底多了一盒未拆封的常用感冒药，盒角用锋利字迹标清了每一次剂量。你把药盒放进窗台抽屉，窗外的海风很暖。"}, "D": {"title": "两把旧钥匙", "text": "你接过他递来的热栗子，没有再算三年前谁欠了谁的账，只让他把公寓备用钥匙和那枚银书签一起交出来。梁砚辞愣了一秒，随即极浅地笑了一下，把钥匙放进你手心时顺手握紧了你发凉的手指，说以后不管遇到什么事，都不会再一个人躲起来扛。\n次年除夕夜急诊室难得清静，窗外烟花升起时他在值班室给你留了一碗还冒着热气的汤圆。不锈钢饭盒底下垫着一张折叠整齐的处方纸，上面写着「今年按时回家」。"}}, "chapters": [{"title": "第一章 冬夜急诊室", "scenes": [{"n": 1, "lines": [["nar", "十一月底的清城落着雨夹雪，市一院急诊楼通宵亮着惨白灯管。你刚从高原飞回来，低烧烧得太阳穴发紧，拎着沾满灰尘的行李箱推开诊室门。"], ["nar", "坐在灯下写病历的医生抬起头，白大褂领口扣得一丝不苟。梁砚辞手里的笔在病历纸上顿了半秒，眼底一闪而过极沉的震动。"], ["nar", "他什么也没问，先起身拿过椅背上那件厚黑羽绒服，大步走过来不由分说罩在了你单薄的冲锋衣外面。"], ["say", "“高原回来怎么就穿这么点。坐下，伸手量体温。”"], ["act", "他拉高羽绒服拉链时指背不小心擦过你滚烫的颈侧，喉结滚了一下，很快收回手坐回诊桌后。"]], "choices": ["“好久不见，梁医生。”", "“不用了，我自己带了外套。”", "低头坐下伸出手，没看他的眼睛"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "体温计滴一声停在三十八度四。梁砚辞盯着屏幕看了两秒，眉头微锁，转身去倒了一杯温水推到你手边。"], ["nar", "你端杯子时指尖被冻得微微发青。他低头看了一眼，直接伸手把你冰凉的手拢进他宽大的黑色大衣口袋里，按了三秒才松开。"], ["say", "“低烧加轻度高反后遗症。先去抽血拍片，别硬撑。”"], ["say", "“你现在对每个病人都这么管东管西？”"], ["nar", "他捏着处方单的手顿了一拍，语气依旧平得听不出波澜。"], ["say", "“对不知道照顾自己的病人，一向如此。”"], ["act", "他把单子递过来，指腹在纸角压了一下，没再与你对视。"]], "choices": ["“那谢谢梁医生关照。”", "“三年前你可没这么客气。”", "接过单子直接起身去缴费"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "凌晨两点的输液室安静得只剩药液滴落声，惨白灯光照在玻璃窗的水痕上。你靠在椅背上昏昏沉沉，听见极轻的脚步停在身旁。"], ["nar", "梁砚辞刚下完一台急诊清创，白大褂袖口还卷着半截。他没叫醒你，只把一杯兑好温水的蜂蜜柠檬轻轻放上小桌，杯外细心地多套了一只空纸杯防烫。"], ["say", "“醒了就喝两口，空腹挂水胃会难受。”"], ["nar", "你睁开眼看见他眼底深重的青影，声音因为发烧有些发哑：「你今晚通宵值班？」"], ["say", "“嗯。挂完这瓶叫护士拔针，别自己扯。”"], ["act", "呼叫器在腰间响起，他只停了两秒，替你把滑落的羽绒服衣角往肩上拉了拉，转身快步回向抢救室。"]], "choices": ["喊住他问他吃晚饭了没有", "端起温热的蜂蜜水喝了一口", "看着他背影消失在走廊尽头"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "拔完针出来取药，你在药房拐角撞见心内科的周朗。三年未见，周朗愣了两秒才认出你，语气一下沉了下来。"], ["say", "“你回清城了？砚辞刚才还在诊室里吧。”"], ["nar", "你点点头刚要寒暄，周朗叹了口气，压低声音道：「这人嘴硬得要命，这一年半因为胃出血进过两回急救室，谁劝都不听……」"], ["nar", "话还没落音，身后传来沉稳的脚步声。梁砚辞提着一袋药走过来，目光冷冷扫过周朗。"], ["say", "“心内科今晚很闲？”"], ["act", "周朗识趣地闭了嘴拍拍他肩膀离开，梁砚辞把药袋递给你，神色恢复成滴水不漏的冷淡。"]], "choices": ["“周朗说你胃出血是怎么回事。”", "“你的羽绒服我洗干净还你。”", "沉默接过药袋往大门走"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "走廊风口冷得刺骨，你低头核对药袋里的退烧药与消炎片，手指无意间摩挲到处方单背面。"], ["nar", "洁白的纸背上，用他一贯锋利克制的钢笔字多写了一行：「回程风大，围巾系紧。明早体温若还过三十七度五，直接来找我。」"], ["nar", "落款处空着，连名字都没签。你站在原地看那行字看了许久，鼻尖被夜风吹得发酸。"], ["say", "“看完了就收起来，站风口里想再烧回去？”"], ["act", "他站在三步外的玻璃门边，已经换下白大褂穿上深灰大衣，手里拎着车钥匙。"]], "choices": ["把处方单小心折好放进衣袋", "“梁砚辞，你到底想怎样。”", "抬头看他：“你下班了？”"], "fx": [0, 0, 0]}, {"n": 6, "lines": [["nar", "医院大门口雨夹雪越下越密，路面泛着冷光。你刷了十分钟打车软件，排队人数纹丝不动。"], ["nar", "黑色轿车缓缓滑到台阶前停住，副驾车窗降下一半。梁砚辞单手搭在方向盘上，侧过脸看你。"], ["say", "“顺路。上车，别让我明早再在急诊室收你一次。”"], ["say", "“你连我住哪儿都不知道，怎么顺路。”"], ["nar", "他顿了半秒，移开视线望向前方雨刷刮开的路面，声音低了几分。"], ["say", "“上车再说地址。淋湿了羽绒服我还要洗。”"], ["act", "他伸手越过副驾替你推开车门，暖气裹着淡淡雪松味扑面而来。"]], "choices": ["拉开车门坐进副驾", "把羽绒服脱下来递给他再走", "问他是不是早就知道我回来了"], "fx": [0, 0, 0]}]}, {"title": "第二章 未寄的病历", "scenes": [{"n": 1, "lines": [["nar", "车厢里暖气开得很足，雨刷有节奏地左右摆动。他等你系好安全带才挂挡起步，开得很稳，连过减速带都提前放慢了速度。"], ["nar", "一路上谁都没有提三年前的事。沉默蔓延过两个红绿灯后，他先开了口，语气平缓得像在聊天气。"], ["say", "“高原上昼夜温差大，你拍那组支教片子待了多久？”"], ["say", "“快两年。那边的风把脸吹黑了两度，不过星星很亮。”"], ["nar", "他很轻地嗯了一声，视线看着前方，嘴角却极浅地动了一下。"], ["say", "“我看过那期杂志。雪山拍得很好。”"], ["act", "红灯亮起，车子稳稳停在斑马线前，暖风把车窗上的雾气吹散了一角。"]], "choices": ["“你一直有看我的报道？”", "“只是工作而已。”", "偏头看他握方向盘的手"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "你伸手去抽纸巾擦镜片上的水雾，手肘不小心碰开了中控台下方的小暗格。"], ["nar", "暗格里没有杂物，只安静躺着一枚边缘磨得发亮的银质书签——那是三年前你落在医院天台栏杆上、以为早就丢了的那一枚。"], ["nar", "车厢里瞬间静得能听见雨点打在车顶的细响。梁砚辞瞥了一眼暗格，没有伸手合上，握着方向盘的指节却微微泛白。"], ["say", "“当时收拾旧物翻出来的，一直没找着机会还你。”"], ["say", "“所以就在车里放了三年？”"], ["act", "绿灯亮了，他喉结滚动一下，低声说「你要的话，现在就可以拿回去」，车子重新驶入雨夜。"]], "choices": ["把银书签拿起来攥在手心", "轻轻合上暗格，没拿走它", "问他还有多少东西留着没扔"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "车停在老小区楼下，他抢先下车撑起黑伞，绕到后备箱拎起你那只沉甸甸的摄影器材箱，一言不发往三楼走。"], ["nar", "到家门口你掏钥匙开门，他把箱子稳稳放进玄关，没有越界迈进半步，只在门外停了一瞬。"], ["say", "“周四下午我出门诊，退烧后过来复查一下肺部。挂不上号直接敲门。”"], ["say", "“梁砚辞，你照顾完我这一次，是不是又打算继续装作不认识？”"], ["nar", "楼道声控灯暗了下来，暗影里他的呼吸停了一拍。"], ["say", "“我没装过不认识你。早点睡，别熬夜修图。”"], ["act", "他替你把门轻轻带上半寸，转身下楼的脚步声在空荡楼梯间响得很慢。"]], "choices": ["追到楼梯口叫住他", "关上门靠在门板上深呼吸", "隔着门缝说一句「你也早点歇着」"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "周三晚上下起冻雨，你去老街采访完回程，经过巷口那家你们大学时常去的小酒馆，透过半掩的包厢门看见了梁砚辞。"], ["nar", "他没穿白大褂，只着一件黑色高领毛衣，面前摆着一只空杯和一壶没动过的温水。听见门口动静抬头对上你目光时，他自嘲地极浅笑了一下。"], ["say", "“怎么站外面？进来吧，外头冷。”"], ["nar", "你走进去坐到他对面，看着他眼底藏不住的倦意，声音放轻：「周朗说你这一年半过得不好。」"], ["say", "“他嘴太碎。只是值班久了胃不好，没他说得那么夸张。”"], ["act", "他伸手替你倒了杯热茶，指尖触到你手背时微微一顿，没有像从前那样立刻躲开。"]], "choices": ["“三年前到底为什么突然提分手。”", "伸手按住他倒茶的手腕", "安静陪他坐一会儿"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "窗外冻雨敲得玻璃脆响。沉默了足足一分钟，梁砚辞放下茶壶，第一次卸下所有冷硬外壳，声音低而哑。"], ["say", "“三年前那台急诊手术出了纠纷，家属天天堵在医院门口闹，院里停了我的职，最坏的结果是吊销执照。”"], ["nar", "他垂眼看着茶面晃动的灯影，指节扣紧桌沿。"], ["say", "“那时候你刚拿到去高原跟拍的调令，是你熬了两年才等到的机会。我怕那场官司拖垮你，也怕你看见我最狼狈的样子。”"], ["say", "“所以你就干脆用最难听的话把我推开，让我恨你走得痛快？”"], ["act", "他抬头迎上你微红的眼眶，没有辩解，只哑声说了一句「是，是我蠢」。"]], "choices": ["“你从来没问过我愿不愿意陪你扛。”", "“调查什么时候还你清白的？”", "沉默很久，低头喝了口热茶"], "fx": [0, 0, 0]}]}, {"title": "第三章 融雪之时", "scenes": [{"n": 1, "lines": [["nar", "周四下午复查结束，诊室里病人散尽。你没有立刻起身，而是从背包里拿出一叠用牛皮纸绳捆好的明信片，放在他面前。"], ["nar", "每一张都贴着高原邮局的邮戳，写着清城市一院的地址，却连收件人名字都只写了一个「梁」字，从未真正投进邮筒。"], ["say", "“这三年我没寄出去，是因为我觉得你不需要。现在还给你。”"], ["nar", "梁砚辞盯着那叠卡片，许久才伸手轻轻解开纸绳。第一张背面只有一句话：今天垭口下大雪，忽然想起你值夜班总忘穿秋衣。"], ["say", "“梁砚辞，你凭什么替我决定什么叫为我好。”"], ["act", "他指尖停在泛黄的纸角上，一贯稳得能拿手术刀的手，第一次微不可察地抖了一下。"]], "choices": ["看着他把明信片一张张看完", "起身把诊断书收进包里", "轻声问：“这三年，你后悔过吗？”"], "fx": [0, 0, 0]}, {"n": 2, "lines": [["nar", "诊室窗外天色渐暗，走廊灯光透进来。梁砚辞把最后一张明信片翻过去，抬起头时眼尾泛着一点极克制的红。"], ["say", "“后悔。从你拖着箱子走出机场那天起，每天都在后悔。”"], ["nar", "他把明信片仔细理齐，放进白大褂内袋，语气沉稳得像在立誓。"], ["say", "“当年是我怯懦，总觉得把你推远就是保护你。以后不会了。无论我想留你还是你决定走，都由你说了算。”"], ["act", "他没有逼你立刻表态，只把桌角那杯早已晾温的水推回你手边。"]], "choices": ["“那你这次别再随便把我推给别人。”", "“我还需要一点时间想想。”", "伸手轻轻碰了碰他的手背"], "fx": [0, 0, 0]}, {"n": 3, "lines": [["nar", "周末深夜清城连环追尾，急诊室连轴转了九个小时。你送去一袋热粥，看见梁砚辞靠在走廊尽头的长椅上睡着了，眉心还微微拧着。"], ["nar", "你放轻脚步，把自己的大衣搭在他膝头。衣角刚落下去，一只温热的手便扣住了你的手腕。"], ["nar", "他睁开眼，瞳仁里还带着刚醒的倦意，力道却收得很轻，像是怕抓疼你，又怕一松手人就不见了。"], ["say", "“怎么这么晚还跑过来。”"], ["say", "“怕某位主治医师又靠空腹撑到胃出血。”"], ["act", "他低头极浅地笑了一声，额头轻轻抵在你肩窝停了三秒，才松开手接过保温袋。"]], "choices": ["坐下来陪他把热粥喝完", "抬手抚平他拧着的眉心", "提醒他下班记得回家睡一觉"], "fx": [0, 0, 0]}, {"n": 4, "lines": [["nar", "立春前夜清城落了今年最后一场雪。你下楼倒垃圾，看见楼道口路灯下站着一道熟悉的身影。"], ["nar", "梁砚辞穿着那件黑色长款大衣，怀里揣着两袋还冒着热气的糖炒栗子，肩头落了一层细白雪花。"], ["say", "“请了五年假，院里批了。林护士长说我再不休假就把我反锁在值班室。”"], ["nar", "他把温热的纸袋塞进你手里，目光在雪光里显得格外清亮。"], ["say", "“明天雪化了，愿不愿意陪我去城郊走走？算重新认识一次。”"], ["act", "雪花落在他睫毛上很快化开，他安静站着，等着你的回答。"]], "choices": ["“好，明早九点楼下见。”", "剥开一颗热栗子先递到他嘴边", "笑着问：“梁医生这次带够耐心了吗？”"], "fx": [0, 0, 0]}, {"n": 5, "lines": [["nar", "次日清晨阳光刺破云层，屋檐上的积雪滴滴答答化作水线。梁砚辞站在楼下梧桐树旁，手里拿着那枚银质书签。"], ["nar", "你走过去，他把书签放进你掌心，没有再多讲大道理，只把你微凉的指尖包裹在温暖掌心里。"], ["say", "“这一千天欠你的话，我慢慢还。这次换我等你。”"], ["nar", "融雪后的风带着一点清冽草木气，阳光把两个人的影子并排拉在青石板上。"], ["act", "他握着你的手揣进大衣口袋，并肩朝街口亮堂的日光走去。"]], "choices": ["反手扣紧他的手指", "把银书签重新放回他掌心保管", "抬头看他：“走吧，先去吃早饭。”"], "fx": [0, 0, 0]}]}], "route": "snowmelt", "context": {"player": "刚从高原支教项目结束回城的摄影记者，带着一身风霜与未愈的轻度高反回到清城。", "relation": "三年前不欢而散的前任。分开前你曾陪他熬过规培最难的两年，却在他卷入医疗事故调查、单方面提分手后彻底断了联系。", "world": "十一月底的清城，雨夹雪下了一整晚。市一院急诊楼通宵亮着惨白灯管，候诊区弥漫着消毒水与潮湿羊毛大衣的味道。", "premise": "你从高原飞回清城的当晚发起了低烧，拎着行李箱打车去市一院挂急诊。叫号屏跳出你的名字，推开诊室门，抬头看见坐在灯下写病历的值班医生是梁砚辞。他手里的笔顿了半秒，起身先拿过椅背上那件厚黑羽绒服，不由分说罩在了你单薄的外套外面。", "known": ["三年前那场纠纷调查后来还了他清白，但你们已经整整一千天没说过话。", "他如今已是急诊外科主治医师，听共同朋友提过他这两年胃病犯过好几次。", "他白大褂左胸口袋里，还别着你当年送他的那支旧钢笔。"], "unknown": "三年前他为什么宁愿被你误解也要推开你，以及这一年半他独自扛下了什么。", "goal": "先做完检查把退烧药拿了，在雨雪停之前决定是像陌生病人一样离开，还是问清三年前那句没说完的话。", "public_meta": "29 · 急诊外科主治医师", "opening": "急诊诊室的门被推开，梁砚辞抬眼看见淋了雨夹雪的你，手里的笔顿了半秒，先起身把椅背上的厚黑羽绒服罩到你肩上。"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

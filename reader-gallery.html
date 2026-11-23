@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>姜绯 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "姜绯", "meta": "25 · 独立艺术空间策展人 / 估价顾问", "premise": "秋雨砸在「白匣」玻璃采光顶上。你推门进场核验展品保单，刚从人字梯下来的姜绯递过干毛巾，顺手扫了你的收款码：「你顺路帮我取的展签胶带，跑腿费加湿掉的鞋套，转你五十。收了再看画，我这儿不记人情账。」", "world": "城东老厂房改建的「白匣」艺术空间、市中心秋拍预展厅与城郊恒温画库。聚光灯、紫外验伪灯、松节油味与冷萃咖啡交织出熟龄名利场。", "desc": "锋利清醒、讲究等价交换，绝不欠人情债。别人递伞她当场转伞钱，唯独在你这里第一次算亏了账，却没撤资。", "arch": "明码标价的「野玫瑰」", "vigs": [{"need": 3, "title": "记账本的最后一页", "lines": ["姜绯办公桌抽屉里有一本黑色皮面小账本，专门记谁帮过她、她怎么还清。", "前几十页密密麻麻全画着红钩。", "只有最后一页写着你的名字，下面列着“顺路取胶带、送回小区、查画框底单”三条，后面既没标金额，也没画钩。"]}, {"need": 8, "title": "常温乌龙茶", "lines": ["画廊小冰箱里常年只放黑咖啡和苏打水，周伯安来都得自己带茶叶。", "直到你第三次来核保单，才发现最上层多了几瓶常温无糖乌龙茶。", "助理小声说，是姜主理人特意交代采购的，因为记得你说过看画前喝冰的胃会不舒服。"]}, {"need": 12, "title": "那枚素银戒", "lines": ["某晚加完班，她把左手那枚素银戒摘下来放在台灯下擦。", "你凑过去看，才看清内侧那串门牌号旁边，不知什么时候多了一道极浅的新划痕。", "她低头淡淡说：“卖掉老画室那天我发誓，以后谁给的东西都按价折现。", "现在想想，好像已经破戒了。”"]}, {"need": 16, "title": "撤掉的转账草稿", "lines": ["你在她电脑上导出展品清单时，不小心点开了微信窗口——聊天草稿栏里还留着半行没发出去的字：“昨晚你那件开衫干洗费四十，还是我请你吃顿饭抵掉？”后面删删改改，最后只给你发了个“早安”。"]}, {"need": 20, "title": "001 号展签", "lines": ["「白匣」每次开展都会留一张未公开发售的 001 号纪念门票。", "你帮她收拾书房时，在画册夹层里翻出了过去三场展的 001 号票，每一张背面都用极细的钢笔字写着当晚的天气和你穿的外套颜色。", "她推门撞见，耳尖瞬间发红，伸手把画册合上压在掌下：“策展归档资料，不准偷看。”"]}], "endings": {"A": {"title": "长线持有", "text": "春展闭馆那晚，老厂房院里的玉兰花落了一地白瓣。姜绯关掉主厅射灯，把装有「白匣」新营业执照和备用钥匙的牛皮纸袋推到你面前，没有再谈股份比例，也没有谈违约金。她说，以前卖掉老画室后，她以为自己这辈子只会算短线止损，直到你把那份解约函推回来的那一晚，她才真正学会长线持有。\n次年深秋，画廊二楼多了一间半开放的书房，长桌一半堆着她的策展模型与色卡，一半码着你的艺术品估价图录。每逢雨夜布展收工，她依然习惯在玄关备两把一模一样的黑色直柄伞，只是再也没人提过三十八块的伞钱；手机账单里多了一张共同储蓄卡，备注栏干干净净写着两个字：“不退。”"}, "B": {"title": "账目未平", "text": "秋展风波虽然平息，「白匣」的现金流与新一轮融资谈判仍像一张绷紧的网。闭馆那晚，姜绯听完你那句话，手指在无名指的素银戒圈上转了一圈又一圈。她抬眼看你，神情极清醒，也带着藏不住的倦意。她说，她现在还背着回购股份的对赌压力，给不了你对等的时间和安稳，不想拿一笔没把握的账拖你下水。\n次年夏天，你调去总部负责国际艺术品承保业务。在一次海外秋拍预展上，你远远看见姜绯穿着利落的黑西装和藏家谈笑风生；散场时她托侍应生给你送来一杯刚好常温的乌龙茶，杯垫背面用铅笔写着一行极工整的小字：“那笔咖啡钱还没还，下回见。”"}, "C": {"title": "最佳拍档", "text": "风波散去后，两人都没越过那条体面的界线，顺理成章成了业内最难拆散的搭档。每逢「白匣」筹备新展，总是由你先带着紫外灯进场核验每一件展品；每次拍卖行有拿不准的冷门画作，她也总会第一时间把高清底片发到你邮箱，从不收顾问费。\n入冬第一场雪落下来那天，你们在画廊露台核完年度结算表。姜绯顺手把刚拆封的一条羊绒围巾抛到你怀里，语气如常地说是品牌方送的伴手礼、她戴着颜色太素。你接过围巾系上，淡淡的雪松味混着冬夜寒气，两人在亮着暖灯的玻璃顶下碰了碰纸杯里的热美式。"}, "D": {"title": "两清为止", "text": "秋展顺利闭幕的下午，姜绯把最后一笔保险评估费准时打进了公司对公账户，连同那份盖好公章的结项回执一起寄到了你的工位。你们在展厅门口握了握手，礼貌客气，像两笔恰好平账的交易。她转身回去指挥工人撤展，背影依旧挺拔利落。\n两年后你在艺术杂志的年度人物专访里看见她的照片，「白匣」已经搬进了江边更大的独栋空间。配图里她站在白色展墙前，左手无名指依然戴着那枚素银戒圈。你合上杂志，想起那个暴雨夜她坚持转来的五十块钱，才发觉两人自始至终，连一顿没算清价格的饭都没吃过。"}}, "chapters": [{"title": "第一章 明码标价", "scenes": [{"n": 1, "lines": [["nar", "【雨夜展厅的三十八块】城东老厂房改建的「白匣」艺术空间，秋雨砸在玻璃采光顶上，布展工人刚收工。"], ["nar", "你作为艺术品保险估价师，受邀在秋展开展前核验展品清单。推开玻璃门时，姜绯正踩在两米高的铝合金人字梯上调射灯角度，黑色西装外套搭在展台边，白衬衫袖口卷到手肘。"], ["nar", "听见动静，她利落退下梯子，扫了一眼你收在门口的湿雨伞，转身从柜台后抽出一条干毛巾递过来，顺手拿起手机扫了你的收款码。"], ["say", "“刚才雨大，你顺路帮我从快递柜取的那卷展签胶带，跑腿费加你湿掉的鞋套，转你五十。”她把手机屏幕往你眼前一亮，“收了再看画，我这儿不记人情账。”"]], "choices": ["干脆收下并报公事：点开收款，把估价清单摊在展台上：“收了。那现在按小时算，姜主理人，先看三号墙那幅油画的原始来源证。”", "退回转账：把五十块原路退回去：“顺手的事，姜小姐没必要把每一秒都标上价签。”"], "fx": [0, 0]}, {"n": 2, "lines": [["nar", "【射灯下的底漆】展厅二号间，聚光灯打在一幅名为《暮港》的青年油画上，松节油味很淡。"], ["nar", "你戴上白手套凑近画框下沿，发现画布绷钉处有一道极细的新漆反光。姜绯抱着双臂站在你身后半步，没催，也没急着替画家辩解。"], ["say", "“看出什么了？”她声音不高，带着点试探。"], ["nar", "你指了指右下角签名边缘的笔触：“画面颜料至少干了两年，但落款旁边这层罩光油是近两个月补上去的。保单里没写修补记录。”"]], "choices": ["直接把异常记入核验单：拿出便携紫外灯照过画角，一笔一划填进保单备注。", "先私下问她是否知情：合上登记本，侧头问她：“这幅画是你从哪位藏家手里借展的？”"], "fx": [0, 0]}, {"n": 3, "lines": [["nar", "【拍卖预展的冷萃】市中心酒店三层秋拍预展厅，人声低缓，周伯安坐在窗边慢悠悠搅着冰美式。"], ["nar", "周伯安冲你招手，顺口聊起姜绯这场独立秋展的排面。不远处，沈澈正端着香槟和几位地产藏家谈笑，偶尔朝姜绯的方向偏一下头。"], ["nar", "姜绯走过来，把一杯常温乌龙茶搁在你手边，自己端起另一杯黑咖啡：“沈总刚才提议，把我的主展位腾出三分之一给某位流量跨界艺人做打卡墙，门票能翻两倍。”"], ["nar", "周伯安笑了一声没接话，只抬眼看你。"]], "choices": ["“打卡墙拉高的是单日客流，压低的是整场展品的保险估值。真这么换，这批画的承保系数得降一档。”", "“沈总占三成股，你打算硬顶还是折中？”"], "fx": [0, 0]}, {"n": 4, "lines": [["nar", "【老仓库的漏雨夜】城郊恒温画库外走廊，深夜雷雨骤至，货车卸完最后两箱展品。"], ["nar", "清点完借展画箱已是十一点半，园区班车早就停运。雨幕把路灯泡成一片白茫茫的雾。"], ["nar", "你把伞递过去一半，姜绯却往后撤了半步，站在屋檐内侧低头看打车软件：“网约车排队二十位。你的车停在东门，捎我到地铁口，车费按专车算，行不行？”"], ["nar", "雨丝斜飘进来，打湿了她额角一缕碎发，她抬手往耳后别了一下，指尖冰凉。"]], "choices": ["“行啊，到地铁口五十，送到你家楼下八十，上车吗姜主理人？”", "“别算车费了，再等下去你这件白衬衫就透了。”"], "fx": [0, 0]}, {"n": 5, "lines": [["nar", "【副驾上的素银戒】高架桥下红灯长队，雨刷有节奏地左右刮开积水，车厢暖风开得很轻。"], ["nar", "车停在小区门口的梧桐树影下。姜绯解开安全带，正要推门，忽然发现左手那枚素银戒圈在搬画箱时不知什么时候松脱，滚进了座椅夹缝里。"], ["nar", "她俯身去摸，指尖在冰冷的滑轨间碰了好几下没够到，呼吸罕见地乱了半拍。"], ["nar", "你打开手机手电，弯腰替她从座椅底下把戒圈摸了出来。戒圈内侧刻着一行极细的旧字——那是她两年前卖掉的老画室门牌号。"]], "choices": ["不问刻字，直接放回她掌心：拿纸巾擦净上面的灰，平平搁在她手心：“找到了，别急。”", "“看你找得这么急，是家里留下的？”"], "fx": [0, 0]}]}, {"title": "第二章 赝品风波", "scenes": [{"n": 6, "lines": [["nar", "【匿名鉴伪帖】开展前四十八小时，「白匣」办公室，电脑屏幕上挂着一篇阅读量破十万的匿名爆料帖。"], ["nar", "帖子直指姜绯秋展压轴的《暮港》系高仿赝品，还贴出了模糊的画角补漆特写。半小时内，三家合作媒体发来暂缓报道的邮件，连保险公司风控部也打来电话要求复核保单。"], ["nar", "沈澈推门进来，把一份补充协议放上桌面，语气依然客气：“姜绯，危机公关我来压，但这次展览的策展署名得挂集团文化部，画廊估值按七折重算。”"], ["nar", "姜绯坐在长桌后没看协议，手指轻轻敲着桌面，目光却忽然越过沈澈，落到了刚推门进来的你身上。"]], "choices": ["先看帖子照片的拍摄角度：凑到屏幕前放大画角特写：“这张照片的光位不对，不是开展前拍的，是展品进库前在第三方仓库拍的。”", "“我的原始承保核验还在有效期内，在正式鉴伪报告出来前，我不会签撤保单。”"], "fx": [0, 0]}, {"n": 7, "lines": [["nar", "【走廊里的试探】画廊外露台，雨后风凉，沈澈刚坐电梯离开。"], ["nar", "办公室里只剩你们两个。姜绯站在露台栏杆边，手里端着一杯没喝两口的凉咖啡。"], ["say", "“刚才风控部给你施压了吧？”她没回头，声音平得听不出波澜，“那篇爆料帖能精准拍到补漆细节，除了借展方、我，就只有做过进场核验的人见过画角。”"], ["nar", "她转过身看着你，没有质问，眼神却像估价灯一样冷亮。"]], "choices": ["“姜绯，如果你真怀疑是我放出去的图，现在就该让助理送客了，何必留我喝这杯冷茶？”", "拿出自己的原始拍照时间水印：把相机存储卡放上栏杆：“我的所有底片都有加密时间戳，随时可以核对。”"], "fx": [0, 0]}, {"n": 8, "lines": [["nar", "【老画室的旧账】城西旧巷一家打烊的装裱铺，周伯安帮着调出了十年前的画框制作底单。"], ["nar", "查来查去，问题不在《暮港》真假，而在两年前跑路的那位前辈藏家——这幅画当年正是从他手里流出的，如今沈澈暗中买通了当年的画框师傅，想借旧案把姜绯逼出「白匣」。"], ["nar", "走出装裱铺时下起了毛毛细雨。姜绯靠在湿漉漉的砖墙边，头一次没急着报下一步方案，只低头转着无名指上的银戒。"], ["say", "“两年前我赔光了家里的老画室，那时候我觉得，只要把每一笔账算到分毫不差，就不会再被人从背后捅一刀。”她顿了顿，声音轻得像融进雨里，“结果账算清了，局还是冲着人来的。”"]], "choices": ["“账算得清是本事，但被人算计不是你的错。今晚别算了，先去吃碗热面。”", "“既然问题出在两年前的画框底单，只要找到原始木料编号和画家本人的草图手稿，沈澈这招就废了。”"], "fx": [0, 0]}, {"n": 9, "lines": [["nar", "【深夜画室的草图】城郊画家旧居，铁门锈迹斑斑，院里积着雨水，室内飘着松节油味。"], ["nar", "画家是个脾气古怪的老头，听说你们来意，起初闭门不见。姜绯站在雨檐下没硬闯，只隔着纱门报出了老头十年前落选美展那幅画的配色和画框尺寸，连当年他在画背用铅笔写的修改日期都一字不差。"], ["nar", "老头拉开门，把一卷压在箱底的原始素描稿和当年补漆的书信证明全翻了出来。"], ["nar", "回程车上，姜绯靠着车窗闭眼小憩，连日熬夜让她眼下泛着淡青，手里却仍死死抱着装草图的牛皮纸筒。"]], "choices": ["把车厢暖风调高两度，放慢车速：路过减速带时极轻地踩了刹车，没叫醒她。", "“雨大，草图别受潮了，放我包里吧。”"], "fx": [0, 0]}, {"n": 10, "lines": [["nar", "【解约函与退路】开展前夜，风控部突然发来内部通报：若你继续为「白匣」背书，公司将暂停你本季度的主评资格。"], ["nar", "你刚在走廊接完部门主管的电话，推开办公室门，看见姜绯正把一份签好字的《保单解除确认书》装进文件袋，推到桌子正中央。"], ["nar", "她脸上没有委屈，也没有发脾气，语气冷静得像在谈一笔普通退货：“周老刚才告诉我，你们风控部给你下通牒了。明天的鉴真发布会我自己开，保单我找另一家承保，这份解约函你签个字，别把自己的前程赔进我的画廊里。”"], ["nar", "说完她垂下眼，左手食指把文件袋往你这边又推了半寸。"]], "choices": ["“姜绯，当初签合同时你说不欠人情、只认契约。现在展还没开、真伪刚查清，你单方面毁约，违约金算谁的？”", "“风控部要的是实证，不是撤退。明天的发布会我以主估价师身份出席，输了我认，赢了你请我喝一年茶。”"], "fx": [0, 0]}, {"n": 11, "lines": [["nar", "【布展前的最后一盏灯】凌晨四点的主展厅，所有画作已全部重新核验上墙，只剩主墙一盏射灯还亮着。"], ["nar", "空旷的白墙在暖光下安静得像退潮后的海面。姜绯坐在展厅中央的长木凳上，手里转着两支没拆封的吸管，递给你一盒温热的牛奶。"], ["say", "“如果明天沈澈还是撤资，‘白匣’账上的现金流只够撑四个月。”她仰头看着主墙上的《暮港》，声音很轻，“你算过这笔账吗？陪我赌这一局，你其实不划算。”"]], "choices": ["“算过了，确实不划算。可有些事本来就不是拿计算器按出来的。”", "“好画和好策展人都经得起长线持有，短期波动不算亏。”"], "fx": [0, 0]}]}, {"title": "第三章 落槌定音", "scenes": [{"n": 12, "lines": [["nar", "【开幕前十分钟】「白匣」门口签到台，记者与藏家陆续入场，沈澈站在侧廊面色冷淡。"], ["nar", "距十点开幕还剩十分钟，沈澈走过来压低声音：“姜绯，现在撤下《暮港》还来得及，别等记者发难大家都不体面。”"], ["nar", "姜绯穿着一身剪裁利落的深墨绿西装，站姿笔直。她没接沈澈的话，只侧身替你把歪了一点的工作证挂绳扶正，指尖擦过你衣领。"]], "choices": ["“别听他的，公证书和底片都在我包里，按流程开场。”", "先向周伯安点头致意：请周伯安坐到第一排见证席。"], "fx": [0, 0]}, {"n": 13, "lines": [["nar", "【紫外灯下的真相】主展厅聚光灯下，一名被安排好的自媒体博主果然举手质问《暮港》补漆造假。"], ["nar", "展厅里瞬间安静，所有镜头齐刷刷对准姜绯。"], ["nar", "姜绯没有一句情绪化辩解，只请助理拉下遮光帘，将画家亲笔原始素描稿、十年前装裱底单和那封当年补漆的手写书信原件依次投影上白墙。"], ["say", "“画作右下角确有两处修补，出自画家本人之手，原始凭证已由公证处封存。”她转向提问者，语速不紧不慢，“倒是贵账号那张未公开的库房特写，拍摄时间早于画作进场三天——不知是从哪位中间人手里买的图？”"]], "choices": ["走上前出示保险核验时间戳：打开平板，把原始进场核验单与异常光线比对图投上大屏。（若持有 `c1_eye` 与 `c2_proof` 标记，现场藏家一片哗然，风控部代表当场起身确认承保有效）", "在台下稳住风控部代表：把完整纸质公证副本递交风控部复核。"], "fx": [0, 0]}, {"n": 14, "lines": [["nar", "【股份回购单】展览首日闭馆后，空荡的办公室里，沈澈留下了一份股权转让意向书。"], ["nar", "舆论彻底反转，秋展首日预约直接排到下个月。沈澈自知理亏，提出按原价退出「白匣」三成股份，但要求一周内付清全款。"], ["nar", "姜绯盯着转让书上的数字，从抽屉里拿出个人资产清单一条条核算，眉头微蹙。"], ["say", "“周老愿意托底一大半，还差最后一小块缺口。”她合上笔帽，语气依然利落，“明天我去谈银行过桥贷，总能凑齐。”"]], "choices": ["“别去碰高息过桥贷。剩下的那份小股我按市场价认购，分红照算，但补充条款得加一条——以后再遇事，不准单方面递解约函。”", "“周老那边有低息专项扶持，利息比银行低一半，明天我陪你去谈。”"], "fx": [0, 0]}, {"n": 15, "lines": [["nar", "【闭馆后的长木凳】夜色降临，展厅关掉主灯，只留《暮港》上方一盏柔黄射灯，窗外雨彻底停了。"], ["nar", "所有外人都走了，展厅安静得能听见空调低低的送风声。姜绯脱掉磨脚的高跟鞋，光脚踩在温润的木地板上，靠着长凳长长舒了口气。"], ["nar", "她偏头看你，左手那枚素银戒圈在微光里泛着温和的银色。"], ["say", "“这两年我习惯把每一笔账算到零，觉得只要不欠别人，就能随时全身而退。”她声音轻得像只说给你听，“但现在这笔账，我好像算不平了。”"]], "choices": ["“那就别算平了。姜绯，我喜欢你，这笔账我不打算结清，你想赖账也行。”", "“算不平就先放着，先把鞋穿上，地板凉。”"], "fx": [0, 0]}, {"n": 16, "lines": [["nar", "【新展签的落款】秋展收官周，阳光透过高大的玻璃采光顶铺满展厅。"], ["nar", "你在帮她整理下一季青年雕塑展的保险清单。翻到新印好的展览画册扉页时，你发现“特别鸣谢”那一栏干干净净，反而在“联合出品”下面，并排印着姜绯和你的名字。"], ["nar", "她端着两杯刚冲好的手冲咖啡走过来，顺手把不加糖的那杯放在你右手边。"]], "choices": ["“姜主理人，把我印在联合出品栏，算不算溢价分红？”", "认真核对画册里的展品估值：拿起红笔替她把两处微小的印刷字距标了出来。"], "fx": [0, 0]}, {"n": 17, "lines": [["nar", "【次年春展】次年清明过后的晴日，「白匣」春季新展正式开幕，院里种的新玉兰开满枝头。"], ["nar", "展厅里人来人往，周伯安正拿着放大镜看一件新锐陶艺作品。"], ["nar", "姜绯换了一件米白色亚麻西装，手里拿着两张刚印好的开幕邀请函走到你身边。她没有再像初遇那晚那样把每件小事都折算成转账数字，只是自然地把其中一张印着“001”编号的卡片塞进你西装口袋。"]], "choices": ["“这次的 001 号票，收我多少钱？”", "“走吧，姜主理人，新展该剪彩了。”"], "fx": [0, 0]}]}], "route": "gallery", "context": {"player": "受邀在秋展开展前核验展品清单与保单的艺术品保险估价师。", "relation": "素不相识的保险估价师与独立画廊主理人。雨夜展厅初遇，她顺手给你转了五十块跑腿费，不记人情账，却很快被一桩赝品风波绑进同一场鉴真博弈。", "world": "城东老厂房改建的「白匣」艺术空间、市中心秋拍预展厅与城郊恒温画库。聚光灯、紫外验伪灯、松节油味与冷萃咖啡交织出熟龄名利场。", "premise": "秋雨砸在「白匣」玻璃采光顶上。你推门进场核验展品保单，刚从人字梯下来的姜绯递过干毛巾，顺手扫了你的收款码：「你顺路帮我取的展签胶带，跑腿费加湿掉的鞋套，转你五十。收了再看画，我这儿不记人情账。」", "known": ["姜绯筹备了半年的独立青年秋展两天后开幕，主展品是一幅备受关注的油画《暮港》。", "投资人沈澈占了画廊三成股份，一直想借商业流量接管策展话语权。", "姜绯左手无名指常年戴着一枚素银戒圈，内侧刻着一串旧门牌号。"], "unknown": "两年前她为什么卖掉家里的老画室赔违约金，以及匿名爆料《暮港》造假的幕后推手到底是谁。", "goal": "先完成展品进场核验，在秋展风波与资本压价中查清《暮港》真伪，守住保单与「白匣」。", "public_meta": "25 · 独立艺术空间策展人 / 估价顾问", "opening": "秋雨敲打「白匣」玻璃顶，姜绯退下人字梯递过毛巾，顺手扫了你的收款码：「顺路取胶带的跑腿费加湿鞋套，转你五十。收了再看画，我这儿不记人情账。」"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>

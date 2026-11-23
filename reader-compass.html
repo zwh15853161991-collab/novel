@@ -1,0 +1,116 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>韩烈 · 逐字版</title>
+<style>
+:root{--bg:#0f0c0b;--ink:#ece6de;--dim:#a49b90;--faint:#8a8279;--line:rgba(255,255,255,.09);
+--accent:#c9a06a;--acc-ink:#1a140e}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(120% 70% at 50% 0,#1a1512,#0f0c0b 62%);color:var(--ink);
+ font:17px/1.9 "Songti SC","Noto Serif SC",serif;min-height:100dvh}
+.wrap{max-width:680px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top)) 20px 60px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;letter-spacing:.04em}
+.meta{color:var(--faint);font-size:12.5px;letter-spacing:.12em}
+.sec{color:var(--accent);font-size:11.5px;letter-spacing:.18em;margin:20px 0 6px}
+p.world{color:var(--dim);font-size:15px;margin:0;white-space:pre-line}
+.relation{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:0 15px 15px;margin-top:18px;background:rgba(255,255,255,.035)}
+.known{padding-left:1.2em;color:var(--dim);font-size:15px;margin:5px 0;line-height:1.9}
+.known li+li{margin-top:6px}
+.context-again{background:none;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer}
+.btn{display:inline-block;margin-top:18px;background:var(--accent);color:var(--acc-ink);border:0;
+ border-radius:12px;padding:11px 20px;font-size:15px;font-family:inherit}
+#stage{display:none}
+.chap{color:var(--faint);font-size:12px;letter-spacing:.16em;text-align:center;margin:26px 0 14px}
+.nar{margin:0 0 14px;line-height:2;font-size:16.5px}
+.her{background:rgba(255,255,255,.05);border:1px solid var(--line);border-left:2px solid var(--accent);
+ border-radius:14px;padding:11px 15px;margin:0 0 14px}
+.choices{display:grid;gap:9px;margin:18px 0 0}
+.choices button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink);
+ border-radius:12px;padding:12px 14px;font-size:14.5px;font-family:inherit}
+.choices button:hover{border-color:rgba(201,160,106,.5)}
+.endcard{margin:22px 0;padding:16px 18px;border-radius:16px;border:1px solid rgba(201,160,106,.32);
+ background:linear-gradient(180deg,rgba(201,160,106,.1),transparent)}
+.eth{color:var(--accent);font-size:12.5px;letter-spacing:.12em;margin-bottom:8px}
+.vig{margin-top:20px;border-top:1px dashed var(--line);padding-top:14px}
+.vig h3{font-size:14px;font-weight:500;margin:0 0 8px;color:#c8a37a}
+.vig p{margin:0 0 8px;color:var(--dim);font-size:14px}
+.small{color:var(--faint);font-size:12.5px;margin-top:10px}
+</style></head><body><div class="wrap">
+<div class="navrow" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+  <a href="./routes.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">← 故事总览</a>
+  <a href="./index.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">离线完整版</a>
+  <a href="./app-v2.html" style="color:#a49b90;text-decoration:none;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 11px;font-size:12.5px">AI 版</a>
+  <button class="context-again" id="contextAgain">前情</button>
+</div>
+<div id="intro">
+  <h1 id="nm"></h1><div class="meta" id="mt"></div>
+  <div class="sec">你在这篇故事中的身份</div><p class="world" id="player"></p>
+  <div class="relation"><div class="sec">人物关系</div><p class="world" id="relation"></p></div>
+  <div class="sec" id="secWorld">故事背景</div><p class="world" id="world"></p>
+  <div class="sec">眼前的人</div><p class="world" id="persona"></p>
+  <div class="sec" id="secPremise">前情提要</div><p class="world" id="premise"></p>
+  <div class="sec">开场时你已经知道</div><ul class="known" id="known"></ul>
+  <div class="sec">开场时尚未说清</div><p class="world" id="unknown"></p>
+  <div class="sec">眼下的事</div><p class="world" id="goal"></p>
+  <button class="btn" id="go">开始</button>
+  <div class="small">这一版是写死的正文：不联网、不需要模型，每句都对过。</div>
+</div>
+<div id="stage"><div id="log"></div><div class="choices" id="ch"></div></div>
+</div>
+<script>
+const D={"name": "韩烈", "meta": "28 · 秦岭地质灾害调查队领队", "premise": "特大暴雨引发山体塌方，考察队越野皮卡卡在盘山路边缘打滑。副驾门猛地被拉开，浑身雨水的韩烈探身进来一把扣住你冲锋衣后领，低喝一声：「车轮打滑了，跳！踩我脚印，别看崖下！」", "world": "暴雨封山的秦岭南麓深山。孤悬山脊的护林道班房、断桥钢缆、浅溶洞柴火堆与裸露花岗岩主脊构成极境求生之路。", "desc": "常年扎在秦岭深山的防灾领队，话少且重，越到险境越冷静。不善说软话，却在暴雨封山时把军大衣、净水和生路全留给你。", "arch": "荒野求生里的「定风波」", "vigs": [{"need": 3, "title": "烟袋锅的规矩", "lines": ["韩烈随身带着旱烟，但在狭窄的道班房里硬是憋了三天一口没抽。", "老宋笑他什么时候改了性子，他蹲在屋外风口拿柴刀削木楔，闷声回了一句：“屋里地方小，烟味呛姑娘，我站外面抽还能憋死？”"]}, {"need": 8, "title": "七叶一枝花", "lines": ["山里蚊虫毒，你脚踝被咬得红肿。", "第二天醒来，床头摆着一只小瓷瓶，里头是他托老宋采的野生七叶一枝花捣成的药膏，泛着淡淡草木苦香。", "瓶盖贴着一小截医用白胶布，上面是他粗重的字：“抹肿处。”"]}, {"need": 12, "title": "钢板的温度", "lines": ["雷雨夜岩洞湿冷，你睡梦中下意识往热源缩。", "他身子僵了半晌，小心把没受伤的右肩迎向洞口风向，拿温热的脊背挡在你外侧。", "半梦半醒间你摸到他锁骨下方一道硬邦邦的凸起，他在暗处放轻声音：“别摸，里头压着块钢板，凉，别冰着你手。”"]}, {"need": 16, "title": "不吃羊肉的真相", "lines": ["县城小馆子里，老板端上一大碗热腾腾的羊肉汤，韩烈把软烂的肉全拨进你碗里，自己就着辣子啃干锅盔。", "你问他怎么不吃，老宋在旁揭了他的底：“这小子当年在可可西里断粮四天，把最后半条风干羊肉全留给实习生，自己饿出胃病，闻着膻味就反胃，怕你不够吃才硬点的这碗！”"]}, {"need": 20, "title": "柴火堆上的正字", "lines": ["保护站后院码着三面墙的松木劈柴。", "有天你绕去拿柴，发现最靠里的几根木桩截面上，用炭笔歪歪扭扭画着一排“正”字。", "你正数着天数，韩烈拎着斧头走过来，耳根瞬间红透，一把把那几根木桩翻了个面，粗声粗气道：“数着玩呢，看今年过冬的柴够不够烧。”后来小梁偷偷告诉你，那正字是从你提交调驻申请那天开始画的。"]}], "endings": {"A": {"title": "定风止澜", "text": "发车前五分钟，检票口已经开始收队，韩烈气喘吁吁地从站台长廊尽头追了过来。他左手攥着一张刚补的同车次站票，右手把那枚纯铜老罗盘连着一张盖好红章的省城联合勘探调令复印件一起塞进你大衣兜里。他说，山里的事交给老宋盯着了，这趟车他送你回省城，把欠你的那顿饭和后面的日子当面聊清楚。\n次年深秋，秦岭主峰落了第一场薄雪。他在保护站后院亲手用青石砌了座避风壁炉，炉膛里整夜烧着青冈木炭，铁架上永远坐着一壶红枣姜茶；每逢山风呼啸雪落封道，他总会把你冰凉的双手揣进自己暖烘烘的羊绒衫口袋里焐热，屋外风雪拍窗，屋内柴火轻爆，整座大山再也没一阵冷风能吹到你身上。"}, "B": {"title": "峰回路转", "text": "月台汽笛拉响，韩烈听完你那句话，按在罗盘上的手背青筋微微鼓起。他静静看了你两秒，终究退回黄色安全线外。车门合拢前，他把那块盖着保护区钢印的出入牌塞进你手心，哑着嗓子说，山里的苦他一个人吃惯了，等他把这几道滑坡沟全部治理稳妥，如果那时候你还愿意等，他进城找你。\n次年盛夏，省城地质灾害治理评审会上，秦岭方案全票通过。你在发言席抬起头，看见最后一排坐着个肩宽背厚的身影；他穿着一套略显拘谨的深蓝西装，领口别着一枚小小的铜指针，在掌声里隔着人群望向你，眼神沉静笃定。"}, "C": {"title": "高山流水", "text": "走出大山后，谁都没把那句话点破。他留在深山当他的防灾领队，你回研究所主持古水脉文献整理。每年立秋和冬至，山里邮车总会准时捎来两袋新打的野生板栗和晒干的羊肚菌；你在省城挑好的防水登山靴和防滑冰爪，也会按老地址寄回道班房，包裹里谁都不留多余的话。\n三年后联合勘探队重返秦岭，两人在龟背石观测点重逢。雨后初晴，韩烈靠在皮卡车门边擦罗盘，见你拎着测绘仪走来，自然地迈步迎上去接过最沉的那只箱子架上肩头，笑着吐出两个字：“来了？”像昨天才刚分开。"}, "D": {"title": "过客归川", "text": "火车站一别，生活迅速归位。你调往沿海城市参与海洋地质项目，秦岭的暴雨与断崖渐渐成了档案柜里几页工整的坐标日志。偶尔有同事聊起那场暴雨脱险，你总能平静专业地分析花岗岩基岩与古水脉走势，只是很少再提起那个在泥石流里拉住你后领的墨绿色背影。\n五年后一个雨夜，你在纪录片频道看到秦岭国家公园建成的专题片。镜头掠过林场荣誉室展柜，那枚布满划痕的纯铜老罗盘静静躺在绒布上，旁白念着原领队韩烈调赴高原支援地质找矿的消息。你关掉电视站在窗前，掌心似乎还留着当年山风吹过时的凉意。"}}, "chapters": [{"title": "第一章 暴雨封山", "scenes": [{"n": 1, "lines": [["nar", "【断崖落石】秦岭南麓盘山公路，黑云压顶，特大暴雨倾盆而下，山坡泥石滚落。"], ["nar", "你随考察队乘坐的越野皮卡被前方塌方截断在半山腰，泥浆裹着碎石噼里啪啦砸在车顶铁皮上。"], ["nar", "副驾车门猛地被拉开，高山冷雨灌进车厢。一个肩宽背厚的男人探身进来，墨绿冲锋衣袖口被荆棘划开一道口子，雨水顺着下颌往下淌。"], ["nar", "他一把扣住你的冲锋衣后领，力道沉稳，直接把你带出车门：“车轮打滑了，跳！踩我脚印，别看崖下！”"]], "choices": ["干脆借力跳下车：顺着他的臂力跃进泥地，双脚稳稳踩进他踏实的石窝里。", "回头捞走地质日志：跳车前顺手把座位上的防水勘测包死死抱进怀里。"], "fx": [0, 0]}, {"n": 2, "lines": [["nar", "【道班房的火炉】山脊上的护林道班房，铁皮屋顶被狂风掀得闷响，屋内柴火炉泛着暗红火光。"], ["nar", "四人浑身湿透躲进砖房。老宋往炉膛里续松木柴，小梁蹲在墙角摇动应急发电机试短波电台。"], ["nar", "韩烈脱下滴水的冲锋衣搭在木架上，里面只剩一件贴身的黑色工字背心。他双臂线条利落结实，左肩胛骨横着一道长达二十公分的陈旧缝合疤痕。"], ["nar", "他从铁炉上拎下烧滚的铝皮大水壶，倒了一搪瓷缸浓姜茶，推到你面前：“喝了。山里失温二十分钟就能要人命，别硬扛。”"]], "choices": ["双手捧起搪瓷缸：捂着滚烫的缸身道谢，小口咽下辛辣的姜茶。", "递毛巾问他左肩的伤：递过去一块干毛巾，目光落在他方才蹭破渗血的左肩。"], "fx": [0, 0]}, {"n": 3, "lines": [["nar", "【纯铜老罗盘】道班房昏暗油灯下，韩烈正用油石细细擦拭一枚纯铜老罗盘的指针轴心。"], ["nar", "暴雨伴着局部地磁扰动，短波电台只剩沙沙电流声。如果二十四小时内找不到安全撤离坡道，这排老道班房随时会被后山泥石流推平。"], ["nar", "你摊开随身带来的清代古地质图凑到灯下。韩烈停下擦拭，俯身凑近，身上带着潮湿松木烟和山风的气味。"], ["say", "“这是旧县志附的《秦岭水脉注》。”你指着图上的红圈。"], ["nar", "韩烈粗糙的拇指按在罗盘滚花外圈上，目光锁住图纸：“玄乎的风水话我不信，但这图标的‘龟背石’，整块都是花岗岩基岩，上面滑不下来。”"]], "choices": ["并肩换算现代比例尺：抽出铅笔帮他把古图里数折算成等高线坐标。", "轻声问罗盘来历：指尖停在罗盘边缘磨得发亮的刻字旁。"], "fx": [0, 0]}, {"n": 4, "lines": [["nar", "【半干的军大衣】后半夜山风如刀，气温跌到零度上下，木窗缝不断往屋里灌冷气。"], ["nar", "你缩在靠炉火的竹椅里，嘴唇冻得发白，双手插在兜里止不住轻颤。"], ["nar", "韩烈巡完屋顶防雨布回来，军靴底沾满厚泥。他在门槛外跺净碎冰，大步走过来，脱下身上那件烤得半干、沾着松木柴烟味的墨绿羊毛军大衣，直接罩在你肩上。"], ["nar", "大衣沉甸甸的，内衬里还留着他胸口滚烫的体温。"]], "choices": ["“大衣给我了，你穿什么？”", "往他那边挪半张凳子：把宽大衣摆分出一半搭在他身后的木椅上。"], "fx": [0, 0]}, {"n": 5, "lines": [["nar", "【暴风雨前的巡视】凌晨五点，道班房外悬崖观测点，浓雾锁山。"], ["nar", "韩烈独自站在风口，手里握着削尖的硬木探杆，一寸寸扎进湿土里测含水量。"], ["nar", "你披着大衣悄悄走到他身后。一阵横风卷来，脚下碎石一滑。韩烈头也没回，长臂一伸精准扣住你手腕，顺势把你带进避风的岩凹里。"], ["nar", "他的手掌宽大干燥，指腹布满粗茧，把你冻僵的手腕严严实实裹在掌心。"]], "choices": ["“坡面含水量超标了，还能撑多久？”", "站稳后轻咳退开半步：缩回手拢紧大衣领口。"], "fx": [0, 0]}]}, {"title": "第二章 绝壁突围", "scenes": [{"n": 6, "lines": [["nar", "【断桥天堑】清晨山洪暴发，撤离路上的木桥已被浊流冲毁，只剩两根碗口粗的钢丝缆绳横跨峡谷。"], ["nar", "脚下黄泥激流翻滚，巨石碰撞发出沉闷轰鸣。小梁脸色发白，老宋磕灭烟袋解下腰间主绳。"], ["nar", "韩烈把主锁扣死在自己腰带上，回身看你。山风吹乱他额前黑发，眼神沉静得没有一丝晃动。"], ["say", "“我先滑过去架滑轮、钉稳地锚，你第二个过。”他从脖子上摘下那枚纯铜老罗盘，顺手挂进你衣领里，“帮我收着。万一我那边地锚打滑，别等我，你带着老宋和小梁照罗盘正南走。”"]], "choices": ["“韩烈，我不替你收遗物。罗盘我帮你拿着，对岸你亲自来取。”", "“你只管稳住地锚，我踩准滑轮就过去。”"], "fx": [0, 0]}, {"n": 7, "lines": [["nar", "【滑轮卡死】峡谷上空，暴雨中滑轮滑到中段，突然死死卡在钢缆一处翘起的断股锈结上。"], ["nar", "你悬在峡谷中央随风摇晃，脚下是咆哮的浊流，安全绳绷得吱吱作响。"], ["nar", "对岸的韩烈二话没说，立刻将腰间副锁扣上主缆，倒挂着顺绳飞快滑到你身前。"], ["say", "“别往下看，双脚曲起来护住胸口！”他在雨声里喊得短促清晰，抽出腰间地质锤，用尾钩狠狠卡进滑轮缝隙撬开锈死轴承。滑轮脱卡瞬间惯性猛冲，为了防止滑轮跳轨，他右掌直接死死按住钢缆硬生生刹住冲势，钢丝毛刺瞬间绞裂他的虎口与掌心，鲜血混着雨水顺着小臂往下淌。"]], "choices": ["“韩烈，松手！掌心勒穿了！”", "照他指令屈膝缓冲：稳住重心配合他一起落地。"], "fx": [0, 0]}, {"n": 8, "lines": [["nar", "【岩洞清创】对岸干燥的浅溶洞，小梁在洞口架电台警戒，你在柴火旁替韩烈清创。"], ["nar", "韩烈靠着岩壁坐着，脸色因失血发白。他右掌全是深深的钢丝勒痕，左肩旧伤也因方才拉扯渗出血印。"], ["nar", "你拧开碘伏瓶，手背因为后怕还在微微发颤。"], ["nar", "韩烈没催，只伸出没受伤的左手，宽大温热的掌心轻轻盖在你发抖的手背上压了两秒。"], ["say", "“抖什么。开膛破肚的事我都扛过，这点皮肉伤算个屁。直接倒，我受得住。”"]], "choices": ["稳住手消毒并轻轻吹气：利落冲洗干净创面，上药时低头替他吹了吹灼痛的掌心。", "红着眼眶低头缠绷带：一句话没说，一圈一圈把纱布绕得极细密。"], "fx": [0, 0]}, {"n": 9, "lines": [["nar", "【最后半壶水】溶洞深夜，洞外雨势未歇，净水与干粮已见底。"], ["nar", "军用水壶里只剩最后半壶接来的干净雨水。老宋和小梁靠在洞壁睡着了。"], ["nar", "韩烈嘴唇干得起了白皮。你把水壶递过去，他扭头避开：“你喝。明天翻主脊还有二十里陡坡，你身子单薄。”"], ["say", "“你失了那么多血，不补水明天直接虚脱。”"]], "choices": ["“你不喝，我一口不沾，现在全倒沙地里。”", "“一人一半，规矩我定了，领队也得服从。”"], "fx": [0, 0]}, {"n": 10, "lines": [["nar", "【背上探路包】清晨雾重，救援电台仍无回音，小梁因体力透支情绪崩溃，质疑不该走古道翻脊。"], ["nar", "小梁蹲在洞口捂着头，声音发颤地问到底还有没有活路。老宋在一旁沉默着磕烟袋。"], ["nar", "韩烈一句没顶嘴，也没跟小梁争辩。他只是蹲下身，把仅剩的两包压缩饼干和纯铜罗盘悄悄塞进老宋怀里，接着单手抓起最重的探路绳和地质锤背上左肩，准备独自往洞外那段最易二次滑坡的碎石坡走。"], ["nar", "你一眼看穿他在把最险的死路全揽到自己身上，抢先一步冲出洞口，死死拉住了他胸前的背包扣。"], ["say", "“韩烈，你要自己去踩滑坡带？”"], ["nar", "雨水顺着他眉骨往下淌，他垂眼看你抓紧背带的手，声音低沉沙哑：“前方三百米碎石松动，我先去探一条实底。要是不行，你们退回岩洞等天晴。”"]], "choices": ["“你不是说领队要把全队带出去吗？把自己扔在碎石坡上算什么领队！要探路我跟你打绳距，老宋在后面兜底。”", "“古图上的岩层走向我比你熟，少了我你走错一道沟就是死路。”"], "fx": [0, 0]}, {"n": 11, "lines": [["nar", "【龟背石上的红烟】黄昏时分，四人踏上秦岭主脊的龟背石，暴雨渐收，云层裂开一道灰白缝隙。"], ["nar", "这里全是整块裸露的花岗岩，彻底脱离了泥石流区。"], ["nar", "韩烈攀上最高的岩台，从防水筒里取出定位旗和红色信号火炬。山风卷得他破损的冲锋衣猎猎作响。"], ["nar", "火柴划燃，浓烈的红烟笔直冲向阴云。他站在风口回过头，朝岩台下的你伸出左手，掌心粗糙温热，稳稳候在半空。"]], "choices": ["握住他的手爬上岩台：借着他的力道站上巨石，并肩看层层退散的山雾。", "在岩台下配合小梁复核坐标：帮小梁重新架起天线，稳稳报出龟背石经纬度。"], "fx": [0, 0]}]}, {"title": "第三章 云开雾散", "scenes": [{"n": 12, "lines": [["nar", "【搜救大本营】山脚临时搜救点，警灯闪烁，救护车与工作人员往来穿梭。"], ["nar", "四人被直升机接驳下山。医护人员正按着韩烈清创包扎，他却一直扯着脖子往医疗帐篷门口看。"], ["nar", "直到看见你披着毛毯、捧着热姜汤安安稳稳走出来，他一直紧锁的眉心才彻底松开，顺从地把受伤的右手重新放回清创托盘里。"]], "choices": ["快步走过去站在他身边：把没喝完的热姜汤递到他左手边：“不是说皮肉伤算个屁吗，怎么还乖乖坐着上药了？”", "隔着人群朝他扬了扬手：示意自己检查完一切正常。"], "fx": [0, 0]}, {"n": 13, "lines": [["nar", "【病房里的葡萄】县医院骨科病房，午后阳光斜照在白色床单上，窗外蝉鸣稀疏。"], ["nar", "韩烈左肩打了固定绷带，右手裹得像个白粽子，正极不耐烦地想自己套鞋下床。"], ["nar", "你推门进来，拎着一袋洗净的紫葡萄和老宋炖的排骨汤。"], ["nar", "一见是你，他刚要下床的脚悄悄缩回被窝里，语气一下子短了半截：“你怎么过来了……不是让你多歇两天么？”"]], "choices": ["“来看看某位硬汉是不是又准备偷溜出院。”", "“老宋清早炖的，让你补补血。”"], "fx": [0, 0]}, {"n": 14, "lines": [["nar", "【洗干净的浅蓝衬衫】出院那天，县城老旅馆门口，梧桐树影筛在青砖地上，早点摊飘着油条香。"], ["nar", "韩烈换下了那身磨破的冲锋衣，破天荒穿了件熨得平整的浅蓝纯棉衬衫。肩宽背厚，布料绷出利落的线条。"], ["nar", "他站在梧桐树下，左手拎着你的行李箱，右手垂在身侧有些无处安放。见你走出来，他迎上两步想接你的帆布包，伸到一半又怕手上的老茧勾丝，下意识在裤缝上蹭了两下才接过去。"]], "choices": ["“衬衫挺合身，精神多了。”", "“韩队长这一身，差点没认出来。”"], "fx": [0, 0]}, {"n": 15, "lines": [["nar", "【月台告别】秦岭脚下的老火车站月台，绿皮列车停在轨道边，广播播报着开往省城的检票通知。"], ["nar", "检票口人声嘈杂。老宋和小梁已经先提着装备上了车厢。"], ["nar", "韩烈站在黄色安全线外，帮你把行李箱递进车窗。他垂眼看你，拇指又习惯性地摩挲起胸前那枚纯铜老罗盘的滚花外圈。"], ["say", "“回省城好好做你的研究。”他声音发闷，字句说得很慢，“山里路险，以后……别再跟这种拼命的队上山了。”"]], "choices": ["“韩烈，如果我下次再进秦岭，不是为了考察，只是为了找你呢？”", "“你的手还没拆线，回林场别急着拎重东西。”"], "fx": [0, 0]}, {"n": 16, "lines": [["nar", "【核桃木罗盘盒】三个月后，你在省城地质研究所的办公室，窗外落着细密的秋雨。"], ["nar", "办公桌上放着一个从秦岭老林场寄来的邮包。拆开厚厚的防震报纸，里面是一只用老核桃木手工打磨上蜡的罗盘盒。"], ["nar", "盒盖内侧，用刻刀深浅不一却极认真地刻着一行字：“指南针指北，我指南。烈。”"], ["nar", "盒子旁边塞满了一大袋山里晒干的野生红五味子和大红枣。"]], "choices": ["立刻拨通包裹单上的道班房座机：听筒里传来山里微弱的电流声和他低沉的“喂”。", "把罗盘盒端正摆在案头：抓起一颗红枣放进嘴里，晒得极甜。（好感 +1）"], "fx": [0, 0]}, {"n": 17, "lines": [["nar", "【归山之路】次年盛夏，秦岭山脚晴空万里，修缮一新的盘山公路绕着苍翠山脊蜿蜒。"], ["nar", "秦岭地质灾害保护站正式挂牌，你以驻站首席地质顾问的身份重返大山。"], ["nar", "韩烈开着一辆崭新的深灰皮卡停在站口，手臂搭在车窗沿。看见你拖着箱子走出来，他利落地推门下车，单手把箱子甩进后斗，替你拉开了副驾车门。"], ["nar", "车内后视镜上悬着的，正是那枚带你们走出绝境的纯铜老罗盘。"]], "choices": ["“韩站长，今天山路限速多少？”", "“秦岭的夏天比去年安静多了。”"], "fx": [0, 0]}]}], "route": "compass", "context": {"player": "随队进入秦岭南麓核查古水脉与地质滑坡隐患的年轻地质文献研究员。", "relation": "临时编入同一支山区考察队的领队与随队研究员。盘山公路突发塌方，生死一线间他一把把你拽出打滑的越野皮卡。", "world": "暴雨封山的秦岭南麓深山。孤悬山脊的护林道班房、断桥钢缆、浅溶洞柴火堆与裸露花岗岩主脊构成极境求生之路。", "premise": "特大暴雨引发山体塌方，考察队越野皮卡卡在盘山路边缘打滑。副驾门猛地被拉开，浑身雨水的韩烈探身进来一把扣住你冲锋衣后领，低喝一声：「车轮打滑了，跳！踩我脚印，别看崖下！」", "known": ["暴雨伴随强地磁扰动，短波电台暂时失联，四人必须靠古地质图与纯铜罗盘找出安全撤离路径。", "韩烈在秦岭跑了十余年防灾勘探，胸前总挂着师父留下的纯铜老罗盘。", "他左肩胛骨有一道陈年缝合长疤，阴雨天偶尔会暗暗发紧。"], "unknown": "三年前泥石流事故里他左肩留下的钛合金钢板旧事，以及这个寡言硬汉心里究竟藏着多少柔软。", "goal": "借助古地质图与纯铜罗盘翻上花岗岩主脊「龟背石」发出求救信号，全员平安走出暴雨封山。", "public_meta": "28 · 秦岭地质灾害调查队领队", "opening": "秦岭盘山公路泥石滚落，韩烈一把拉开打滑的越野车门，扣住你冲锋衣后领把你带出车厢：「车轮打滑了，跳！踩我脚印，别看崖下！」"}};
+const $=s=>document.querySelector(s);
+$('#nm').textContent=D.name; $('#mt').textContent=D.meta;
+['player','relation','unknown','goal'].forEach(key=>{$('#'+key).textContent=D.context[key]||'';});
+$('#persona').textContent=D.desc||'';
+(D.context.known||[]).forEach(text=>{const li=document.createElement('li');li.textContent=text;$('#known').appendChild(li);});
+if(D.world){ $('#world').textContent=D.world; } else { $('#secWorld').style.display='none'; $('#world').style.display='none'; }
+if(D.premise){ $('#premise').textContent=D.premise; } else { $('#secPremise').style.display='none'; $('#premise').style.display='none'; }
+let flat=[];
+D.chapters.forEach((c,ci)=>c.scenes.forEach((s,si)=>flat.push({...s,chap:c.title,ci,si})));
+let i=0, warm=0, log=null;   /* warm = 累计显式效果分（来自数据里的 fx.aff），不再用关键词猜 */
+function line(kind,text){
+  const el=document.createElement(kind==='say'?'div':'p');
+  el.className = kind==='say'?'her':(kind==='nar'?'nar':'nar');
+  el.textContent = text;
+  $('#log').appendChild(el);
+}
+function render(){
+  const s=flat[i]; if(!s){ finish(); return; }
+  $('#log').innerHTML=''; 
+  const c=document.createElement('div'); c.className='chap'; c.textContent=s.chap; $('#log').appendChild(c);
+  s.lines.forEach(([k,v])=>line(k,v));
+  const box=$('#ch'); box.innerHTML='';
+  s.choices.forEach((choice, idx)=>{
+    const t = (typeof choice === 'string') ? choice : (choice && choice.t) || '';
+    const aff = (typeof choice === 'object' && choice && choice.fx && Number.isFinite(Number(choice.fx.aff)))
+      ? Number(choice.fx.aff)
+      : Number((s.fx && s.fx[idx]) || 0);
+    const b=document.createElement('button'); b.textContent=t;
+    b.onclick=()=>{ 
+      warm += aff;                    /* 分数只来自数据里的 fx，改文案不影响判定 */
+      i++; render();
+      window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+    };
+    box.appendChild(b);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function finish(){
+  const total=flat.length, ratio=Math.max(0, Math.min(1, warm/Math.max(1,total)));
+  const tier = ratio>=0.6?'A':ratio>=0.45?'B':ratio>=0.3?'C':'D';
+  const e=D.endings[tier];
+  $('#ch').innerHTML='';
+  const card=document.createElement('div'); card.className='endcard';
+  card.innerHTML='<div class="eth">'+(e.title||'结局')+' · '+tier+'</div>'+e.text.split('\n').map(t=>'<p class="nar">'+t+'</p>').join('');
+  $('#log').appendChild(card);
+  const v=document.createElement('div'); v.className='vig';
+  v.innerHTML='<h3>她的这段日子</h3>'+D.vigs.map(x=>'<p><b style="color:#c8a37a;font-weight:400">'+x.title+'</b><br>'+x.lines.join('<br>')+'</p>').join('');
+  $('#log').appendChild(v);
+  const again=document.createElement('button'); again.className='btn'; again.textContent='再走一遍';
+  again.onclick=()=>{ i=0; warm=0; render(); };
+  $('#ch').appendChild(again);
+}
+let started=false;
+$('#go').onclick=()=>{ $('#intro').style.display='none'; $('#stage').style.display='block'; if(!started){started=true;render();} };
+$('#contextAgain').onclick=()=>{ $('#intro').style.display='block'; $('#stage').style.display='none'; $('#go').textContent=started?'回到当前剧情':'开始'; window.scrollTo({top:0,behavior:'smooth'}); };
+</script></body></html>
